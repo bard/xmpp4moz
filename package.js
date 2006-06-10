@@ -18,11 +18,8 @@
   Author: Massimiliano Mirra, <bard [at] hyperstruct [dot] net>
 */
 
-with(module) {
-    this.ID      = require('class', 'id');
-    this.Parser  = require('class', 'parser');
-    this.Session = require('class', 'session');
-    this.XML     = require('class', 'xmlsax');
-    this.element = require('package', 'element');
-    this.elementNG = require('package', 'element');
-}
+this.ID      = module.require('class', 'id');
+this.Parser  = module.require('class', 'parser');
+this.Session = module.require('class', 'session');
+this.XML     = module.require('class', 'xmlsax');
+this.element = module.require('package', 'element');
