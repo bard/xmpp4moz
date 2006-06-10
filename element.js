@@ -123,7 +123,7 @@ function _(xml) {
         return s;
 }
 
-function wrap(domElement) {
+function wrap(domElement, session) {
     var xml, wrapper;
 
     xml = new XML(_serializer.serializeToString(domElement));
@@ -149,7 +149,7 @@ function wrap(domElement) {
         break;
     }
 
-    return new wrapper(xml);
+    return new wrapper(xml, session);
 }
 
 function iqAuth(opts) {
@@ -172,13 +172,18 @@ function iqRoster(opts) {
 
 // ----------------------------------------------------------------------
 
-function StanzaWrapper(xml) {
-    this.xml = xml; 
+function StanzaWrapper(xml, session) {
+    this.xml = xml;
+    this._session = session;
 }
 
 StanzaWrapper.prototype = {
     get nodeName() {
         return _(this.xml.name());
+    },
+
+    get session() {
+        return this._session;
     },
 
     getId: function() {
@@ -212,10 +217,9 @@ StanzaWrapper.prototype = {
 
 // ----------------------------------------------------------------------
 
-function PresenceWrapper(xml) {
-    StanzaWrapper.call(this, xml);
+function PresenceWrapper() {
+    StanzaWrapper.apply(this, arguments);
 }
-
 PresenceWrapper.prototype = new StanzaWrapper();
 
 PresenceWrapper.prototype.getMessage = function() {
@@ -245,10 +249,9 @@ PresenceWrapper.prototype.getErrorCode =  function() {
 
 // ----------------------------------------------------------------------
 
-function MessageWrapper(xml) {
-    StanzaWrapper.call(this, xml);
+function MessageWrapper() {
+    StanzaWrapper.apply(this, arguments);
 }
-
 MessageWrapper.prototype = new StanzaWrapper();
 
 MessageWrapper.prototype.getType = function() {
@@ -265,10 +268,9 @@ MessageWrapper.prototype.getErrorCode = function() {
 
 // ----------------------------------------------------------------------
 
-function IqWrapper(xml) {
-    StanzaWrapper.call(this, xml);
+function IqWrapper() {
+    StanzaWrapper.apply(this, arguments);
 }
-
 IqWrapper.prototype = new StanzaWrapper();
 
 IqWrapper.prototype.getNameSpace = function() {
@@ -278,10 +280,9 @@ IqWrapper.prototype.getNameSpace = function() {
 
 // ----------------------------------------------------------------------
 
-function IqRosterWrapper(xml) {
-    IqWrapper.call(this, xml);
+function IqRosterWrapper() {
+    IqWrapper.apply(this, arguments);
 }
-
 IqRosterWrapper.prototype = new IqWrapper();
 
 IqRosterWrapper.prototype.getItems = function() {

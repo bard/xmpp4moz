@@ -343,7 +343,7 @@ function _serverDisconnected() {
 function _stanza(direction, stanza) {
     this._log.enter(arguments);
 
-    stanza = element.wrap(stanza);
+    stanza = element.wrap(stanza, this);
     this._handle('in/element', stanza);
 
     var id = stanza.getId();

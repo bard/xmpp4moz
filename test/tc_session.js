@@ -297,8 +297,8 @@ spec.stateThat = {
         var transport = new mocks.Socket();
 
         var element;
-        session.on(
-            'in/element', function(e) {
+        session.on( 
+           'in/element', function(e) {
                 element = e;
             });
 
@@ -312,6 +312,26 @@ spec.stateThat = {
         assert.equals('iq', element.nodeName);
         assert.equals('result', element.getAttribute('type'));
         assert.equals('1000', element.getAttribute('id'));
+    },
+
+    'Received element has a reference to the session is has been carried by': function() {
+        var session = new Session();
+        var transport = new mocks.Socket();
+
+        var element;
+        session.on(
+            'in/element', function(e) {
+                element = e;
+            });
+
+        session.signOn({
+            transport: transport,
+            userID: 'foo@localhost/mozilla',
+            userPassword: 'secret'
+            });
+        transport.otherSide.acceptSignOn();
+        
+        assert.equals(session, element.session);
     },
 
     'Callback is called when data is sent': function() {
