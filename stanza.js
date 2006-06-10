@@ -54,7 +54,7 @@ function iq(type, purpose, opts) {
     else
         throw new Error('Type required for iq.');
 
-    // Making this optional as session will id-stamp the element
+    // Making this optional as session will id-stamp the stanza
     if(opts.id)
         xml.@id = opts.id;
 

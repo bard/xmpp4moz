@@ -23,7 +23,7 @@ var Specification = mozlab.mozunit.Specification;
 var assert        = mozlab.mozunit.assertions;
 var module        = new ModuleManager(['../..']);
 var Session       = module.require('class', 'xmppjs/session');
-var element       = module.require('package', 'xmppjs/element');
+var stanza        = module.require('package', 'xmppjs/stanza');
 var mocks         = module.require('package', 'xmppjs/test/mocks');
 
 var spec = new Specification('Session');
@@ -259,12 +259,12 @@ spec.stateThat = {
             userPassword: 'secret'});
         transport.otherSide.acceptSignOn();
         
-        session._send(element.iq('get', 'roster'));
+        session._send(stanza.iq('get', 'roster'));
         assert.equals(
             '<iq type="get" id="1001"><query xmlns="jabber:iq:roster"/></iq>',
             transport.otherSide.read());
 
-        session._send(element.iq('get', 'roster'));
+        session._send(stanza.iq('get', 'roster'));
         assert.equals(
             '<iq type="get" id="1002"><query xmlns="jabber:iq:roster"/></iq>',
             transport.otherSide.read())
@@ -292,14 +292,14 @@ spec.stateThat = {
         assert.isTrue(streamStartedSeen);
     },
 
-    'Callback is called when element is received': function() {
+    'Callback is called when stanza is received': function() {
         var session = new Session();
         var transport = new mocks.Socket();
 
-        var element;
+        var stanza;
         session.on( 
-           'in/element', function(e) {
-                element = e;
+           'in/stanza', function(e) {
+                stanza = e;
             });
 
         session.signOn({
@@ -309,19 +309,19 @@ spec.stateThat = {
             });
         transport.otherSide.acceptSignOn();
 
-        assert.equals('iq', element.nodeName);
-        assert.equals('result', element.getAttribute('type'));
-        assert.equals('1000', element.getAttribute('id'));
+        assert.equals('iq', stanza.nodeName);
+        assert.equals('result', stanza.getAttribute('type'));
+        assert.equals('1000', stanza.getAttribute('id'));
     },
 
-    'Received element has a reference to the session is has been carried by': function() {
+    'Received stanza has a reference to the session is has been carried by': function() {
         var session = new Session();
         var transport = new mocks.Socket();
 
-        var element;
+        var stanza;
         session.on(
-            'in/element', function(e) {
-                element = e;
+            'in/stanza', function(e) {
+                stanza = e;
             });
 
         session.signOn({
@@ -331,7 +331,7 @@ spec.stateThat = {
             });
         transport.otherSide.acceptSignOn();
         
-        assert.equals(session, element.session);
+        assert.equals(session, stanza.session);
     },
 
     'Callback is called when data is sent': function() {

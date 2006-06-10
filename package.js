@@ -19,4 +19,4 @@
 */
 
 this.Session = module.require('class', 'session');
-this.element = module.require('package', 'element');
+this.stanza  = module.require('package', 'stanza');

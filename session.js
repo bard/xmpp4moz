@@ -43,7 +43,7 @@ var stateTransitions = {
 
 var fsm         = module.require('package', 'lib/fsm');
 var mixin       = module.require('package', 'lib/mixin');
-var element     = module.require('package', 'xmppjs/element');
+var stanza      = module.require('package', 'xmppjs/stanza');
 var Parser      = module.require('class', 'xmppjs/parser');
 var JID         = module.require('class', 'xmppjs/id');
 var EventHelper = module.require('class', 'lib/event_helper');
@@ -70,8 +70,8 @@ function constructor(opts) {
         'stop', function() {
             session._stream('stop');
         },
-        'stanza', function(element) {
-            session._stanza('in', element);
+        'stanza', function(st) {
+            session._stanza('in', st);
         });
 
     this._log = opts.logger || {
@@ -148,21 +148,21 @@ function signOff() {
 }
 
 function subscribeToPresence(jid) {
-    this._send(element.presence({type: 'subscribe', to: jid}));
+    this._send(stanza.presence({type: 'subscribe', to: jid}));
 }
 
 function acceptPresenceSubscription(jid) {
-    this._send(element.presence({type: 'subscribed', to: jid}));
+    this._send(stanza.presence({type: 'subscribed', to: jid}));
 }
 
 function cancelPresenceSubscription(jid) {
-    this._send(element.iq('set', 'roster/remove', {jid: jid}));
+    this._send(stanza.iq('set', 'roster/remove', {jid: jid}));
 }
 
 function sendPresence(type, opts) {
     opts = opts || {};
 
-    var presence = element.presence({type: type, show: opts.show, to: opts.to})
+    var presence = stanza.presence({type: type, show: opts.show, to: opts.to})
     this._send(presence);
     this._handle('out/presence', presence);
 }
@@ -173,12 +173,12 @@ function joinRoom(service, room, nick) {
         return;
     }
 
-    var p = element.presence({to: room + '@' + service + '/' + nick});
+    var p = stanza.presence({to: room + '@' + service + '/' + nick});
     this._send(p);
 }
 
 function sendMessage(to, body, type) {
-    var message = element.message({
+    var message = stanza.message({
         to: to,
         body: body,
         type: type || 'normal'});
@@ -190,7 +190,7 @@ function requestRoster() {
     if(this._state != 'online') {
         // possibly throw an exception
     } else {
-        this._send(element.iq('get', 'roster'));
+        this._send(stanza.iq('get', 'roster'));
     }
 }
 
@@ -234,7 +234,7 @@ function open(continuation) {
 
 function authenticate(continuation) {
     this._send(
-        element.iqAuth({
+        stanza.iqAuth({
             username: this.username,
             resource: this.resource,
             password: this.password
@@ -267,7 +267,7 @@ function offline(continuation) {
 
 function register(continuation) {
     this._send(
-        element.iqRegister({
+        stanza.iqRegister({
             username: this.username,
             password: this.password
             }),
@@ -294,19 +294,19 @@ function _setState(s) {
  * called when a reply to that stanza is received
  */
  
-function _send(element, replyHandler) {
+function _send(stanza, replyHandler) {
     this._log.enter(arguments);
 
-    if(element.xml &&
-       (replyHandler || element.xml.name().toString() == 'iq')) {
-        element.xml.@id = this._idCounter;
+    if(stanza.xml &&
+       (replyHandler || stanza.xml.name().toString() == 'iq')) {
+        stanza.xml.@id = this._idCounter;
         this._idCounter += 1;
     }
 
     if(replyHandler) 
-        this._pending[element.xml.@id.toString()] = replyHandler;
+        this._pending[stanza.xml.@id.toString()] = replyHandler;
 
-    var data = charsetConverter.ConvertFromUnicode(element.toString());
+    var data = charsetConverter.ConvertFromUnicode(stanza.toString());
 
     this.transport.write(data);
 
@@ -340,37 +340,37 @@ function _serverDisconnected() {
  *
  */
 
-function _stanza(direction, stanza) {
+function _stanza(direction, st) {
     this._log.enter(arguments);
 
-    stanza = element.wrap(stanza, this);
-    this._handle('in/element', stanza);
+    st = stanza.wrap(st, this);
+    this._handle('in/stanza', st);
 
-    var id = stanza.getId();
+    var id = st.getId();
     if(id && id in this._pending) {
-        this._pending[id](this, stanza);
+        this._pending[id](this, st);
         delete this._pending[id];
     }
     
-    switch(stanza.nodeName) {
+    switch(st.nodeName) {
     case 'presence':
-        this._handle('in/presence', stanza);
+        this._handle('in/presence', st);
         break;
         
     case 'message':
-        this._handle('in/message', stanza);
+        this._handle('in/message', st);
         break;
         
     case 'iq':
-        this._handle('in/iq', stanza);
+        this._handle('in/iq', st);
         
-        var nameSpace = stanza.getNameSpace();
+        var nameSpace = st.getNameSpace();
         if(nameSpace)
-            this._handle('in/iq/' + nameSpace, stanza);
+            this._handle('in/iq/' + nameSpace, st);
         break;
         
     default:
-        throw new Error('Unrecognized element. (' + stanza.nodeName + ')');
+        throw new Error('Unrecognized stanza[s]. (' + st.nodeName + ')');
         break;
     }
 

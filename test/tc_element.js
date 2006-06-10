@@ -21,9 +21,9 @@
 var Specification = mozlab.mozunit.Specification;
 var assert        = mozlab.mozunit.assertions;
 var module        = new ModuleManager(['../..']);
-var element       = module.require('package', 'xmppjs/element');
+var stanza        = module.require('package', 'xmppjs/stanza');
 
-var spec = new Specification('Element');
+var spec = new Specification('Stanza');
 
 assert.equalsXML = function(x, y) {
     if(typeof(x) == 'string')
@@ -45,18 +45,18 @@ spec.stateThat = {
     'Old <message> creation and new one with legacy interface': function() {
         var message;
 
-        message = element.message({to: 'foo@localhost'});
+        message = stanza.message({to: 'foo@localhost'});
         assert.equals('normal', message.getType());
         assert.equals('<message to="foo@localhost"/>', message.toString());
 
-        message = element.message({to: 'foo@localhost/mozilla', type: 'chat'});
+        message = stanza.message({to: 'foo@localhost/mozilla', type: 'chat'});
         assert.equals('foo@localhost/mozilla', message.getTo());
         assert.equals('chat', message.getType());
         assert.equals(
             '<message to="foo@localhost/mozilla" type="chat"/>',
             message.toString());
     
-        message = element.message({to: 'foo@localhost/mozilla', body: 'hey pal!'});
+        message = stanza.message({to: 'foo@localhost/mozilla', body: 'hey pal!'});
         assert.equals('hey pal!', message.getBody());
         assert.equals(
             '<message to="foo@localhost/mozilla"><body>hey pal!</body></message>',
@@ -66,24 +66,24 @@ spec.stateThat = {
     'New <message> creation': function() {
         var message;
 
-        message = element.message('foo@localhost', 'hello, foo!', { type: 'normal' });
+        message = stanza.message('foo@localhost', 'hello, foo!', { type: 'normal' });
         assert.equals(
             '<message to="foo@localhost" type="normal"><body>hello, foo!</body></message>',
             message.toString());
 
-        message = element.message('foo@localhost', 'hello, foo!');
+        message = stanza.message('foo@localhost', 'hello, foo!');
         assert.equals(
             '<message to="foo@localhost"><body>hello, foo!</body></message>',
             message.toString());
 
-        message = element.message('foo@localhost');
+        message = stanza.message('foo@localhost');
         assert.equals(
             '<message to="foo@localhost"/>',
             message.toString());
     },
 
     'New <iq> (auth) creation': function() {
-        var iq = element.iq(
+        var iq = stanza.iq(
             'set', 'auth',
             { username: 'foo', resource: 'bar', password: 'secret' });
 
@@ -98,7 +98,7 @@ spec.stateThat = {
     },
 
     'New <iq> roster creation for contact removal': function() {
-        var iq = element.iq(
+        var iq = stanza.iq(
             'set', 'roster/remove',
             { jid: 'contact@example.org' });
 
@@ -112,7 +112,7 @@ spec.stateThat = {
     },
 
     'New <iq> roster creation for roster get': function() {
-        var iq = element.iq(
+        var iq = stanza.iq(
             'get', 'roster');
         
         assert.equalsXML(
@@ -124,35 +124,35 @@ spec.stateThat = {
     'New <presence> creation': function() {
         assert.equalsXML(
             '<presence to="foo@bar"/>', 
-            element.presence(null, 'foo@bar').xml);
+            stanza.presence(null, 'foo@bar').xml);
 
         assert.equals(
-            'foo@bar', element.presence(null, 'foo@bar').xml.@to);
+            'foo@bar', stanza.presence(null, 'foo@bar').xml.@to);
 
         assert.equalsXML(
             '<presence to="foo@bar"/>',
-            element.presence('available', 'foo@bar').xml);
+            stanza.presence('available', 'foo@bar').xml);
 
         assert.equalsXML(
-            '<presence/>', element.presence().xml);
+            '<presence/>', stanza.presence().xml);
 
         assert.equalsXML(
             '<presence><show>dnd</show></presence>',
-            element.presence(null, null, {show: 'dnd'}).xml);
+            stanza.presence(null, null, {show: 'dnd'}).xml);
 
         assert.equals(
             'dnd',
-            element.presence(null, null, {show: 'dnd'}).xml.show);
+            stanza.presence(null, null, {show: 'dnd'}).xml.show);
 
         assert.equalsXML(
             '<presence><message>Eating!</message></presence>',
-            element.presence(null, null, {message: 'Eating!'}).xml);
+            stanza.presence(null, null, {message: 'Eating!'}).xml);
     },
 
     'Old <iq> (roster) creation and new one with legacy interface': function() {
         var iqRoster;
 
-        iqRoster = element.iqRoster(
+        iqRoster = stanza.iqRoster(
             { id: '1000' });
         assert.equals(
             '<iq type="get" id="1000">' +
@@ -170,7 +170,7 @@ spec.stateThat = {
             '</query></iq>',
             'text/xml').documentElement;
 
-        var iqRoster = element.wrap(domElement);
+        var iqRoster = stanza.wrap(domElement);
 
         assert.equals('foo@localhost', iqRoster.getItems()[0]);
         assert.equals('bar@localhost', iqRoster.getItems()[1]);
@@ -179,7 +179,7 @@ spec.stateThat = {
     'Old <iq> (register) creation and new one with legacy interface': function() {
         var iqRegister;
 
-        iqRegister = element.iqRegister(
+        iqRegister = stanza.iqRegister(
             { username: 'foo', password: 'bar' });
         assert.equals(
             '<iq type="set">' +
@@ -194,7 +194,7 @@ spec.stateThat = {
     'Old <iq> (auth) creation and new one with legacy interface': function() {
         var iqAuth;
         
-        iqAuth = element.iqAuth(
+        iqAuth = stanza.iqAuth(
             {id: 'auth1', username: 'foobar', password: 'secret', resource: 'jsjab'});
         assert.equals('auth1', iqAuth.getId());
         assert.equals(
@@ -211,19 +211,19 @@ spec.stateThat = {
     'Old <presence> creation and new one with legacy interface': function() {
         var presence;
 
-        presence = element.presence();
+        presence = stanza.presence();
         assert.equals("<presence/>", presence.toString());
         assert.equals('available', presence.getType());
 
-        presence = element.presence({type: 'available'});
+        presence = stanza.presence({type: 'available'});
         assert.equals('<presence/>', presence.toString());
         assert.equals('available', presence.getType());
 
-        presence = element.presence({type: 'unavailable'});
+        presence = stanza.presence({type: 'unavailable'});
         assert.equals('unavailable', presence.getType());
         assert.equals('<presence type="unavailable"/>', presence.toString());
 
-        presence = element.presence({to: 'bar@foo.com/mozilla', show: 'dnd'});
+        presence = stanza.presence({to: 'bar@foo.com/mozilla', show: 'dnd'});
         assert.equals('bar@foo.com/mozilla', presence.getTo());
         assert.equals('<presence to="bar@foo.com/mozilla"><show>dnd</show></presence>',
                       presence.toString());
