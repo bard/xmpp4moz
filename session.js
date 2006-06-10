@@ -18,6 +18,7 @@
   Author: Massimiliano Mirra, <bard [at] hyperstruct [dot] net>
 */
 
+// ----------------------------------------------------------------------
 // DEFINITION OF FSM TRANSITIONS
 
 var stateTransitions = {
@@ -95,6 +96,109 @@ function constructor(opts) {
     this.__defineGetter__( 'state', function() { return this._state; });
 }
 
+// ----------------------------------------------------------------------
+// CLIENT OPERATIONS
+
+function signOn(opts) {
+    this._log.enter(arguments);
+
+    var jid = new JID(opts.userID);
+
+    this.userID = opts.userID;
+    this.username = jid.username;
+    this.resource = jid.resource;
+    this.password = opts.userPassword;
+    this.transport = opts.transport;
+    this.server = jid.hostname;
+
+    this._fsm.go('connect');
+
+    this._log.leave();
+}
+
+function registerID(opts) {
+    this._log.enter(arguments);
+
+    var jid = new JID(opts.userID);
+    
+    this.transport = opts.transport;
+    this.username = jid.username;
+    this.server = jid.hostname;
+    this.password = opts.userPassword;
+
+    var machine =  new fsm.FSM();
+    machine.context = this;
+    machine.stateHandlers = this;
+    machine.stateTransitions = stateTransitions.registrationSession;
+    machine.on(
+        'state/enter', function(stateName) {
+            this._setState(stateName);
+        });
+    machine.go('connect');
+
+    this._log.leave();
+}
+
+function send(stanza, replyHandler) {
+    this._send(stanza, replyHandler);
+}
+
+function signOff() {
+    this._fsm.go('close');
+}
+
+function subscribeToPresence(jid) {
+    this._send(element.presence({type: 'subscribe', to: jid}));
+}
+
+function acceptPresenceSubscription(jid) {
+    this._send(element.presence({type: 'subscribed', to: jid}));
+}
+
+function cancelPresenceSubscription(jid) {
+    this._send(element.iq('set', 'roster/remove', {jid: jid}));
+}
+
+function sendPresence(type, opts) {
+    opts = opts || {};
+
+    var presence = element.presence({type: type, show: opts.show, to: opts.to})
+    this._send(presence);
+    this._handle('out/presence', presence);
+}
+
+function joinRoom(service, room, nick) {
+    if(this._state != 'online') {
+        // throw exception
+        return;
+    }
+
+    var p = element.presence({to: room + '@' + service + '/' + nick});
+    this._send(p);
+}
+
+function sendMessage(to, body, type) {
+    var message = element.message({
+        to: to,
+        body: body,
+        type: type || 'normal'});
+    this._send(message);
+    this._handle('out/message', message);
+}
+
+function requestRoster() {
+    if(this._state != 'online') {
+        // possibly throw an exception
+    } else {
+        this._send(element.iq('get', 'roster'));
+    }
+}
+
+function sessionID() {
+    return this._sessionID;
+}
+
+// ----------------------------------------------------------------------
 // STATE HANDLERS
 
 function connect(continuation) {
@@ -173,40 +277,68 @@ function register(continuation) {
 }
 
 // ----------------------------------------------------------------------
+// INTERNALS
 
-// INTERNAL CALLBACK: invoked when socket has data available
-// 'direction' parameter unused for now
-
-function _data(direction, data) {
-    data = charsetConverter.ConvertToUnicode(data);
-
+function _setState(s) {
     this._log.enter(arguments);
 
-    this._handle('in/data', data);
-
-    this._parser.parse(data);
+    this._state = s;
+    
+    this._handle('state', this._state);
 
     this._log.leave();
-};
+}
 
-// INTERNAL CALLBACK: invoked when parser seens start or end of stream
-
-function _stream(phase, sessionID) {
-    this._log.enter(arguments);
+/**
+ * Send a stanza, optionally registering a function that will be
+ * called when a reply to that stanza is received
+ */
  
-    if(phase == 'start') {
-        this._sessionID = sessionID;
-        this._handle('openSuccess', this);
+function _send(element, replyHandler) {
+    this._log.enter(arguments);
+
+    if(element.xml &&
+       (replyHandler || element.xml.name().toString() == 'iq')) {
+        element.xml.@id = this._idCounter;
+        this._idCounter += 1;
     }
-    else {
-        this._handle('serverClosedStream', this);
-    }
+
+    if(replyHandler) 
+        this._pending[element.xml.@id.toString()] = replyHandler;
+
+    var data = charsetConverter.ConvertFromUnicode(element.toString());
+
+    this.transport.write(data);
+
+    this._handle('out/data', data);
 
     this._log.leave();
-};
+}
 
-// INTERNAL CALLBACK: invoked when parser gets an XML stanza.
-// 'direction' ignored for now.
+function _startConnectionMonitor() {
+    if(this.TESTING)
+        return;
+    var session = this;
+    this._monitorInterval = setInterval(function() { session._send(' '); }, 10000);
+}
+
+/**
+ * Invoked from transport when other end closes TCP connection.
+ *
+ */
+
+function _serverDisconnected() {
+    this._log.enter(arguments);
+    clearInterval(this._monitorInterval);
+    this._fsm.go('disconnect');
+    this._handle('server disconnect', this);
+    this._log.leave();
+}
+
+/**
+ * Invoked when parser gets an XML stanza.
+ *
+ */
 
 function _stanza(direction, stanza) {
     this._log.enter(arguments);
@@ -243,167 +375,42 @@ function _stanza(direction, stanza) {
     }
 
     this._log.leave();
-};
-
-// INTERNAL CALLBACK: invoked from transport when other end closes TCP connection
-
-function _serverDisconnected() {
-    this._log.enter(arguments);
-    clearInterval(this._monitorInterval);
-    this._fsm.go('disconnect');
-    this._handle('server disconnect', this);
-    this._log.leave();
-};
-
-// CLIENT OPERATION: goes through all states from offline to online
-
-function signOn(opts) {
-    this._log.enter(arguments);
-
-    var jid = new JID(opts.userID);
-
-    this.userID = opts.userID;
-    this.username = jid.username;
-    this.resource = jid.resource;
-    this.password = opts.userPassword;
-    this.transport = opts.transport;
-    this.server = jid.hostname;
-
-    this._fsm.go('connect');
-
-    this._log.leave();
-};
-
-// CLIENT OPERATION: register a user on a server
-
-function registerID(opts) {
-    this._log.enter(arguments);
-
-    var jid = new JID(opts.userID);
-    
-    this.transport = opts.transport;
-    this.username = jid.username;
-    this.server = jid.hostname;
-    this.password = opts.userPassword;
-
-    var machine =  new fsm.FSM();
-    machine.context = this;
-    machine.stateHandlers = this;
-    machine.stateTransitions = stateTransitions.registrationSession;
-    machine.on(
-        'state/enter', function(stateName) {
-            this._setState(stateName);
-        });
-    machine.go('connect');
-
-    this._log.leave();
-};
-
-// CLIENT OPERATION: goes through all states from online to offline
-
-function signOff() {
-    this._fsm.go('close');
-};
-
-// CLIENT OPERATION:
-
-function subscribeToPresence(jid) {
-    this._send(element.presence({type: 'subscribe', to: jid}));
-};
-
-function acceptPresenceSubscription(jid) {
-    this._send(element.presence({type: 'subscribed', to: jid}));
-};
-
-function cancelPresenceSubscription(jid) {
-    this._send(element.iq('set', 'roster/remove', {jid: jid}));
-};
-
-function sendPresence(type, opts) {
-    opts = opts || {};
-
-    var presence = element.presence({type: type, show: opts.show, to: opts.to})
-    this._send(presence);
-    this._handle('out/presence', presence);
-};
-
-function joinRoom(service, room, nick) {
-    if(this._state != 'online') {
-        // throw exception
-        return;
-    }
-
-    var p = element.presence({to: room + '@' + service + '/' + nick});
-    this._send(p);
-};
-
-// CLIENT OPERATION: 
-
-function sendMessage(to, body, type) {
-    var message = element.message({
-        to: to,
-        body: body,
-        type: type || 'normal'});
-    this._send(message);
-    this._handle('out/message', message);
-};
-
-// CLIENT OPERATION: 
-
-function requestRoster() {
-    if(this._state != 'online') {
-        // possibly throw an exception
-    } else {
-        this._send(element.iq('get', 'roster'));
-    }
-};
-
-// DATA ACCESSORS
-
-function sessionID() {
-    return this._sessionID;
 }
 
-function _setState(s) {
+/**
+ * Invoked when socket has data available.
+ * 'direction' parameter unused for now
+ *
+ */
+
+function _data(direction, data) {
+    data = charsetConverter.ConvertToUnicode(data);
+
     this._log.enter(arguments);
 
-    this._state = s;
-    
-    this._handle('state', this._state);
+    this._handle('in/data', data);
+
+    this._parser.parse(data);
 
     this._log.leave();
-};
+}
 
-// INTERNAL OPERATION: send a stanza, optionally registering a
-// function that will be called when a reply to that stanza is
-// received
+/**
+ * Invoked when parser seens start or end of stream.
+ *
+ */
 
-function _send(element, replyHandler) {
+function _stream(phase, sessionID) {
     this._log.enter(arguments);
-
-    if(element.xml &&
-       (replyHandler || element.xml.name().toString() == 'iq')) {
-        element.xml.@id = this._idCounter;
-        this._idCounter += 1;
+ 
+    if(phase == 'start') {
+        this._sessionID = sessionID;
+        this._handle('openSuccess', this);
+    }
+    else {
+        this._handle('serverClosedStream', this);
     }
 
-    if(replyHandler) 
-        this._pending[element.xml.@id.toString()] = replyHandler;
-
-    var data = charsetConverter.ConvertFromUnicode(element.toString());
-
-    this.transport.write(data);
-
-    this._handle('out/data', data);
-
     this._log.leave();
-};
+}
 
-// INTERNAL OPERATIONS
-
-function _startConnectionMonitor() {
-    if(this.TESTING)
-        return;
-    var session = this;
-    this._monitorInterval = setInterval(function() { session._send(' '); }, 10000);
-};
