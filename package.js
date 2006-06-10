@@ -18,8 +18,5 @@
   Author: Massimiliano Mirra, <bard [at] hyperstruct [dot] net>
 */
 
-this.ID      = module.require('class', 'id');
-this.Parser  = module.require('class', 'parser');
 this.Session = module.require('class', 'session');
-this.XML     = module.require('class', 'xmlsax');
 this.element = module.require('package', 'element');
