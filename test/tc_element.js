@@ -20,8 +20,8 @@
 
 var Specification = mozlab.mozunit.Specification;
 var assert        = mozlab.mozunit.assertions;
-var module        = new ModuleManager(['../..']);
-var stanza        = module.require('package', 'xmppjs/stanza');
+var module        = new ModuleManager(['..']);
+var stanza        = module.require('package', 'stanza');
 
 var spec = new Specification('Stanza');
 

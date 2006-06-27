@@ -20,8 +20,8 @@
 
 var Specification = mozlab.mozunit.Specification;
 var assert        = mozlab.mozunit.assertions;
-var module        = new ModuleManager(['../..']);
-var Parser        = module.require('class', 'xmppjs/parser');
+var module        = new ModuleManager(['..']);
+var Parser        = module.require('class', 'parser');
 
 var spec = new Specification('Parser');
 

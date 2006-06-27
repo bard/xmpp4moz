@@ -18,607 +18,156 @@
   Author: Massimiliano Mirra, <bard [at] hyperstruct [dot] net>
 */
 
-
 var Specification = mozlab.mozunit.Specification;
 var assert        = mozlab.mozunit.assertions;
-var module        = new ModuleManager(['../..']);
-var Session       = module.require('class', 'xmppjs/session');
-var stanza        = module.require('package', 'xmppjs/stanza');
-var mocks         = module.require('package', 'xmppjs/test/mocks');
+var module        = new ModuleManager(['..']);
 
 var spec = new Specification('Session');
-    
+
+var Session = module.require('class', 'session');
+
 spec.stateThat = {
-
-    // Excersising state handlers, individually and as driven by state machine
-
-    'Connecting session causes underlying transport to connect': function() {
+    'Open stream': function() {
         var session = new Session();
-        var transport = new mocks.Socket();
-            
-        assert.isFalse(transport.isConnected());
-        session.transport = transport;
-        session.connect(function() {});
-        assert.isTrue(transport.isConnected());
-    },
+        var output;
+        session.on({tag: 'data', direction: 'out'},
+                   function(data) { output = data.content; });
 
-    'After connecting, session opens the XML stream': function() {
-        var session = new Session();
-        var transport = new mocks.Socket();
-
-        var data;
-        session.transport = transport;
-        session.server = 'localhost';
-        session.on(
-            'in/data', function(d) {
-                data = d;
-            });
-
-        session._fsm.go('connect');
-            
-        assert.equals('open', session.state);
+        session.open('localhost');
         assert.equals('<?xml version="1.0"?>' +
                       '<stream:stream xmlns="jabber:client" ' +
                       'xmlns:stream="http://etherx.jabber.org/streams" '+
-                      'to="localhost">', transport.otherSide.read());
-
-        transport.otherSide.openStream();
-        assert.equals("<?xml version='1.0'?>" +
-                      "<stream:stream xmlns='jabber:client' " +
-                      "xmlns:stream='http://etherx.jabber.org/streams' " +
-                      "id='2622060002' from='localhost' xml:lang='en'>", data);
-        assert.equals('2622060002', session.sessionID());
-
+                      'to="localhost">', output);
     },
 
-    'Successful authentication leads to "online" state': function() {
+    'Close stream': function() {
         var session = new Session();
-        var transport = new mocks.Socket();
+        var output;
+        session.on({tag: 'data', direction: 'out'},
+                   function(data) { output = data.content; });
 
-        var data;
-        session.on(
-            'in/data', function(d) {
-                data = d;
-            });
-
-        session.transport = transport;
-        session.username = 'jsjab';
-        session.password = 'secret';
-        session.resource = 'mozilla';
-        session._fsm.go('connect');
-            
-        assert.equals('open', session.state);
-
-        transport.otherSide.openStream();
-        assert.equals('authenticate', session.state);
-        assert.equals('<iq type="set" id="1000">' +
-                      '<query xmlns="jabber:iq:auth">' +
-                      '<username>jsjab</username>' +
-                      '<password>secret</password>' +
-                      '<resource>mozilla</resource>' +
-                      '</query></iq>', transport.otherSide.read());
-
-        transport.otherSide.acceptAuth();
-        assert.equals("<iq type='result' id='1000'/>", data);
-        assert.equals('online', session.state);
+        session.open();
+        session.close();
+        assert.equals('</stream:stream>', output);       
     },
 
-    'Exceptions are raised when state is called from other states where it is not expected': function() {
-        // assert.fail('Write me');
+    'Tell if stream is open or not': function() {
+        var session = new Session();
+
+        assert.isFalse(session.isOpen());
+        session.open();
+        assert.isTrue(session.isOpen());
+        session.close();
+        assert.isFalse(session.isOpen());
     },
+
+    'Error if opening already opened session': function() {
+        var session = new Session();
+
+        session.open();
+        assert.raises(new Error(), function() {
+                          session.open();
+                      });
+    },
+
+    'Error if closing already closed session': function() {
+        var session = new Session();        
+
+        session.open();
+        session.close();
+        assert.raises(new Error(), function() {
+                          session.close();
+                      });
+    },
+
+    'Accept incoming data': function() {
         
-    'States of a successfull session are "connect", "open", "authenticate", "online", "close", "offline"': function() {
-        var session = new Session();
-        var transport = new mocks.Socket();
-        var log = [];
-
-        session.server = 'localhost';
-        session.username = 'jsjab';
-        session.resource = 'mozilla';
-        session.password = 'secret';
-        session.transport = transport;
-        session.on(
-            'state', function(state) {
-                log.push(state);
-            });
-
-        session._fsm.go('connect');
-        transport.otherSide.openStream();
-        transport.otherSide.acceptAuth();
-
-        session._fsm.go('close');
-        transport.otherSide.closeStream();
-            
-        assert.equals('connect, open, authenticate, ' +
-                      'online, close, disconnect, offline',
-                      log.join(', '));
     },
+
+    'Expose outgoing data via handler': function() {
         
-    // Higher level client functionality
-
-    'signOn() brings from offline to online': function() {
-        var session = new Session();
-        var transport = new mocks.Socket();
-        var callbackCalled;
+    },
     
-        session.signOn({
-            transport: transport,
-            userID: 'jsjab@localhost/mozilla',
-            userPassword: 'secret'});
+    'Register procedures to handle incoming and outgoing data': function() {
+
+    },
+
+    'Register procedures to handle incoming and outgoing stanzas': function() {
+        var session = new Session();
+
+        var seen = [];
+        session.on({tag: 'iq'}, function(iq) { seen.push(iq); });
+        session.on({tag: 'presence'}, function(presence) { seen.push(presence) });
+
+        session.send(<iq type="get"/>);
+        session.send(<presence/>);
+        session.send(<iq type="set"/>);
+
+        assert.equals('iq', seen[0].stanza.name());
+        assert.equals('presence', seen[1].stanza.name());
+        assert.equals('iq', seen[2].stanza.name());
+    },
+
+    'Send plain text': function() {
+        var session = new Session();
+        var output;
+        session.on({tag: 'data', direction: 'out'},
+                   function(data) { output = data.content; });
+
+        session.send('<message to="alyssa@localhost"/>')
+        assert.equals('<message to="alyssa@localhost"/>', output);
+    },
+
+    'Send XML stanzas': function() {
+        var session = new Session();
+        var output;
+        session.on({tag: 'data', direction: 'out'},
+                   function(data) { output = data.content; });
+
+        session.send(<message to="alyssa@localhost"/>);
+        assert.equals('<message to="alyssa@localhost" id="1000"/>', output);
+    },
+
+    'Stamp outgoing XML stanzas with incrementing IDs': function() {
+        var session = new Session();
+        var output;
+        session.on({tag: 'data', direction: 'out'},
+                   function(data) { output = data.content; });
+
+        session.send(<message to="alyssa@localhost"/>)
+        assert.equals('<message to="alyssa@localhost" id="1000"/>', output);
+        session.send(<message to="alyssa@localhost"/>)
+        assert.equals('<message to="alyssa@localhost" id="1001"/>', output);
+    },
+
+    'Optionally associate a reply handler to an XML stanza': function() {
+        var session = new Session();
+        var output, reply;
+        session.on({tag: 'data', direction: 'out'},
+                   function(data) { output = data.content.replace(/\n\s*/mg, ''); });
         
-        transport.otherSide.acceptSignOn();
-        assert.equals('online', session.state);
+        session.send(<iq type="get"><query xmlns="test"/></iq>,
+                     function(r) { reply = r; });
+        assert.equals('<iq type="get" id="1000"><query xmlns="test"/></iq>', output);
+
+        session.receive(<iq id="1000" type="result"/>);
+        assert.equals('iq', reply.stanza.name())
     },
 
-    'Session can notify its presence after going online': function() {
+    'Stanzas passed to handlers know to what session they belong': function() {
         var session = new Session();
-        var transport = new mocks.Socket();
-            
-        session.signOn({
-            transport: transport,
-            userID: 'jsjab@localhost/mozilla',
-            userPassword: 'secret'
-            });
-        transport.otherSide.acceptSignOn();
-
-        session.sendPresence();
-    
-        assert.equals('<presence/>', transport.otherSide.read());
-    },
-
-    'Session can send a message': function() {
-        var session = new Session();
-        var transport = new mocks.Socket();
-            
-        session.signOn({
-            transport: transport,
-            userID: 'jsjab@localhost/mozilla',
-            userPassword: 'secret'
-            });
-        transport.otherSide.acceptSignOn();
-
-        session.sendMessage('man@future.com', '42!');
-    
-        assert.equals('<message to="man@future.com" type="normal">' +
-                      '<body>42!</body></message>', transport.otherSide.read());
-    },
-
-    'Session can perform a registration': function() {
-        var session = new Session();
-        var transport = new mocks.Socket();
-            
-        var states = [];
-        session.on(
-            'state', function(state) {
-                states.push(state);
-            });
-
-        var registrationSuccessful;
-
-        var whenRegistered = session.on(
-            'in/iq/jabber:iq:register', function(iq) {
-                if(iq.getType() == 'result') 
-                    registrationSuccessful = true;
-                session.forget('in/iq/jabber:iq:register', whenRegistered);
-            });
-
-        session.registerID({
-            transport: transport,
-            userID: 'foo@localhost/mozilla',
-            userPassword: 'secret' });
-
-        transport.otherSide.openStream();
-
-        assert.equals('<iq type="set" id="1000">' +
-                      '<query xmlns="jabber:iq:register">' +
-                      '<username>foo</username>' +
-                      '<password>secret</password>' +
-                      '</query></iq>', transport.otherSide.read());
-
-        transport.otherSide.acceptRegistration();
-        transport.otherSide.closeStream();
-    
-        assert.isTrue(registrationSuccessful);
-        assert.equals('connect, open, register, close, disconnect, offline',
-                      states.join(', '));
-    },
-
-    'Session can request to subscribe to the presence of another user': function() {
-        var session = new Session();
-        var transport = new mocks.Socket();
-
-        session.signOn({
-            transport: transport,
-            userID: 'foo@localhost/mozilla',
-            userPassword: 'secret'});
-        transport.otherSide.acceptSignOn();
-
-        session.subscribeToPresence('deepthought@future.com');
-        assert.equals('<presence to="deepthought@future.com" type="subscribe"/>',
-                      transport.otherSide.read());
-
-        var presence;
-        session.on(
-            'in/presence', function(p) {
-                presence = p;
-            });
-
-        transport.otherSide.authorizePresenceSubscription();
-    
-        assert.equals('subscribed', presence.getType());
-        assert.equals('deepthought@future.com/dolphin', presence.getFrom());
-    },
-
-    'Outgoing <iq>s are stamped with incrementing id values': function() {
-        var session = new Session();
-        var transport = new mocks.Socket();
-
-        session.signOn({
-            transport: transport,
-            userID: 'foo@localhost/mozilla',
-            userPassword: 'secret'});
-        transport.otherSide.acceptSignOn();
+        var seen = [];
         
-        session._send(stanza.iq('get', 'roster'));
-        assert.equals(
-            '<iq type="get" id="1001"><query xmlns="jabber:iq:roster"/></iq>',
-            transport.otherSide.read());
-
-        session._send(stanza.iq('get', 'roster'));
-        assert.equals(
-            '<iq type="get" id="1002"><query xmlns="jabber:iq:roster"/></iq>',
-            transport.otherSide.read())
-    },
-
-    // Callbacks on various events
-
-    'Callback is called on stream opening': function() {
-        var session = new Session();
-        var transport = new mocks.Socket();
-
-        var streamStartedSeen;
-        session.on(
-            'openSuccess', function() {
-                streamStartedSeen = true;
-            });
-        session.signOn({
-            transport: transport,
-            userID: 'foo@localhost/mozilla',
-            userPassword: 'secret'
-            });
-
-        transport.otherSide.openStream();
-
-        assert.isTrue(streamStartedSeen);
-    },
-
-    'Callback is called when stanza is received': function() {
-        var session = new Session();
-        var transport = new mocks.Socket();
-
-        var stanza;
-        session.on( 
-           'in/stanza', function(e) {
-                stanza = e;
-            });
-
-        session.signOn({
-            transport: transport,
-            userID: 'foo@localhost/mozilla',
-            userPassword: 'secret'
-            });
-        transport.otherSide.acceptSignOn();
-
-        assert.equals('iq', stanza.nodeName);
-        assert.equals('result', stanza.getAttribute('type'));
-        assert.equals('1000', stanza.getAttribute('id'));
-    },
-
-    'Received stanza has a reference to the session is has been carried by': function() {
-        var session = new Session();
-        var transport = new mocks.Socket();
-
-        var stanza;
-        session.on(
-            'in/stanza', function(e) {
-                stanza = e;
-            });
-
-        session.signOn({
-            transport: transport,
-            userID: 'foo@localhost/mozilla',
-            userPassword: 'secret'
-            });
-        transport.otherSide.acceptSignOn();
+        session.on({tag: 'iq'}, function(iq) {
+                       seen.push(iq);
+                   });
         
-        assert.equals(session, stanza.session);
-    },
+        session.send(<iq type="get"/>);
+        session.receive(<iq type="result"/>);
 
-    'Callback is called when data is sent': function() {
-        var session = new Session();
-        var transport = new mocks.Socket();
-
-        var data;
-        session.on(
-            'out/data', function(d) {
-                data = d;
-            });
-            
-        session.signOn({
-            transport: transport,
-            userID: 'foo@localhost/mozilla',
-            userPassword: 'secret'
-            });
-        assert.matches(/^<\?xml version="1\.0"/, data);
-    },
-
-    'Callback is called when data is received': function() {
-        var session = new Session();
-        var transport = new mocks.Socket();
-            
-        var data;
-        session.on(
-            'in/data', function(d) {
-                data = d;
-            });
-        session.signOn({
-            transport: transport,
-            userID: 'foo@localhost/mozilla',
-            userPassword: 'secret'
-            });
-
-        transport.otherSide.openStream();
-    
-        assert.matches(/^<\?xml version='1\.0'/, data);
-    },
-
-    'Callback is called when session state changes': function() {
-        var session = new Session();
-        var transport = new mocks.Socket();
-
-        var state;
-        session.on(
-            'state', function(s) {
-                state = s;
-            });
-        session.signOn({
-            transport: transport,
-            userID: 'foo@localhost/mozilla',
-            userPassword: 'secret'
-            });
-    
-        assert.equals('open', state);
-    },
-
-    // Stanza handlers
-
-    'Arbitrary IQ can be handled': function() {
-        var session = new Session();
-        var transport = new mocks.Socket();
-
-        session.signOn({
-            transport: transport,
-            userID: 'foo@localhost/mozilla',
-            userPassword: 'secret'
-            });
-        transport.otherSide.acceptSignOn();
-
-        var iq;
-        session.on(
-            'in/iq/foo:bar', function(i) {
-                iq = i;
-            });
-
-        transport.otherSide.write("<iq from='jsjab@localhost/mozilla' " +
-                                  "to='jsjab@localhost/mozilla' " +
-                                  "type='result'><query xmlns='foo:bar'></query></iq>");
-    
-        assert.isDefined(iq);
-    },
-
-    'Example of scheduling a one-time action for just after a state is reached': function() {
-        var session = new Session();
-        var transport = new mocks.Socket();
-        var callbackCalled, forgottenCallback;
-    
-        var whenOnline = session.on(
-            'state', function(state) {
-                if(state == 'online') {
-                    callbackCalled = true;
-                    forgottenCallback = session.forget('state', whenOnline);
-                }                
-            });
-        assert.isDefined(whenOnline);
-
-        session.signOn({
-            transport: transport,
-            userID: 'jsjab@localhost/mozilla',
-            userPassword: 'secret'});
-        
-        transport.otherSide.acceptSignOn();
-        assert.isTrue(callbackCalled);
-        assert.equals(forgottenCallback, whenOnline);
-    },
-    
-    'Example of handling failed authentication': function() {
-        var session = new Session();
-        var transport = new mocks.Socket();
-            
-        var userNotified;
-        session.on(
-            'in/iq/jabber:iq:auth', function(iq) {
-                if(iq.getType() == 'error') 
-                    userNotified = true;
-            });
-
-        var states = [];
-        session.on(
-            'state', function(state) {
-                states.push(state);
-            })
-
-        session.signOn({
-            transport: transport,
-            userID: 'foo@localhost/mozilla',
-            userPassword: 'secret'
-            });
-        transport.otherSide.openStream();
-        transport.otherSide.rejectAuth();
-        transport.otherSide.closeStream();
-
-        assert.equals('connect, open, authenticate, close, disconnect, offline',
-                      states.join(', '));
-        assert.isTrue(userNotified);
-    },
-        
-    'Example of handling stream closed by the other side': function() {
-        var session = new Session();
-        var transport = new mocks.Socket();
-
-        var userNotified;
-        session.on(
-            'serverClosedStream', function(session) {
-                if(session.state == 'online') {
-                    session._fsm.go('close'); // XXX should be done internally
-                    userNotified = true;
-                }
-            });
-
-        var states = [];
-        session.on(
-            'state', function(state) {
-                states.push(state);
-            })
-
-        session.signOn({
-            transport: transport,
-            userID: 'foo@localhost/mozilla',
-            userPassword: 'secret'
-            });
-        transport.otherSide.acceptSignOn();
-        transport.otherSide.closeStream();
-
-        assert.equals('connect, open, authenticate, ' +
-                      'online, close, disconnect, offline',
-                      states.join(', '));
-        assert.isTrue(userNotified);
-    },
-
-    'Example of handling roster entries': function() {
-        var session = new Session();
-        var transport = new mocks.Socket();
-
-        session.signOn({
-            transport: transport,
-            userID: 'foo@localhost/mozilla',
-            userPassword: 'secret'
-            });
-        transport.otherSide.acceptSignOn();
-
-        var iq;
-        session.on(
-            'in/iq/jabber:iq:roster', function(i) {
-                iq = i;
-            });
-
-        session.requestRoster();
-        assert.equals('<iq type="get" id="1001"><query xmlns="jabber:iq:roster"/></iq>',
-                      transport.otherSide.read());
-
-        transport.otherSide.sendRoster();
-
-        assert.isDefined(iq);
-        assert.equals('foo@localhost', iq.getItems()[0]);
-        assert.equals('bar@localhost', iq.getItems()[1]);    
-    },
-    
-    'Example of handling presence stanzas': function() {
-        var session = new Session();
-        var transport = new mocks.Socket();
-    
-        session.signOn({
-            transport: transport,
-            userID: 'foo@localhost/mozilla',
-            userPassword: 'secret'
-            });
-        transport.otherSide.acceptSignOn();
-
-        var presence;
-        session.on(
-            'in/presence', function(p) {
-                presence = p;
-            });
-
-        transport.otherSide.write("<presence from='foo@localhost/mozilla' " +
-                                  "to='jsjab@localhost/mozilla'/>");
-
-        assert.isDefined(presence);
-        assert.equals('foo@localhost/mozilla', presence.getFrom());
-        assert.equals('available', presence.getType());
-        assert.equals('jsjab@localhost/mozilla', presence.getTo());
-
-        transport.otherSide.write("<presence from='foo@localhost/mozilla' " +
-                                  "to='jsjab@localhost/mozilla'>" +
-                                  "<show>away</show>" +
-                                  "</presence>");
-
-        assert.equals('foo@localhost/mozilla', presence.getFrom());
-        assert.equals('available', presence.getType());
-        assert.equals('jsjab@localhost/mozilla', presence.getTo());
-        assert.equals('away', presence.getShow());
-
-        session.on(
-            'out/presence', function(p) {
-                presence = p;
-            });
-
-        session.sendPresence('available', {show: 'dnd'});
-        assert.equals('dnd', presence.getShow());
-    },
-        
-    'Example of handling sending of messages': function() {
-        var session = new Session();
-        var transport = new mocks.Socket();
-
-        session.signOn({
-            transport: transport,
-            userID: 'jsjab@localhost/mozilla',
-            userPassword: 'secret'
-            });
-        transport.otherSide.acceptSignOn();
-
-        var message;
-        session.on(
-            'out/message', function(m) {
-                message = m;
-            });
-
-        session.sendMessage('man@future.com', '42!');
-        assert.equals('42!', message.getBody());
-        assert.equals('man@future.com', message.getTo());
-    },
-
-    'Example of handling reception of messages': function() {
-        var session = new Session();
-        var transport = new mocks.Socket();
-
-        session.signOn({
-            transport: transport,
-            userID: 'foo@localhost/mozilla',
-            userPassword: 'secret'
-            });
-        transport.otherSide.acceptSignOn();
-
-        var message;
-        session.on(
-            'in/message', function(m) {
-                message = m;
-            });
-
-        transport.otherSide.write('<message from="foo@localhost/mozilla">' +
-                                  '<body>Hello, world!</body></message>');
-        assert.isDefined(message);
-        assert.equals('foo@localhost/mozilla', message.getFrom());
-        assert.equals('Hello, world!', message.getBody());
+        assert.equals(session, seen[0].session);
+        assert.equals(session, seen[1].session);
     }
 };
+
+spec.verify();

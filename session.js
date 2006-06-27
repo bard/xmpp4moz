@@ -18,399 +18,168 @@
   Author: Massimiliano Mirra, <bard [at] hyperstruct [dot] net>
 */
 
-// ----------------------------------------------------------------------
-// DEFINITION OF FSM TRANSITIONS
 
-var stateTransitions = {
-    normalSession: {
-        connect:      { ok: 'open',         ko: 'offline' },
-        open:         { ok: 'authenticate', ko: 'offline' },
-        authenticate: { ok: 'online',       ko: 'close'   },
-        online:       { },
-        close:        { ok: 'disconnect' },
-        disconnect:   { ok: 'offline'    },
-        offline:      { }
-    },
-    registrationSession: {
-        connect:    { ok: 'open',      ko: 'offline' },
-        open:       { ok: 'register',  ko: 'offline' },
-        register:   { ok: 'close',     ko: 'close'   },
-        close:      { ok: 'disconnect' },
-        disconnect: { ok: 'offline'    },
-        offline:    { }
-    }
-};
+/**
+ * The session object sits between the network and the user, mediating
+ * exchange of XMPP stanzas between the two and doing some bookkeeping
+ * in the meanwhile, like stamping each outgoing stanza with an ID,
+ * and remembering what handler to run when a reply to a specific
+ * stanza is received.
+ *
+ * Input from the network is expected to be fed to the receive()
+ * method and user should listen for it via the {tag: 'data',
+ * direction: 'in'} event.  Input from the user is expected to be fed
+ * to the send() method and network should listen for it via the {tag:
+ * 'data', direction: 'out'} event.
+ *
+ */
 
-var fsm         = module.require('package', 'lib/fsm');
-var mixin       = module.require('package', 'lib/mixin');
-var stanza      = module.require('package', 'xmppjs/stanza');
-var Parser      = module.require('class', 'xmppjs/parser');
-var JID         = module.require('class', 'xmppjs/id');
-var EventHelper = module.require('class', 'lib/event_helper');
-
-const charsetConverter = Components.
+var Parser      = module.require('class', 'parser');
+var event       = module.require('package', 'lib/event_handling');
+var converter   = Components.
     classes["@mozilla.org/intl/scriptableunicodeconverter"].
     getService(Components.interfaces.nsIScriptableUnicodeConverter);
-charsetConverter.charset = "UTF-8";
+converter.charset = 'UTF-8';
 
-function constructor(opts) {
-    opts = opts || {};
-    var session = this;
-
-    var eventHelper = new EventHelper();
-    mixin.forward(this, 'on', eventHelper);
-    mixin.forward(this, 'forget', eventHelper);
-    mixin.forward(this, '_handle', eventHelper);
-
+function constructor() {
+    this._preWatches = [];
+    this._postWatches = [];
+    this._isOpen = false;
+    this._idCounter = 1000;
     this._parser = new Parser();
+    this._pending = {};
+
+    var session = this;
     this._parser.on(
-        'start', function(sessionID) {
-            session._stream('start', sessionID);
+        'start', function() {
+            session._stream('start');
         },
         'stop', function() {
             session._stream('stop');
         },
-        'stanza', function(st) {
-            session._stanza('in', st);
+        'stanza', function(stanzaDOMElement) {
+            session._stanza(
+                'in', new XML(
+                    (new XMLSerializer()).serializeToString(stanzaDOMElement)));
         });
-
-    this._log = opts.logger || {
-        enter: function() {},
-        leave: function() {},
-        trace: function() {}
-    };
-
-    this._idCounter = 1000;
-    this._pending = {};
-    this._setState('offline');
-
-    this._fsm = new fsm.FSM();
-    this._fsm.context = this;
-    this._fsm.stateHandlers = this;
-    this._fsm.stateTransitions = stateTransitions.normalSession;
-    this._fsm.on(
-        'state/enter', function(stateName) {
-            this._setState(stateName);
-        });
-
-    this.__defineGetter__( 'state', function() { return this._state; });
 }
 
 // ----------------------------------------------------------------------
-// CLIENT OPERATIONS
+// CONTEXT
 
-function signOn(opts) {
-    this._log.enter(arguments);
+function open(server) {
+    if(this._isOpen)
+        throw new Error('Session already opened.');
 
-    var jid = new JID(opts.userID);
+    this.send('<?xml version="1.0"?>' +
+              '<stream:stream xmlns="jabber:client" ' +
+              'xmlns:stream="http://etherx.jabber.org/streams" ' +
+              'to="' + server + '">');
+    this._isOpen = true;
+}
+open.doc = 'Send the stream prologue.';
 
-    this.userID = opts.userID;
-    this.username = jid.username;
-    this.resource = jid.resource;
-    this.password = opts.userPassword;
-    this.transport = opts.transport;
-    this.server = jid.hostname;
+function close() {
+    if(!this._isOpen)
+        throw new Error('Session already closed.');
 
-    this._fsm.go('connect');
+    this._isOpen = false;        
+    this.send('</stream:stream>');
+}
+close.doc = 'Send the stream epilogue.';
 
-    this._log.leave();
+function isOpen() {
+    return this._isOpen;
 }
 
-function registerID(opts) {
-    this._log.enter(arguments);
+// ----------------------------------------------------------------------
+// INPUT
 
-    var jid = new JID(opts.userID);
+function send(data, handler) {
+    if(typeof(data) == 'xml')
+        this._stanza('out', data, handler);
+    else
+        this._data('out', data);
+}
+send.doc = 'Send text or XML to the other side.  If XML, it is stamped with an \
+incrementing counter, and an optional reply handler is associated.  The  \
+data is not actually sent since the session has no notion of transports \
+internally, but resurfaces as plain text in the {tag: "data", direction: "out"} \
+event so that it can be passed to a transport there.';
+
+function receive(data) {
+    if(typeof(data) == 'xml')
+        this._stanza('in', data);
+    else
+        this._data('in', data);
+}
+receive.doc = 'Receive text or XML from the other side.';
     
-    this.transport = opts.transport;
-    this.username = jid.username;
-    this.server = jid.hostname;
-    this.password = opts.userPassword;
-
-    var machine =  new fsm.FSM();
-    machine.context = this;
-    machine.stateHandlers = this;
-    machine.stateTransitions = stateTransitions.registrationSession;
-    machine.on(
-        'state/enter', function(stateName) {
-            this._setState(stateName);
-        });
-    machine.go('connect');
-
-    this._log.leave();
-}
-
-function send(stanza, replyHandler) {
-    this._send(stanza, replyHandler);
-}
-
-function signOff() {
-    this._fsm.go('close');
-}
-
-function subscribeToPresence(jid) {
-    this._send(stanza.presence({type: 'subscribe', to: jid}));
-}
-
-function acceptPresenceSubscription(jid) {
-    this._send(stanza.presence({type: 'subscribed', to: jid}));
-}
-
-function cancelPresenceSubscription(jid) {
-    this._send(stanza.iq('set', 'roster/remove', {jid: jid}));
-}
-
-function sendPresence(type, opts) {
-    opts = opts || {};
-
-    var presence = stanza.presence({type: type, show: opts.show, to: opts.to})
-    this._send(presence);
-    this._handle('out/presence', presence);
-}
-
-function joinRoom(service, room, nick) {
-    if(this._state != 'online') {
-        // throw exception
-        return;
-    }
-
-    var p = stanza.presence({to: room + '@' + service + '/' + nick});
-    this._send(p);
-}
-
-function sendMessage(to, body, type) {
-    var message = stanza.message({
-        to: to,
-        body: body,
-        type: type || 'normal'});
-    this._send(message);
-    this._handle('out/message', message);
-}
-
-function requestRoster() {
-    if(this._state != 'online') {
-        // possibly throw an exception
-    } else {
-        this._send(stanza.iq('get', 'roster'));
-    }
-}
-
-function sessionID() {
-    return this._sessionID;
-}
-
 // ----------------------------------------------------------------------
-// STATE HANDLERS
+// OUTPUT
 
-function connect(continuation) {
-    this.on(
-        'connectSuccess', function() {
-            continuation('ok');
-        });
-
-    var session = this;
-    this.transport.on(
-        'data', function(data) {
-            session._data('in', data);
-        },
-        'stop', function() {
-            session._serverDisconnected();
-        });
-    this.transport.connect();
-
-    this._handle('connectSuccess', session);
+function on(pattern, handler) {
+    this._postWatches.push({pattern: pattern, handler: handler});
 }
 
-function open(continuation) {
-    this.on(
-        'openSuccess', function() {
-            continuation('ok');
-        });
-
-    this._send('<?xml version="1.0"?>' +
-                '<stream:stream xmlns="jabber:client" ' +
-                'xmlns:stream="http://etherx.jabber.org/streams" ' +
-                'to="' + this.server + '">');
-}
-
-function authenticate(continuation) {
-    this._send(
-        stanza.iqAuth({
-            username: this.username,
-            resource: this.resource,
-            password: this.password
-            }),
-        function(session, reply) {
-            if(reply.getAttribute('type') == 'result')
-                continuation('ok');
-            else
-                continuation('ko');
-        });
-}
-
-function online(continuation) {
-    continuation('ok');
-}
-
-function close(continuation) {
-    this._send('</stream:stream>');
-    continuation('ok');
-}
-
-function disconnect(continuation) {
-    this.transport.disconnect();
-    continuation('ok');
-}
-
-function offline(continuation) {
-
-}
-
-function register(continuation) {
-    this._send(
-        stanza.iqRegister({
-            username: this.username,
-            password: this.password
-            }),
-        function(session, iq) {
-            continuation('ok');
-        });    
+function before(pattern, handler) {
+    this._preWatches.push({pattern: pattern, handler: handler});    
 }
 
 // ----------------------------------------------------------------------
 // INTERNALS
 
-function _setState(s) {
-    this._log.enter(arguments);
-
-    this._state = s;
-    
-    this._handle('state', this._state);
-
-    this._log.leave();
-}
-
-/**
- * Send a stanza, optionally registering a function that will be
- * called when a reply to that stanza is received
- */
- 
-function _send(stanza, replyHandler) {
-    this._log.enter(arguments);
-
-    if(stanza.xml &&
-       (replyHandler || stanza.xml.name().toString() == 'iq')) {
-        stanza.xml.@id = this._idCounter;
-        this._idCounter += 1;
-    }
-
-    if(replyHandler) 
-        this._pending[stanza.xml.@id.toString()] = replyHandler;
-
-    var data = charsetConverter.ConvertFromUnicode(stanza.toString());
-
-    this.transport.write(data);
-
-    this._handle('out/data', data);
-
-    this._log.leave();
-}
-
-function _startConnectionMonitor() {
-    if(this.TESTING)
-        return;
-    var session = this;
-    this._monitorInterval = setInterval(function() { session._send(' '); }, 10000);
-}
-
-/**
- * Invoked from transport when other end closes TCP connection.
- *
- */
-
-function _serverDisconnected() {
-    this._log.enter(arguments);
-    clearInterval(this._monitorInterval);
-    this._fsm.go('disconnect');
-    this._handle('server disconnect', this);
-    this._log.leave();
-}
-
-/**
- * Invoked when parser gets an XML stanza.
- *
- */
-
-function _stanza(direction, st) {
-    this._log.enter(arguments);
-
-    st = stanza.wrap(st, this);
-    this._handle('in/stanza', st);
-
-    var id = st.getId();
-    if(id && id in this._pending) {
-        this._pending[id](this, st);
-        delete this._pending[id];
-    }
-    
-    switch(st.nodeName) {
-    case 'presence':
-        this._handle('in/presence', st);
+function _stream(state) {
+    switch(state) {
+    case 'start':
         break;
-        
-    case 'message':
-        this._handle('in/message', st);
-        break;
-        
-    case 'iq':
-        this._handle('in/iq', st);
-        
-        var nameSpace = st.getNameSpace();
-        if(nameSpace)
-            this._handle('in/iq/' + nameSpace, st);
-        break;
-        
-    default:
-        throw new Error('Unrecognized stanza[s]. (' + st.nodeName + ')');
+    case 'stop':
         break;
     }
-
-    this._log.leave();
 }
-
-/**
- * Invoked when socket has data available.
- * 'direction' parameter unused for now
- *
- */
 
 function _data(direction, data) {
-    data = charsetConverter.ConvertToUnicode(data);
+    data = converter[direction == 'in' ?
+                     'ConvertToUnicode' : 'ConvertFromUnicode'](data);
 
-    this._log.enter(arguments);
+    event._handle1(
+        {direction: direction, tag: 'data', content: data},
+        this._preWatches, event._match1);
 
-    this._handle('in/data', data);
+    if(direction == 'in')
+        this._parser.parse(data);
 
-    this._parser.parse(data);
-
-    this._log.leave();
+    event._handle1(
+        {direction: direction, tag: 'data', content: data},
+        this._postWatches, event._match1);
 }
 
-/**
- * Invoked when parser seens start or end of stream.
- *
- */
+function _stanza(direction, stanza, handler) {
+    event._handle1(
+        {direction: direction, tag: stanza.name(), stanza: stanza, session: this},
+        this._preWatches, event._match1);
 
-function _stream(phase, sessionID) {
-    this._log.enter(arguments);
- 
-    if(phase == 'start') {
-        this._sessionID = sessionID;
-        this._handle('openSuccess', this);
-    }
-    else {
-        this._handle('serverClosedStream', this);
+    switch(direction) {
+    case 'in':
+        var id = stanza.@id;
+        if(this._pending[id]) {
+            this._pending[id]({session: this, stanza: stanza}); // ADD TAG HERE
+            delete this._pending[id];
+        }
+        // if(stanza.*::query.length() > 0) {
+        //     var nameSpace = stanza.*::query.namespace().toString();
+        break;
+    case 'out':
+        stanza.@id = this._idCounter++;
+        if(handler)
+            this._pending[stanza.@id] = handler;
+        this._data('out', stanza.toXMLString());
+        break;
     }
 
-    this._log.leave();
+    event._handle1(
+        {direction: direction, tag: stanza.name(), stanza: stanza, session: this},
+        this._postWatches, event._match1);
 }
+
 

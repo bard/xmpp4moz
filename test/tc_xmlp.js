@@ -20,8 +20,8 @@
 
 var Specification = mozlab.mozunit.Specification;
 var assert        = mozlab.mozunit.assertions;
-var module        = new ModuleManager(['../..']);
-var XMLP          = module.require('package', 'xmppjs/xmlsax').XMLP;
+var module        = new ModuleManager(['..']);
+var XMLP          = module.require('package', 'lib/xmlsax').XMLP;
 
 var spec = new Specification('Additions to XMLP');
 

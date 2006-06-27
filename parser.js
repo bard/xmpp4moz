@@ -1,4 +1,4 @@
-var xmlsax = module.require('package', 'xmlsax');
+var xmlsax = module.require('package', 'lib/xmlsax');
 var mixin = module.require('package', 'lib/mixin');
 var XMLP = xmlsax.XMLP;
 var EventHelper = module.require('class', 'lib/event_helper');

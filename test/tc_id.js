@@ -20,8 +20,8 @@
 
 var Specification = mozlab.mozunit.Specification;
 var assert        = mozlab.mozunit.assertions;
-var module        = new ModuleManager(['../..']);
-var ID            = module.require('class', 'xmppjs/id');
+var module        = new ModuleManager(['..']);
+var ID            = module.require('class', 'id');
 
 var spec = new Specification('ID');
     
