@@ -47,6 +47,8 @@ function signOn(jid, password, opts) {
              if(reply.stanza.@type == 'result') {
                  session.send(<iq type="get"><query xmlns="jabber:iq:roster"/></iq>);
                  session.send(<presence/>);
+                 if(opts.continuation)
+                     opts.continuation();
              }
          });
 }
