@@ -1,0 +1,7 @@
+xmpp4moz is a library to ease creation of Firefox extensions and other
+Mozilla applications that use the XMPP protocol (Extensible Messaging
+and Presence Protocol), also known as Jabber.
+
+It depends on ModuleManager, that you can get as part of MozLab
+(http://dev.hyperstruct.net/mozlab) or separately
+(http://repo.hyperstruct.net/mozlab/chrome/content/lib/module_manager.js).
