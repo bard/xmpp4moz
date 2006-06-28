@@ -84,9 +84,11 @@ function register(jid, password, opts) {
 function connect(jid, opts) {
     opts = opts || {};
     var server = opts.server || jid.match(/@([^\/]+)/)[1];
-    var port = opts.port || 5222;        
-        
-    var transport = new Transport(server, port);
+    var port = opts.port || 5223;
+    if(opts.ssl == undefined)
+        opts.ssl = true;
+    
+    var transport = new Transport(server, port, { ssl: opts.ssl });
     var session = new Session(transport);
 
     transport.on(
