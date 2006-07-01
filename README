@@ -5,3 +5,6 @@ and Presence Protocol), also known as Jabber.
 It depends on ModuleManager, that you can get as part of MozLab
 (http://dev.hyperstruct.net/mozlab) or separately
 (http://repo.hyperstruct.net/mozlab/chrome/content/lib/module_manager.js).
+
+It includes a slightly modified version of the pull parser from the
+XML for <SCRIPT> suite (http://xmljs.sourceforge.net).
