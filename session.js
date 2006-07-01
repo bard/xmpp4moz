@@ -35,6 +35,7 @@
  */
 
 var Parser      = module.require('class', 'parser');
+var mixin       = module.require('package', 'lib/mixin');
 var event       = module.require('package', 'lib/event_handling');
 var converter   = Components.
     classes["@mozilla.org/intl/scriptableunicodeconverter"].
@@ -42,21 +43,26 @@ var converter   = Components.
 converter.charset = 'UTF-8';
 
 function constructor() {
-    this._preWatches = [];
-    this._postWatches = [];
     this._isOpen = false;
     this._idCounter = 1000;
     this._parser = new Parser();
     this._pending = {};
 
+    var eventManager = new event.Manager();
+    mixin.forward(this, 'on', eventManager);
+    mixin.forward(this, '_preHandle', eventManager, 'preHandle');
+    mixin.forward(this, '_postHandle', eventManager, 'postHandle');
+
     var session = this;
     this._parser.on(
         'start', function() {
             session._stream('start');
-        },
+        });
+    this._parser.on(
         'stop', function() {
             session._stream('stop');
-        },
+        });
+    this._parser.on(
         'stanza', function(stanzaDOMElement) {
             session._stanza(
                 'in', new XML(
@@ -116,17 +122,6 @@ function receive(data) {
 receive.doc = 'Receive text or XML from the other side.';
     
 // ----------------------------------------------------------------------
-// OUTPUT
-
-function on(pattern, handler) {
-    this._postWatches.push({pattern: pattern, handler: handler});
-}
-
-function before(pattern, handler) {
-    this._preWatches.push({pattern: pattern, handler: handler});    
-}
-
-// ----------------------------------------------------------------------
 // INTERNALS
 
 function _stream(state) {
@@ -140,24 +135,21 @@ function _stream(state) {
 
 function _data(direction, data) {
     data = converter[direction == 'in' ?
-                     'ConvertToUnicode' : 'ConvertFromUnicode'](data);
+                     'ConvertToUnicode' :
+                     'ConvertFromUnicode'](data);
 
-    event._handle1(
-        {direction: direction, tag: 'data', content: data},
-        this._preWatches, event._match1);
+    var eventObject = {direction: direction, tag: 'data', content: data};
+    this._preHandle(eventObject);
 
     if(direction == 'in')
         this._parser.parse(data);
 
-    event._handle1(
-        {direction: direction, tag: 'data', content: data},
-        this._postWatches, event._match1);
+    this._postHandle(eventObject);
 }
 
 function _stanza(direction, stanza, handler) {
-    event._handle1(
-        {direction: direction, tag: stanza.name(), stanza: stanza, session: this},
-        this._preWatches, event._match1);
+    var eventObject = {direction: direction, tag: stanza.name(), stanza: stanza, session: this};
+    this._preHandle(eventObject);
 
     switch(direction) {
     case 'in':
@@ -177,9 +169,5 @@ function _stanza(direction, stanza, handler) {
         break;
     }
 
-    event._handle1(
-        {direction: direction, tag: stanza.name(), stanza: stanza, session: this},
-        this._postWatches, event._match1);
+    this._postHandle(eventObject);
 }
-
-

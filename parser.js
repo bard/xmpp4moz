@@ -1,7 +1,6 @@
-var xmlsax = module.require('package', 'lib/xmlsax');
 var mixin = module.require('package', 'lib/mixin');
-var XMLP = xmlsax.XMLP;
-var EventHelper = module.require('class', 'lib/event_helper');
+var event = module.require('package', 'lib/event_handling');
+var XMLP = module.require('package', 'lib/xmlsax').XMLP;
 
 var _document = Components
     .classes['@mozilla.org/xml/xml-document;1']
@@ -13,9 +12,9 @@ function constructor() {
     this._eventListeners = {};
     this._characterData = '';
 
-    var eventHelper = new EventHelper();
-    mixin.forward(this, 'on', eventHelper);
-    mixin.forward(this, '_handle', eventHelper);
+    var eventManager = new event.Manager();
+    mixin.forward(this, 'on', eventManager);
+    mixin.forward(this, '_handle', eventManager, 'postHandle');
 }
     
 function parse(string) {

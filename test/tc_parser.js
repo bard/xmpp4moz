@@ -191,7 +191,8 @@ spec.stateThat = {
         parser.on(
             'start', function(sessionID) {
                 started = true;
-            },
+            });
+        parser.on(
             'stop', function() {
                 started = false;
             });
