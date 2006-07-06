@@ -37,9 +37,13 @@
 var Parser      = module.require('class', 'parser');
 var mixin       = module.require('package', 'lib/mixin');
 var event       = module.require('package', 'lib/event_handling');
-var converter   = Components.
-    classes["@mozilla.org/intl/scriptableunicodeconverter"].
-    getService(Components.interfaces.nsIScriptableUnicodeConverter);
+var converter   = Components
+    .classes["@mozilla.org/intl/scriptableunicodeconverter"]
+    .getService(Components.interfaces.nsIScriptableUnicodeConverter);
+var serializer  = Components
+    .classes['@mozilla.org/xmlextras/xmlserializer;1']
+    .getService(Components.interfaces.nsIDOMSerializer);
+
 converter.charset = 'UTF-8';
 
 function constructor() {
@@ -66,7 +70,7 @@ function constructor() {
         'stanza', function(stanzaDOMElement) {
             session._stanza(
                 'in', new XML(
-                    (new XMLSerializer()).serializeToString(stanzaDOMElement)));
+                    serializer.serializeToString(stanzaDOMElement)));
         });
 }
 
