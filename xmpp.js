@@ -31,9 +31,13 @@ var XMPP = {
     _serializer: Components
     .classes['@mozilla.org/xmlextras/xmlserializer;1']
     .getService(Components.interfaces.nsIDOMSerializer),
+
+    get accounts() {
+        return this._service.getSessions();
+    },
     
     up: function(jid, opts) {
-        this._service.signOn(jid, opts.password);
+        this._service.signOn(jid, opts.password)
     },
 
     // could have a reference count mechanism
@@ -110,8 +114,6 @@ var XMPP = {
                         });
                 }
             },
-
-            // unused
 
             release: function() {
                 this._service.removeObserver(this);

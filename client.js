@@ -130,6 +130,13 @@ function jidOfSession(session) {
             return jid;
 }
 
+function getSessions() {
+    var jids = [];
+    for(var jid in this._sessions)
+        jids.push(jid);
+    return jids;
+}
+
 function addObserver(observer) {
     this._observers.push(observer);
 }
