@@ -3,8 +3,6 @@ var Transport = module.require('class', 'lib/socket');
 var Session = module.require('class', 'session');
 
 function constructor() {
-    this._preWatches = [];
-    this._postWatches = [];
     this._sessions = {};
 }
 
@@ -107,10 +105,12 @@ function connect(jid, opts) {
             transport.write(data.content);
         });
 
-    var postWatches = this._postWatches;
+    var client = this;
     session.on(
-        {tag: undefined}, function(object) {
-            _handle1(object, postWatches, _match1);
+        {stanza: function(s) { return s; }}, function(object) {
+            client.notifyObservers(
+                object.stanza, 'stanza-' + object.direction,
+                jidOfSession(object.session));
         });
 
     transport.connect();
@@ -118,37 +118,21 @@ function connect(jid, opts) {
     this._sessions[jid] = session;
 }
 
-function on(pattern, handler) {
-    this._postWatches.push({pattern: pattern, handler: handler});
-}
-
 function send(sessionName) {
     var session = this._sessions[sessionName];
     session.send.apply(session, Array.prototype.slice.call(arguments, 1));
+}
+
+function jidOfSession(session) {
+    for(var jid in this._sessions)
+        if(session == this._sessions[jid])
+            return jid;
 }
 
 function addObserver(observer) {
     // TODO: really handle multiple observers, not just one
     
     this._observer = observer;
-    var sessions = this._sessions;
-    function jidOfSession(session) {
-        for(var jid in sessions)
-            if(session == sessions[jid])
-                return jid;
-    }
-
-    var service = this;
-    this.on(
-        {stanza: function(s) { return s; }},
-        function(object) {
-
-            service.notifyObservers(
-                object.stanza, 'stanza-' + object.direction,
-                jidOfSession(object.session));
-        });
-                
-    // TODO: provide for open/close session events as well
 }
 
 function notifyObservers(subject, topic, data) {
@@ -159,42 +143,3 @@ function removeObserver(observer) {
     this._observer = null;
     // TODO: stub
 }
-
-
-// ----------------------------------------------------------------------
-
-function _handle1(object, watches, matcher) {
-    for each(var watch in watches) {
-        if(matcher(object, watch.pattern))
-            watch.handler(object);
-    }
-}
-
-function _match1(object, template) {
-    var pattern, value;
-    for(var member in template) {
-        value = object[member];
-        pattern = template[member];
-        
-        if(pattern === undefined)
-            ;
-        else if(pattern && typeof(pattern) == 'function') {
-            if(!pattern(value))
-                return false;
-        }
-        else if(pattern && typeof(pattern.test) == 'function') {
-            if(!pattern.test(value))
-                return false;
-        }
-        else if(pattern && pattern.id) {
-            if(pattern.id != value.id)
-                return false;
-        }
-        else if(pattern != value)
-            return false;
-    } 
-
-    return true;
-}
-
-
