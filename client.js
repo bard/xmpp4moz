@@ -127,6 +127,39 @@ function send(sessionName) {
     session.send.apply(session, Array.prototype.slice.call(arguments, 1));
 }
 
+function addObserver(observer) {
+    // TODO: really handle multiple observers, not just one
+    
+    this._observer = observer;
+    var sessions = this._sessions;
+    function jidOfSession(session) {
+        for(var jid in sessions)
+            if(session == sessions[jid])
+                return jid;
+    }
+
+    var service = this;
+    this.on(
+        {stanza: function(s) { return s; }},
+        function(object) {
+
+            service.notifyObservers(
+                object.stanza, 'stanza-' + object.direction,
+                jidOfSession(object.session));
+        });
+                
+    // TODO: provide for open/close session events as well
+}
+
+function notifyObservers(subject, topic, data) {
+    this._observer.observe(subject, topic, data);
+}
+
+function removeObserver(observer) {
+    this._observer = null;
+    // TODO: stub
+}
+
 
 // ----------------------------------------------------------------------
 
