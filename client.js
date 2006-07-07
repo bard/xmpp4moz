@@ -102,7 +102,7 @@ function connect(jid, opts) {
         });
 
     session.on(
-        {tag: 'data', direction: 'out'}, function(data) {
+        {event: 'data', direction: 'out'}, function(data) {
             transport.write(data.content);
         });
 
@@ -111,6 +111,12 @@ function connect(jid, opts) {
         {stanza: function(s) { return s; }}, function(object) {
             client.notifyObservers(
                 object.stanza, 'stanza-' + object.direction,
+                jidOfSession(object.session));
+        });
+    session.on(
+        {event: 'data'}, function(object) {
+            client.notifyObservers(
+                object.content, 'data-' + object.direction,
                 jidOfSession(object.session));
         });
 

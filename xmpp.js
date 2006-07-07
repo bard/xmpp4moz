@@ -102,6 +102,15 @@ var XMPP = {
                         break;
                     }
                     break;
+                    case 'data-in':
+                    case 'data-out':
+                    this.handle({
+                        session: sessionJid,
+                        event: 'data',
+                        direction: topic == 'data-in' ? 'in' : 'out',
+                        content: subject
+                        });
+                    break;
                     case 'stanza-in':
                     case 'stanza-out':
                     var domStanza = subject;

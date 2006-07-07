@@ -27,9 +27,9 @@
  * stanza is received.
  *
  * Input from the network is expected to be fed to the receive()
- * method and user should listen for it via the {tag: 'data',
+ * method and user should listen for it via the {event: 'data',
  * direction: 'in'} event.  Input from the user is expected to be fed
- * to the send() method and network should listen for it via the {tag:
+ * to the send() method and network should listen for it via the {event:
  * 'data', direction: 'out'} event.
  *
  */
@@ -115,7 +115,7 @@ function send(data, handler) {
 send.doc = 'Send text or XML to the other side.  If XML, it is stamped with an \
 incrementing counter, and an optional reply handler is associated.  The  \
 data is not actually sent since the session has no notion of transports \
-internally, but resurfaces as plain text in the {tag: "data", direction: "out"} \
+internally, but resurfaces as plain text in the {event: "data", direction: "out"} \
 event so that it can be passed to a transport there.';
 
 function receive(data) {
@@ -147,7 +147,7 @@ function _data(direction, data) {
     if(direction == 'in')
         this._parser.parse(data);
 
-    this._handle({direction: direction, tag: 'data', content: data});
+    this._handle({direction: direction, event: 'data', content: data});
 }
 
 function _stanza(direction, stanza, handler) {
@@ -175,5 +175,5 @@ function _stanza(direction, stanza, handler) {
         break;
     }
 
-    this._handle({direction: direction, tag: domStanza.nodeName, stanza: domStanza, session: this});
+    this._handle({direction: direction, event: domStanza.nodeName, stanza: domStanza, session: this});
 }
