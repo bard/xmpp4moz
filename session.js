@@ -120,7 +120,8 @@ internally, but resurfaces as plain text in the {tag: "data", direction: "out"} 
 event so that it can be passed to a transport there.';
 
 function receive(data) {
-    if(typeof(data) == 'xml')
+    if(typeof(data) == 'xml' ||
+       data instanceof Components.interfaces.nsIDOMElement)
         this._stanza('in', data);
     else
         this._data('in', data);

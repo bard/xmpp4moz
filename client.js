@@ -91,7 +91,7 @@ function connect(jid, opts) {
 
     transport.on(
         'data', function(data) {
-            session._data('in', data);
+            session.receive(data);
         },
         'stop', function() {
             try {
