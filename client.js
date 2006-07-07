@@ -4,6 +4,7 @@ var Session = module.require('class', 'session');
 
 function constructor() {
     this._sessions = {};
+    this._observers = [];
 }
 
 /**
@@ -130,16 +131,16 @@ function jidOfSession(session) {
 }
 
 function addObserver(observer) {
-    // TODO: really handle multiple observers, not just one
-    
-    this._observer = observer;
+    this._observers.push(observer);
 }
 
 function notifyObservers(subject, topic, data) {
-    this._observer.observe(subject, topic, data);
+    for each(var observer in this._observers)
+        observer.observe(subject, topic, data);
 }
 
 function removeObserver(observer) {
-    this._observer = null;
-    // TODO: stub
+    var index = this._observers.indexOf(observer);
+    if(index != -1)
+        this._observers.splice(index, 1);
 }
