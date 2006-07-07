@@ -160,7 +160,8 @@ function _stanza(direction, stanza, handler) {
     case 'in':
         var id = domStanza.getAttribute('id');
         if(this._pending[id]) {
-            this._pending[id]({session: this, stanza: domStanza}); // MISSING EVENT NAME
+            this._pending[id]({session: this,
+                        stanza: new XML(serializer.serializeToString(domStanza))}); // MISSING EVENT NAME
             delete this._pending[id];
         }
         // if(stanza.*::query.length() > 0) {
