@@ -43,6 +43,9 @@ var converter   = Components
 var serializer  = Components
     .classes['@mozilla.org/xmlextras/xmlserializer;1']
     .getService(Components.interfaces.nsIDOMSerializer);
+var parser      = Components
+    .classes['@mozilla.org/xmlextras/domparser;1']
+    .getService(Components.interfaces.nsIDOMParser);
 
 converter.charset = 'UTF-8';
 
@@ -67,10 +70,8 @@ function constructor() {
             session._stream('stop');
         });
     this._parser.on(
-        'stanza', function(stanzaDOMElement) {
-            session._stanza(
-                'in', new XML(
-                    serializer.serializeToString(stanzaDOMElement)));
+        'stanza', function(domStanza) {
+            session._stanza('in', domStanza);
         });
 }
 
@@ -106,9 +107,10 @@ function isOpen() {
 // INPUT
 
 function send(data, handler) {
-    if(typeof(data) == 'xml')
-        this._stanza('out', data, handler);
-    else
+    if(typeof(data) == 'xml' ||
+       data instanceof Components.interfaces.nsIDOMElement) 
+        this._stanza('out', data, handler);    
+    else 
         this._data('out', data);
 }
 send.doc = 'Send text or XML to the other side.  If XML, it is stamped with an \
@@ -152,24 +154,30 @@ function _data(direction, data) {
 }
 
 function _stanza(direction, stanza, handler) {
-    var eventObject = {direction: direction, tag: stanza.name(), stanza: stanza, session: this};
+    var domStanza = 
+        typeof(stanza) == 'xml' ?
+        parser.parseFromString(stanza.toXMLString(), 'text/xml').documentElement :
+        stanza;
+
+    var eventObject = {direction: direction, tag: domStanza.nodeName, stanza: domStanza, session: this};
+    
     this._preHandle(eventObject);
 
     switch(direction) {
     case 'in':
-        var id = stanza.@id;
+        var id = domStanza.getAttribute('id');
         if(this._pending[id]) {
-            this._pending[id]({session: this, stanza: stanza}); // ADD TAG HERE
+            this._pending[id]({session: this, stanza: domStanza}); // MISSING EVENT NAME
             delete this._pending[id];
         }
         // if(stanza.*::query.length() > 0) {
         //     var nameSpace = stanza.*::query.namespace().toString();
         break;
     case 'out':
-        stanza.@id = this._idCounter++;
+        domStanza.setAttribute('id', this._idCounter++);
         if(handler)
-            this._pending[stanza.@id] = handler;
-        this._data('out', stanza.toXMLString());
+            this._pending[domStanza.getAttribute('id')] = handler;
+        this._data('out', serializer.serializeToString(domStanza));
         break;
     }
 

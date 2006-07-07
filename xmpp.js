@@ -27,6 +27,10 @@ var XMPP = {
     .classes['@hyperstruct.net/mozeskine/xmppservice;1']
     .getService(Components.interfaces.nsIMozeskineXMPPService)
     .wrappedJSObject,
+
+    _serializer: Components
+    .classes['@mozilla.org/xmlextras/xmlserializer;1']
+    .getService(Components.interfaces.nsIDOMSerializer),
     
     up: function(jid, opts) {
         this._service.signOn(jid, opts.password);
@@ -96,13 +100,14 @@ var XMPP = {
                     break;
                     case 'stanza-in':
                     case 'stanza-out':
-                    var stanza = subject;
+                    var domStanza = subject;
                     var sessionJid = data;
                     this.handle({
                         session: sessionJid,
-                        event: stanza.name(),
+                        event: domStanza.nodeName,
                         direction: topic == 'stanza-in' ? 'in' : 'out',
-                        stanza: stanza});
+                        stanza: new XML(XMPP._serializer.serializeToString(domStanza))
+                        });
                 }
             },
 
