@@ -57,8 +57,7 @@ function constructor() {
 
     var eventManager = new event.Manager();
     mixin.forward(this, 'on', eventManager);
-    mixin.forward(this, '_preHandle', eventManager, 'preHandle');
-    mixin.forward(this, '_postHandle', eventManager, 'postHandle');
+    mixin.forward(this, '_handle', eventManager, 'postHandle');
 
     var session = this;
     this._parser.on(
@@ -145,13 +144,10 @@ function _data(direction, data) {
                      'ConvertToUnicode' :
                      'ConvertFromUnicode'](data);
 
-    var eventObject = {direction: direction, tag: 'data', content: data};
-    this._preHandle(eventObject);
-
     if(direction == 'in')
         this._parser.parse(data);
 
-    this._postHandle(eventObject);
+    this._handle({direction: direction, tag: 'data', content: data});
 }
 
 function _stanza(direction, stanza, handler) {
@@ -159,10 +155,6 @@ function _stanza(direction, stanza, handler) {
         typeof(stanza) == 'xml' ?
         parser.parseFromString(stanza.toXMLString(), 'text/xml').documentElement :
         stanza;
-
-    var eventObject = {direction: direction, tag: domStanza.nodeName, stanza: domStanza, session: this};
-    
-    this._preHandle(eventObject);
 
     switch(direction) {
     case 'in':
@@ -182,5 +174,5 @@ function _stanza(direction, stanza, handler) {
         break;
     }
 
-    this._postHandle(eventObject);
+    this._handle({direction: direction, tag: domStanza.nodeName, stanza: domStanza, session: this});
 }
