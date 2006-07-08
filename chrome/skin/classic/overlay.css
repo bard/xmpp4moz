@@ -1,0 +1,14 @@
+* [command="xmpp-command-connect"]
+{
+  list-style-image: url("connect.png");
+  }
+
+* [command="xmpp-command-disconnect"]
+{
+  list-style-image: url("disconnect.png");
+  }
+
+* [command="xmpp-command-debug"]
+{
+  list-style-image: url("debug.png");
+  }

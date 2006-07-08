@@ -1,0 +1,3 @@
+content xmpp4moz chrome/content/
+
+overlay chrome://browser/content/browser.xul chrome://xmpp4moz/content/overlay.xul

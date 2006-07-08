@@ -24,8 +24,8 @@
 
 var XMPP = {
     _service: Components
-    .classes['@hyperstruct.net/mozeskine/xmppservice;1']
-    .getService(Components.interfaces.nsIMozeskineXMPPService)
+    .classes['@hyperstruct.net/xmpp4moz/xmppservice;1']
+    .getService(Components.interfaces.nsIXMPPClientService)
     .wrappedJSObject,
 
     _serializer: Components

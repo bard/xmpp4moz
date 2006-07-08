@@ -16,7 +16,7 @@ function init() {
     Components
         .classes['@mozilla.org/moz/jssubscript-loader;1']
         .getService(Components.interfaces.mozIJSSubScriptLoader)
-        .loadSubScript('chrome://mozeskine/content/module_manager.js');
+        .loadSubScript('chrome://xmpp4moz/content/module_manager.js');
     
     var Client = (new ModuleManager())
         .require('class', 'client');
