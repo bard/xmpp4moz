@@ -153,6 +153,6 @@ function notifyObservers(subject, topic, data) {
 
 function removeObserver(observer) {
     var index = this._observers.indexOf(observer);
-    if(index != -1)
+    if(index != -1) 
         this._observers.splice(index, 1);
 }

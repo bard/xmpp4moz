@@ -125,7 +125,7 @@ var XMPP = {
             },
 
             release: function() {
-                this._service.removeObserver(this);
+                XMPP._service.removeObserver(this);
             },
 
             // not relying on non-local state
