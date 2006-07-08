@@ -108,7 +108,10 @@ Author: Massimiliano Mirra, <bard [at] hyperstruct [dot] net>
                      command="xmpp-command-debug"
                      flex="0"/>
 
+      <toolbarseparator/>
+
       <toolbaritem flex="1" align="center">
+        <label value="Last Message:" id="xmpp-last-speaker" flex="0"/>
         <textbox readonly="true" id="xmpp-last-message" crop="end" value="" flex="1"/>
       </toolbaritem>
     </toolbar>

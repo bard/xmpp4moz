@@ -1,3 +1,8 @@
+* [command="xmpp-command-toggle-sidebar"]
+{
+  list-style-image: url("toggle.png");
+  }
+
 * [command="xmpp-command-connect"]
 {
   list-style-image: url("connect.png");

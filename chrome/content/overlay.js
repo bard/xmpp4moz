@@ -9,8 +9,11 @@ xmppChannel.on(
     { event: 'message', direction: 'in', stanza: function(s) { return s.body && s.body.toString(); }},
     function(message) {
         document
+            .getElementById('xmpp-last-speaker')
+            .value = message.stanza.@from + ': ';
+        document
             .getElementById('xmpp-last-message')
-            .value = message.stanza.@from + ': ' + message.stanza.body;
+            .value = message.stanza.body;
     });
 
 function xmppToggleSidebar() {
