@@ -32,17 +32,6 @@ Author: Massimiliano Mirra, <bard [at] hyperstruct [dot] net>
   <!-- COMMANDS -->
 
   <commandset id="mainCommandSet">
-    <command id="xmpp-command-reload-application"
-             label="Reload XMPP Application"
-             oncommand="document
-                        .getElementById('xmpp-sidebar')
-                        .firstChild
-                        .contentDocument
-                        .location.href = 'chrome://mozeskine/content/mozeskine.xul'"/>
-    <command id="xmpp-command-open"
-             label="Open/Close XMPP Application..."
-             accesskey="s"
-             oncommand="window.open('chrome://mozeskine/content/mozeskine.xul', 'mozeskine', 'chrome');"/>
     <command id="xmpp-command-toggle-sidebar"
              label="Toggle"
              oncommand="xmppToggleSidebar();"/>
@@ -60,8 +49,7 @@ Author: Massimiliano Mirra, <bard [at] hyperstruct [dot] net>
   <!-- KEYS -->
 
   <keyset id="mainKeyset">
-    <key keycode="VK_F12" modifiers="shift" command="xmpp-command-toggle-sidebar"/>
-    <key keycode="VK_F12" command="xmpp-command-reload-application"/>
+    <key keycode="VK_F12" command="xmpp-command-toggle-sidebar"/>
   </keyset>
 
   <!-- MENUS -->
@@ -79,7 +67,7 @@ Author: Massimiliano Mirra, <bard [at] hyperstruct [dot] net>
           collapsed="false"
           persist="width collapsed"
           width="500">
-      <iframe src="chrome://mozeskine/content/"
+      <iframe src="about:blank"
               class="box-inset"
               flex="1"/>
     </vbox>
