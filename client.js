@@ -3,7 +3,7 @@ var Transport = module.require('class', 'lib/socket');
 var Session = module.require('class', 'session');
 
 function constructor() {
-    this._sessions = {};
+    this._sessions = [];
     this._observers = [];
 }
 
@@ -28,13 +28,12 @@ function constructor() {
 
 function signOn(jid, password, opts) {
     opts = opts || {};
-    this.connect(jid, opts);
         
     var m = jid.match(/^([^@]+)@([^\/]+)\/(.+)$/);
     var username = m[1];
     var server   = m[2];
     var resource = m[3];
-    var session = this._sessions[jid];
+    var session = this.connect(jid, opts);
         
     session.send(
         <iq to={server} type="set"><query xmlns="jabber:iq:auth">
@@ -53,18 +52,17 @@ function signOn(jid, password, opts) {
 }
 
 function signOff(jid) {
-    this._sessions[jid].close();
+    this.getSession(jid).close();
 }
 
 function register(jid, password, opts) {
     opts = opts || {};
-    this.connect(jid, opts);
 
     var m = jid.match(/^([^@]+)@([^\/]+)\/(.+)$/);
     var username = m[1];
     var server   = m[2];
     var resource = m[3];
-    var session = this._sessions[jid];
+    var session = this.connect(jid, opts);
     
     session.send(
         <iq to={server} type="set"><query xmlns="jabber:iq:auth">
@@ -110,37 +108,38 @@ function connect(jid, opts) {
     session.on(
         {stanza: function(s) { return s; }}, function(object) {
             client.notifyObservers(
-                object.stanza, 'stanza-' + object.direction,
-                jidOfSession(object.session));
+                object.session, 'stanza-' + object.direction, object.stanza);
         });
     session.on(
-        {event: 'data'}, function(object) {
+        {event: 'data'}, function(data) {
             client.notifyObservers(
-                object.content, 'data-' + object.direction,
-                jidOfSession(object.session));
+                data.session, 'data-' + data.direction, data.content);
+        });
+    session.on(
+        {event: 'stream'}, function(stream) {
+            client.notifyObservers(
+                stream.session, 'stream', stream.state);
         });
 
     transport.connect();
     session.open(jid.match(/@([^\/]+)/)[1]);        
-    this._sessions[jid] = session;
+    this._sessions.push(session);
+    return session;
 }
 
 function send(sessionName) {
-    var session = this._sessions[sessionName];
+    var session = this.getSession(sessionName);
     session.send.apply(session, Array.prototype.slice.call(arguments, 1));
 }
 
-function jidOfSession(session) {
-    for(var jid in this._sessions)
-        if(session == this._sessions[jid])
-            return jid;
+function getSession(name) {
+    for each(var session in this._sessions)
+        if(session.name == name)
+            return session;
 }
 
 function getSessions() {
-    var jids = [];
-    for(var jid in this._sessions)
-        jids.push(jid);
-    return jids;
+    return this._sessions;
 }
 
 function addObserver(observer) {

@@ -140,8 +140,10 @@ receive.doc = 'Receive text or XML from the other side.';
 function _stream(state) {
     switch(state) {
     case 'start':
+        this._handle({event: 'stream', state: 'open', session: this});
         break;
     case 'stop':
+        this._handle({event: 'stream', state: 'close', session: this});
         break;
     }
 }
@@ -154,7 +156,7 @@ function _data(direction, data) {
     if(direction == 'in')
         this._parser.parse(data);
 
-    this._handle({direction: direction, event: 'data', content: data});
+    this._handle({direction: direction, event: 'data', content: data, session: this});
 }
 
 function _stanza(direction, stanza, handler) {
@@ -182,5 +184,9 @@ function _stanza(direction, stanza, handler) {
         break;
     }
 
-    this._handle({direction: direction, event: domStanza.nodeName, stanza: domStanza, session: this});
+    this._handle({
+        event: domStanza.nodeName,
+        stanza: serializer.serializeToString(domStanza),
+        direction: direction,
+        session: this});
 }

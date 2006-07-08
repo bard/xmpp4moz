@@ -32,8 +32,9 @@ var XMPP = {
     .classes['@mozilla.org/xmlextras/xmlserializer;1']
     .getService(Components.interfaces.nsIDOMSerializer),
 
-    get accounts() {
-        return this._service.getSessions();
+    get activeSessionNames() {
+        return this._service.getSessions().map(
+            function(session) { return session.name; })
     },
     
     up: function(jid, opts) {
@@ -93,33 +94,32 @@ var XMPP = {
 
             observe: function(subject, topic, data) {
                 switch(topic) {
-                    case 'session':
+                    case 'stream':
                     var session = subject;
-                    switch(data) {
-                        case 'open':
-                        break;
-                        case 'close':
-                        break;
-                    }
+                    var state = data;
+                    this.handle({
+                        event: 'stream',
+                        session: session.name,
+                        state: state
+                        });
                     break;
                     case 'data-in':
                     case 'data-out':
                     this.handle({
-                        session: sessionJid,
                         event: 'data',
+                        session: subject,
                         direction: topic == 'data-in' ? 'in' : 'out',
-                        content: subject
+                        content: data
                         });
                     break;
                     case 'stanza-in':
                     case 'stanza-out':
-                    var domStanza = subject;
-                    var sessionJid = data;
+                    var stanza = new XML(data);
                     this.handle({
-                        session: sessionJid,
-                        event: domStanza.nodeName,
+                        event: stanza.name(),
+                        session: subject,
                         direction: topic == 'stanza-in' ? 'in' : 'out',
-                        stanza: new XML(XMPP._serializer.serializeToString(domStanza))
+                        stanza: stanza
                         });
                 }
             },
