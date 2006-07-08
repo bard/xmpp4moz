@@ -49,11 +49,12 @@ var parser      = Components
 
 converter.charset = 'UTF-8';
 
-function constructor() {
+function constructor(name) {
     this._isOpen = false;
     this._idCounter = 1000;
     this._parser = new Parser();
     this._pending = {};
+    this._name = name;
 
     var eventManager = new event.Manager();
     mixin.forward(this, 'on', eventManager);
@@ -71,6 +72,11 @@ function constructor() {
     this._parser.on(
         'stanza', function(domStanza) {
             session._stanza('in', domStanza);
+        });
+
+    this.__defineGetter__(
+        'name', function() {
+            return this._name;
         });
 }
 
@@ -101,6 +107,7 @@ close.doc = 'Send the stream epilogue.';
 function isOpen() {
     return this._isOpen;
 }
+
 
 // ----------------------------------------------------------------------
 // INPUT

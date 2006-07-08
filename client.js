@@ -88,7 +88,7 @@ function connect(jid, opts) {
         opts.ssl = true;
     
     var transport = new Transport(server, port, { ssl: opts.ssl });
-    var session = new Session(transport);
+    var session = new Session(jid);
 
     transport.on(
         'data', function(data) {
