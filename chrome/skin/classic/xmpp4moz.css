@@ -23,7 +23,12 @@
   list-style-image: url("preferences.png");
   }
 
-#xmpp-menu-accounts
+#xmpp-toolbarbutton-accounts
 {
   list-style-image: url("bulb-small.png");
+  }
+
+#xmpp-toolbarbutton-apps
+{
+  list-style-image: url("apps.png");
   }

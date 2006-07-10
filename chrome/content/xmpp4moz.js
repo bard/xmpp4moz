@@ -61,7 +61,7 @@ function xmppDebug() {
 }
 
 function xmppPopulateAccountMenu() {
-    var menuPopup = document.getElementById('xmpp-accounts');
+    var menuPopup = document.getElementById('xmpp-menu-accounts');
 
     var i = menuPopup.childNodes.length - 1;
     while(i >= 0) {

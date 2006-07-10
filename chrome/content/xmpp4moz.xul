@@ -33,7 +33,7 @@ Author: Massimiliano Mirra, <bard [at] hyperstruct [dot] net>
 
   <commandset id="mainCommandSet">
     <command id="xmpp-command-toggle-sidebar"
-             label="Toggle Live Sidebar"
+             label="Live Sidebar"
              oncommand="xmppToggleSidebar();"/>
     <command id="xmpp-command-debug"
              label="Open Debug Window..."
@@ -96,12 +96,20 @@ Author: Massimiliano Mirra, <bard [at] hyperstruct [dot] net>
              hidden="false" persist="hidden"
              fullscreentoolbar="true">            
 
-      <toolbarbutton id="xmpp-menu-accounts"
+      <toolbarbutton id="xmpp-toolbarbutton-accounts"
                      label="Accounts "
                      class="chromeclass-toolbar-additional"
                      type="menu" tooltiptext="Available and connected accounts"
+                     accesskey="c">
+        <menupopup id="xmpp-menu-accounts" onpopupshowing="xmppPopulateAccountMenu();"/>
+      </toolbarbutton>
+
+      <toolbarbutton id="xmpp-toolbarbutton-apps"
+                     label="Apps "
+                     class="chromeclass-toolbar-additional"
+                     type="menu" tooltiptext="Jabber Applications"
                      accesskey="A">
-        <menupopup id="xmpp-accounts" onpopupshowing="xmppPopulateAccountMenu();"/>
+        <menupopup id="xmpp-menu-apps"/>
       </toolbarbutton>
 
       <toolbarbutton class="chromeclass-toolbar-additional"
