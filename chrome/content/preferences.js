@@ -21,7 +21,7 @@ function xmppShowAccount(accountId) {
 
     var pref = Components
         .classes["@mozilla.org/preferences-service;1"]
-        .getService(Components.interfaces.nsIPrefBranch);          
+        .getService(Components.interfaces.nsIPrefBranch);
 
     function uncamelize(string) {
         return string
@@ -58,7 +58,7 @@ function xmppCreateAccount() {
     
     var pref = Components
         .classes["@mozilla.org/preferences-service;1"]
-        .getService(Components.interfaces.nsIPrefBranch)
+        .getService(Components.interfaces.nsIPrefService)
         .getBranch('xmpp.account.' + newAccountId + '.');
 
     pref.setCharPref('address', 'user@server.org');
@@ -104,7 +104,7 @@ function xmppFieldChanged(field) {
 
     var pref = Components
         .classes["@mozilla.org/preferences-service;1"]
-        .getService(Components.interfaces.nsIPrefBranch)
+        .getService(Components.interfaces.nsIPrefService)
         .getBranch('xmpp.account.' + xmppSelectedAccountId + '.');
 
     try {
