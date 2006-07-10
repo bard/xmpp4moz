@@ -27,7 +27,7 @@ Author: Massimiliano Mirra, <bard [at] hyperstruct [dot] net>
 
   <!-- SCRIPTS -->
 
-  <script type="application/x-javascript" src="overlay.js"/>
+  <script type="application/x-javascript" src="xmpp4moz.js"/>
 
   <!-- COMMANDS -->
 
@@ -35,12 +35,6 @@ Author: Massimiliano Mirra, <bard [at] hyperstruct [dot] net>
     <command id="xmpp-command-toggle-sidebar"
              label="Toggle"
              oncommand="xmppToggleSidebar();"/>
-    <command id="xmpp-command-connect"
-             label="Connect"
-             accesskey="C" oncommand="xmppConnect();"/>
-    <command id="xmpp-command-disconnect"
-             label="Disconnect"
-             accesskey="D" oncommand="xmppDisconnect();"/>
     <command id="xmpp-command-debug"
              label="Debug"
              accesskey="b" oncommand="xmppDebug();"/>
@@ -86,23 +80,24 @@ Author: Massimiliano Mirra, <bard [at] hyperstruct [dot] net>
  
   <toolbox id="navigator-toolbox">
     
-    <toolbar id="xmpp-toolbar" toolbarname="Xmpp Toolbar" 
+    <toolbar id="xmpp-toolbar" toolbarname="XMPP Toolbar" 
              class="chromeclass-toolbar" context="toolbar-context-menu" 
              hidden="false" persist="hidden"
              fullscreentoolbar="true">            
 
       <toolbaritem flex="0" align="center">
-        <label value="[XMPP]" style="font-weight: bold;"/>
+        <label value="Jabber" style="font-weight: bold;"/>
       </toolbaritem>
+
+      <toolbarbutton label="Accounts "
+                     class="chromeclass-toolbar-additional"
+                     type="menu" tooltiptext="Available and connected accounts"
+                     accesskey="A">
+        <menupopup id="xmpp-accounts" onpopupshowing="xmppPopulateAccountMenu();"/>
+      </toolbarbutton>
 
       <toolbarbutton class="chromeclass-toolbar-additional"
                      command="xmpp-command-toggle-sidebar"
-                     flex="0"/>
-      <toolbarbutton class="chromeclass-toolbar-additional"
-                     command="xmpp-command-connect"
-                     flex="0"/>
-      <toolbarbutton class="chromeclass-toolbar-additional"
-                     command="xmpp-command-disconnect"
                      flex="0"/>
       <toolbarbutton class="chromeclass-toolbar-additional"
                      command="xmpp-command-debug"

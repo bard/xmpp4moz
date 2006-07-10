@@ -32,13 +32,72 @@ var XMPP = {
     .classes['@mozilla.org/xmlextras/xmlserializer;1']
     .getService(Components.interfaces.nsIDOMSerializer),
 
+    _pref: Components
+    .classes['@mozilla.org/preferences-service;1']
+    .getService(Components.interfaces.nsIPrefService)
+    .getBranch('xmpp.'),
+
+    _prompter: Components
+    .classes["@mozilla.org/embedcomp/prompt-service;1"]
+    .getService(Components.interfaces.nsIPromptService),
+
+    get accounts() {
+        var accountTable = {};
+        for each(var accountInfo in
+                 this._pref.getChildList('account.', {})) {
+            var infoParts    = accountInfo.split('.');
+            var accountIndex = infoParts[1];
+            var propertyName = infoParts[2];
+            if(!accountTable[accountIndex])
+                accountTable[accountIndex] = {};
+
+            var prefReaders = ['getCharPref', 'getIntPref', 'getBoolPref'];
+            var propertyValue;
+            for each(var reader in prefReaders) 
+                try {
+                    propertyValue = this._pref[reader](accountInfo);
+                    break;
+                } catch(e) {}
+
+            accountTable[accountIndex][propertyName] = propertyValue;
+        }
+
+        var accountList = [];
+        for(var accountIndex in accountTable) 
+            accountList.push(accountTable[accountIndex]);
+        
+        return accountList;
+    },
+
     get activeSessionNames() {
         return this._service.getSessions().map(
             function(session) { return session.name; })
     },
+
+    isUp: function(jid) {
+        var session = this._service.getSession(jid);
+        if(session && session.isOpen())
+            return true;
+    },
     
     up: function(jid, opts) {
-        this._service.signOn(jid, opts.password)
+        opts = opts || {};
+
+        var proceed, password = opts.password;
+        if(password) 
+            proceed = true;
+        else {
+            var inputPassword = { value: '' };
+            var inputSave = { value: false };
+            proceed = this._prompter.promptPassword(
+                null, 'Opening Jabber Session...',
+                'Enter password for ' + jid + ':', inputPassword,
+                null, inputSave);
+            password = inputPassword.value;
+        }
+
+        if(proceed)
+            this._service.signOn(jid, password);
     },
 
     // could have a reference count mechanism

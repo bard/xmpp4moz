@@ -23,6 +23,7 @@ function init() {
 
     var client = new Client();
 
-    for each(var name in ['signOn', 'signOff', 'send', 'on', 'addObserver', 'removeObserver', 'getSessions'])
+    for each(var name in ['signOn', 'signOff', 'send', 'on', 'addObserver',
+                          'removeObserver', 'getSession', 'getSessions'])
         forward(this, name, client);
 }
