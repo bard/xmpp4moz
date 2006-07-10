@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
-<?xml-stylesheet href="chrome://xmpp4moz/skin/overlay.css" type="text/css"?>
+<?xml-stylesheet href="chrome://xmpp4moz/skin/xmpp4moz.css" type="text/css"?>
 
 <!--
 Copyright (C) 2006 by Massimiliano Mirra
@@ -33,11 +33,16 @@ Author: Massimiliano Mirra, <bard [at] hyperstruct [dot] net>
 
   <commandset id="mainCommandSet">
     <command id="xmpp-command-toggle-sidebar"
-             label="Toggle"
+             label="Toggle Live Sidebar"
              oncommand="xmppToggleSidebar();"/>
     <command id="xmpp-command-debug"
-             label="Debug"
-             accesskey="b" oncommand="xmppDebug();"/>
+             label="Open Debug Window..."
+             accesskey="b"
+             oncommand="xmppDebug();"/>
+    <command id="xmpp-command-open-preferences"
+             label="Preferences..."
+             accesskey="n"
+             oncommand="window.openPreferences('xmpp-pane');"/>
   </commandset>
 
   <!-- KEYS -->
@@ -49,7 +54,13 @@ Author: Massimiliano Mirra, <bard [at] hyperstruct [dot] net>
   <!-- MENUS -->
 
   <menupopup id="menu_ToolsPopup">
-    <menuitem position="1" command="xmpp-command-toggle-sidebar"/>
+    <menu label="Jabber" accesskey="J" position="1">
+      <menupopup>      
+        <menuitem class="menuitem-iconic" command="xmpp-command-open-preferences"/>
+        <menuitem class="menuitem-iconic" command="xmpp-command-toggle-sidebar"/>
+        <menuitem class="menuitem-iconic" command="xmpp-command-debug"/>  
+      </menupopup>
+    </menu>
   </menupopup>
 
   <!-- SIDEBAR OVERLAY -->
@@ -85,11 +96,8 @@ Author: Massimiliano Mirra, <bard [at] hyperstruct [dot] net>
              hidden="false" persist="hidden"
              fullscreentoolbar="true">            
 
-      <toolbaritem flex="0" align="center">
-        <label value="Jabber" style="font-weight: bold;"/>
-      </toolbaritem>
-
-      <toolbarbutton label="Accounts "
+      <toolbarbutton id="xmpp-menu-accounts"
+                     label="Accounts "
                      class="chromeclass-toolbar-additional"
                      type="menu" tooltiptext="Available and connected accounts"
                      accesskey="A">

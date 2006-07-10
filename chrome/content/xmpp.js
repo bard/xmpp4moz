@@ -63,10 +63,29 @@ var XMPP = {
         }
 
         var accountList = [];
-        for(var accountIndex in accountTable) 
-            accountList.push(accountTable[accountIndex]);
+        for(var accountIndex in accountTable) {
+            var account = accountTable[accountIndex];
+            account.index = accountIndex;
+            accountList.push(account);   
+        }
         
         return accountList;
+    },
+
+    getAccountByAddress: function(address) {
+        for each(var account in this.accounts) {
+            if(account.address == address)
+                return account;
+        }
+    },
+
+    // TODO: unefficient
+    // TODO: rename to getAccountById
+    getAccountByIndex: function(index) {
+        for each(var account in this.accounts) { 
+            if(account.index == index)
+                return account;
+        }
     },
 
     get activeSessionNames() {

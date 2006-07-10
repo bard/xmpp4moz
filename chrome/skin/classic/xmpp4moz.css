@@ -17,3 +17,13 @@
 {
   list-style-image: url("debug.png");
   }
+
+* [command="xmpp-command-open-preferences"]
+{
+  list-style-image: url("preferences.png");
+  }
+
+#xmpp-menu-accounts
+{
+  list-style-image: url("bulb-small.png");
+  }

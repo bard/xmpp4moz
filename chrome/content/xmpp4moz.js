@@ -87,5 +87,9 @@ function xmppPopulateAccountMenu() {
     menuPopup.appendChild(document.createElement('menuseparator'));
     var menuItem = document.createElement('menuitem');
     menuItem.setAttribute('label', 'Add or modify...');
+    menuItem.addEventListener(
+        'command', function(event) {
+            window.openPreferences('xmpp-pane');
+        }, false);
     menuPopup.appendChild(menuItem);   
 }
