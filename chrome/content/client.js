@@ -52,7 +52,11 @@ function signOn(jid, password, opts) {
 }
 
 function signOff(jid) {
-    this.getSession(jid).close();
+    var session = this.getSession(jid);
+    session.close();
+    // TODO: actually session should be removed on close event, not on
+    // signOff request
+    this._sessions.splice(this._sessions.indexOf(session), 1);    
 }
 
 function register(jid, password, opts) {
