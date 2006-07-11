@@ -16,5 +16,5 @@
     <menupopup id="accounts" onpopupshowing="refreshAccountList();"/>
   </menulist>
   <textbox type="password" id="password" disabled="true"/>
-  <checkbox id="make-default" value="checked" disabled="true"/>
+  <checkbox id="make-default" value="checked" disabled="true" hidden="true"/>
 </dialog>

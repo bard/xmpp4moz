@@ -14,11 +14,12 @@ var params;
 
 function init() {
     params = window.arguments[0];
-
-    var requestingApplication = params.appName || 'this application';
     
-    _('make-default').label =
-        'Always use this account for ' + requestingApplication;
+    if(params.requester) {
+        _('make-default').label =
+            'Always use this account for ' + params.requester;
+        _('make-default').hidden = false;        
+    }
 
     _('main').getButton('accept').disabled = true;
     _('main').getButton('extra1').addEventListener(
