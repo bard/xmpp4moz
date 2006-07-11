@@ -101,22 +101,31 @@ var XMPP = {
     
     up: function(jid, opts) {
         opts = opts || {};
+        var password = opts.password;
 
-        var proceed, password = opts.password;
-        if(password) 
-            proceed = true;
-        else {
-            var inputPassword = { value: '' };
-            var inputSave = { value: false };
-            proceed = this._prompter.promptPassword(
-                null, 'Opening Jabber Session...',
-                'Enter password for ' + jid + ':', inputPassword,
-                null, inputSave);
-            password = inputPassword.value;
+        if(!(jid && password)) {
+            var params = {
+                appName: 'Unknown App',
+                confirmConnection: false,
+                jid: jid,
+                password: undefined
+            };
+            window.openDialog(
+                'chrome://xmpp4moz/content/signon.xul',
+                'xmpp-signon', 'modal,centerscreen',
+                params);
+
+            if(params.confirmConnection) {
+                password = params.password;
+                jid = params.jid;
+                proceed = true;
+            }
         }
 
         if(jid && password)
-            this._service.signOn(jid, password, {continuation: opts.continuation});
+            this._service.signOn(
+                jid, password,
+                {continuation: function() { opts.continuation(jid); }});
     },
 
     // could have a reference count mechanism

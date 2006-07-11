@@ -1,0 +1,20 @@
+<?xml version="1.0"?>
+<?xml-stylesheet href="chrome://global/skin/" type="text/css"?>
+<dialog id="main" title="Connect a Jabber Account..."
+	xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul"
+        ondialogaccept="return doOk();"
+        ondialogcancel="return doCancel();"
+        buttonlabelextra1="Configure..."
+        buttonaccesskeyextra1="C"
+        buttons="accept,cancel,extra1"
+        onload="init();">
+
+  <script type="application/x-javascript" src="xmpp.js"/>
+  <script type="application/x-javascript" src="signon.js"/>
+
+  <menulist id="account" label="">
+    <menupopup id="accounts" onpopupshowing="refreshAccountList();"/>
+  </menulist>
+  <textbox type="password" id="password" disabled="true"/>
+  <checkbox id="make-default" value="checked" disabled="true"/>
+</dialog>
