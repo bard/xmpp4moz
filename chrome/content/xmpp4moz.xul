@@ -35,13 +35,14 @@ Author: Massimiliano Mirra, <bard [at] hyperstruct [dot] net>
   <commandset id="mainCommandSet">
     <command id="xmpp-command-toggle-livebar"
              label="Livebar"
-             oncommand="xmppToggleLivebar();"/>
+             oncommand="xmppToggleLivebar();"
+             accesskey="L"/>
     <command id="xmpp-command-open-tracer"
              label="Session Tracer (window)"
              accesskey="T"
              oncommand="xmppOpenTracer();"/>
     <command id="xmpp-command-open-preferences"
-             label="Preferences..."
+             label="Configure..."
              accesskey="n"
              oncommand="window.openPreferences('xmpp-pane');"/>
   </commandset>
@@ -57,9 +58,16 @@ Author: Massimiliano Mirra, <bard [at] hyperstruct [dot] net>
   <menupopup id="menu_ToolsPopup">
     <menu label="Jabber" accesskey="J" position="1">
       <menupopup>      
-        <menuitem class="menuitem-iconic" command="xmpp-command-open-preferences"/>
+        <menu label="Accounts" accesskey="c">
+          <menupopup onpopupshowing="xmppPopulateAccountMenu(this);"/>
+        </menu>
+        <menu label="Apps" accesskey="A">
+          <menupopup>
+            <menuitem class="menuitem-iconic" command="xmpp-command-open-tracer"/>
+          </menupopup>
+        </menu>
         <menuitem class="menuitem-iconic" command="xmpp-command-toggle-livebar"/>
-        <menuitem class="menuitem-iconic" command="xmpp-command-open-tracer"/>  
+        <menuitem class="menuitem-iconic" command="xmpp-command-open-preferences"/>
       </menupopup>
     </menu>
   </menupopup>
@@ -98,12 +106,20 @@ Author: Massimiliano Mirra, <bard [at] hyperstruct [dot] net>
              hidden="false" persist="hidden"
              fullscreentoolbar="true">            
 
+      <toolbaritem>
+        <progressmeter id="xmpp-status" mode="undetermined" hidden="true"/>
+      </toolbaritem>
+
       <toolbarbutton id="xmpp-toolbarbutton-accounts"
                      label="Accounts "
                      class="chromeclass-toolbar-additional"
                      type="menu" tooltiptext="Available and connected accounts"
                      accesskey="c">
-        <menupopup id="xmpp-menu-accounts" onpopupshowing="xmppPopulateAccountMenu();"/>
+        <menupopup onpopupshowing="xmppPopulateAccountMenu(this);">
+          <menuseparator/>
+          <menuitem command="xmpp-command-open-preferences"
+                    class="menuitem-iconic"/>
+        </menupopup>
       </toolbarbutton>
 
       <toolbarbutton id="xmpp-toolbarbutton-apps"
