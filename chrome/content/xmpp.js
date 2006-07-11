@@ -125,7 +125,10 @@ var XMPP = {
         if(jid && password)
             this._service.signOn(
                 jid, password,
-                {continuation: function() { opts.continuation(jid); }});
+                {continuation: function() {
+                        if(opts.continuation)
+                            opts.continuation(jid);
+                    }});
     },
 
     // could have a reference count mechanism
