@@ -105,10 +105,10 @@ var XMPP = {
 
         if(!(jid && password)) {
             var params = {
-                appName: 'Unknown App',
+                requester: opts.requester,
                 confirmConnection: false,
                 jid: jid,
-                password: undefined
+                password: undefined,
             };
             window.openDialog(
                 'chrome://xmpp4moz/content/signon.xul',
@@ -118,11 +118,12 @@ var XMPP = {
             if(params.confirmConnection) {
                 password = params.password;
                 jid = params.jid;
-                proceed = true;
             }
         }
-
-        if(jid && password)
+        
+        if(this.isUp(jid) && opts.continuation)
+            opts.continuation(jid);
+        else if(jid && password) 
             this._service.signOn(
                 jid, password,
                 {continuation: function() {

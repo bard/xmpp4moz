@@ -94,6 +94,7 @@ function accountSelected(jid) {
     if(XMPP.isUp(jid)) {
         _('already-online').hidden = false;
         _('password').hidden = true;
+        _('password').value = '';
     } else {
         _('already-online').hidden = true;
         _('password').hidden = false;
