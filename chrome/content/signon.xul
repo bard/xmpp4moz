@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <?xml-stylesheet href="chrome://global/skin/" type="text/css"?>
-<dialog id="main" title="Connect a Jabber Account..."
+<dialog id="main" title="Choose an Account"
 	xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul"
         ondialogaccept="return doOk();"
         ondialogcancel="return doCancel();"
@@ -15,6 +15,10 @@
   <menulist id="account" label="">
     <menupopup id="accounts" onpopupshowing="refreshAccountList();"/>
   </menulist>
+  <spacer/>
+  <hbox pack="center">
+    <label id="already-online" value="Online" hidden="true"/>
+  </hbox>
   <textbox type="password" id="password" disabled="true"/>
   <checkbox id="make-default" value="checked" disabled="true" hidden="true"/>
 </dialog>

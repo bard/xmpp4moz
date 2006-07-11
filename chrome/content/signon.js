@@ -30,14 +30,15 @@ function init() {
         for each(var accountItem in _('accounts').childNodes) {
             if(accountItem.label == params.jid) {
                 _('account').setAttribute('label', params.jid);
-                accountSelected();
+                accountSelected(params.jid);
                 break;
             }
         }
     else {
         if(_('accounts').firstChild) {
-            _('account').setAttribute('label',  _('accounts').firstChild.getAttribute('label'));
-            accountSelected();
+            var jid = _('accounts').firstChild.getAttribute('label')
+            _('account').setAttribute('label',  jid);
+            accountSelected(jid);
         }        
     }
     
@@ -68,7 +69,10 @@ function refreshAccountList() {
     for each(var account in XMPP.accounts) {
         var menuItem = document.createElement('menuitem');
         menuItem.setAttribute('label', account.address + '/' + account.resource);
-        menuItem.addEventListener('command', accountSelected, false);
+        menuItem.addEventListener(
+            'command', function(event) {
+                accountSelected(event.target.getAttribute('label'));
+            }, false);
         menuPopup.insertBefore(menuItem, menuPopup.firstChild);
     }
 }
@@ -84,10 +88,18 @@ function configureAccounts() {
 // ----------------------------------------------------------------------
 // REACTIONS
 
-function accountSelected(event) {
+function accountSelected(jid) {
     _('main').getButton('accept').disabled = false;
-    _('password').disabled = false;
-    _('password').focus();
+    
+    if(XMPP.isUp(jid)) {
+        _('already-online').hidden = false;
+        _('password').hidden = true;
+    } else {
+        _('already-online').hidden = true;
+        _('password').hidden = false;
+        _('password').disabled = false;
+        _('password').focus();
+    } 
     //_('make-default').disabled = false;
 }
 
