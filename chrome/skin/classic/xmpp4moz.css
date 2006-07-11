@@ -1,4 +1,4 @@
-* [command="xmpp-command-toggle-sidebar"]
+* [command="xmpp-command-toggle-livebar"]
 {
   list-style-image: url("toggle.png");
   }
@@ -13,7 +13,7 @@
   list-style-image: url("disconnect.png");
   }
 
-* [command="xmpp-command-debug"]
+* [command="xmpp-command-open-tracer"]
 {
   list-style-image: url("debug.png");
   }

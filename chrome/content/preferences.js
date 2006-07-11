@@ -87,6 +87,10 @@ function xmppDeleteAccount(accountId) {
     document.getElementById('xmpp-account-info').hidden = true;
 }
 
+function xmppRegisterAccount() {
+    window.alert('Not implemented yet.');
+}
+
 // ----------------------------------------------------------------------
 // REACTIONS
 

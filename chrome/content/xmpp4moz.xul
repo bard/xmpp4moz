@@ -27,18 +27,19 @@ Author: Massimiliano Mirra, <bard [at] hyperstruct [dot] net>
 
   <!-- SCRIPTS -->
 
+  <script type="application/x-javascript" src="xmpp.js"/>
   <script type="application/x-javascript" src="xmpp4moz.js"/>
 
   <!-- COMMANDS -->
 
   <commandset id="mainCommandSet">
-    <command id="xmpp-command-toggle-sidebar"
-             label="Live Sidebar"
-             oncommand="xmppToggleSidebar();"/>
-    <command id="xmpp-command-debug"
-             label="Open Debug Window..."
-             accesskey="b"
-             oncommand="xmppDebug();"/>
+    <command id="xmpp-command-toggle-livebar"
+             label="Livebar"
+             oncommand="xmppToggleLivebar();"/>
+    <command id="xmpp-command-open-tracer"
+             label="Session Tracer (window)"
+             accesskey="T"
+             oncommand="xmppOpenTracer();"/>
     <command id="xmpp-command-open-preferences"
              label="Preferences..."
              accesskey="n"
@@ -48,7 +49,7 @@ Author: Massimiliano Mirra, <bard [at] hyperstruct [dot] net>
   <!-- KEYS -->
 
   <keyset id="mainKeyset">
-    <key keycode="VK_F12" command="xmpp-command-toggle-sidebar"/>
+    <key keycode="VK_F12" command="xmpp-command-toggle-livebar"/>
   </keyset>
 
   <!-- MENUS -->
@@ -57,20 +58,21 @@ Author: Massimiliano Mirra, <bard [at] hyperstruct [dot] net>
     <menu label="Jabber" accesskey="J" position="1">
       <menupopup>      
         <menuitem class="menuitem-iconic" command="xmpp-command-open-preferences"/>
-        <menuitem class="menuitem-iconic" command="xmpp-command-toggle-sidebar"/>
-        <menuitem class="menuitem-iconic" command="xmpp-command-debug"/>  
+        <menuitem class="menuitem-iconic" command="xmpp-command-toggle-livebar"/>
+        <menuitem class="menuitem-iconic" command="xmpp-command-open-tracer"/>  
       </menupopup>
     </menu>
   </menupopup>
 
-  <!-- SIDEBAR OVERLAY -->
-
   <hbox id="browser">
-    <vbox id="xmpp-sidebar"
+
+    <!-- LIVEBAR -->
+
+    <vbox id="livebar"
           insertbefore="appcontent"
           class="chromeclass-extracontent"
-          collapsed="false"
-          persist="width collapsed"
+          collapsed="true"
+          persist="width"
           width="500">
       <iframe src="about:blank"
               class="box-inset"
@@ -109,16 +111,14 @@ Author: Massimiliano Mirra, <bard [at] hyperstruct [dot] net>
                      class="chromeclass-toolbar-additional"
                      type="menu" tooltiptext="Jabber Applications"
                      accesskey="A">
-        <menupopup id="xmpp-menu-apps"/>
+        <menupopup id="xmpp-menu-apps">
+          <menuitem command="xmpp-command-open-tracer"/>
+        </menupopup>
       </toolbarbutton>
 
       <toolbarbutton class="chromeclass-toolbar-additional"
-                     command="xmpp-command-toggle-sidebar"
+                     command="xmpp-command-toggle-livebar"
                      flex="0"/>
-      <toolbarbutton class="chromeclass-toolbar-additional"
-                     command="xmpp-command-debug"
-                     flex="0"/>
-
       <toolbarseparator/>
 
       <toolbaritem flex="1" align="center">
