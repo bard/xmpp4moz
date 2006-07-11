@@ -115,8 +115,8 @@ var XMPP = {
             password = inputPassword.value;
         }
 
-        if(proceed)
-            this._service.signOn(jid, password);
+        if(jid && password)
+            this._service.signOn(jid, password, {continuation: opts.continuation});
     },
 
     // could have a reference count mechanism
