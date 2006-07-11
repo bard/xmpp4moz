@@ -63,26 +63,22 @@ function xmppDebug() {
 function xmppPopulateAccountMenu() {
     var menuPopup = document.getElementById('xmpp-menu-accounts');
 
-    var i = menuPopup.childNodes.length - 1;
-    while(i >= 0) {
-        var menuItem = menuPopup.childNodes[i];
-        menuPopup.removeChild(menuItem);
-        i--;
-    }
-
-    for each(var account in XMPP.accounts) {
-        var menuItem = document.createElement('menuitem');
-        menuItem.addEventListener(
-            'command', function(event) {
-                var jid = account.address + '/' + account.resource;
-                XMPP.isUp(jid) ? XMPP.down(jid) : XMPP.up(jid);
-            }, false);
-        menuItem.setAttribute('label', account.address);
-        menuItem.setAttribute('type', 'checkbox');
-        if(XMPP.isUp(account.address + '/' + account.resource))
-            menuItem.setAttribute('checked', 'true');
-        menuPopup.appendChild(menuItem);
-    }
+    deleteChildren(menuPopup);
+    
+    XMPP.accounts.forEach(
+        function(account) {
+            var menuItem = document.createElement('menuitem');
+            menuItem.addEventListener(
+                'command', function(event) {
+                    var jid = account.address + '/' + account.resource;
+                    XMPP.isUp(jid) ? XMPP.down(jid) : XMPP.up(jid);
+                }, false);
+            menuItem.setAttribute('label', account.address);
+            menuItem.setAttribute('type', 'checkbox');
+            if(XMPP.isUp(account.address + '/' + account.resource))
+                menuItem.setAttribute('checked', 'true');
+            menuPopup.appendChild(menuItem);            
+        });
 
     menuPopup.appendChild(document.createElement('menuseparator'));
     var menuItem = document.createElement('menuitem');
@@ -92,4 +88,16 @@ function xmppPopulateAccountMenu() {
             window.openPreferences('xmpp-pane');
         }, false);
     menuPopup.appendChild(menuItem);   
+}
+
+// ----------------------------------------------------------------------
+// UTILITIES
+
+function deleteChildren(container) {
+    var i = container.childNodes.length - 1;
+    while(i >= 0) {
+        var child = container.childNodes[i];
+        container.removeChild(child);
+        i--;
+    }
 }
