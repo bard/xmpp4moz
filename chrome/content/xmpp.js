@@ -172,12 +172,14 @@ var XMPP = {
 
             observe: function(subject, topic, data) {
                 switch(topic) {
-                    case 'stream':
+                    case 'stream-in':
+                    case 'stream-out':
                     var session = subject;
                     var state = data;
                     this.handle({
                         event: 'stream',
                         session: session.name,
+                        direction: topic == 'stream-in' ? 'in' : 'out',
                         state: state
                         });
                     break;

@@ -122,7 +122,7 @@ function connect(jid, opts) {
     session.on(
         {event: 'stream'}, function(stream) {
             client.notifyObservers(
-                stream.session, 'stream', stream.state);
+                stream.session, 'stream-' + stream.direction, stream.state);
         });
 
     transport.connect();

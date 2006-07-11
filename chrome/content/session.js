@@ -63,11 +63,11 @@ function constructor(name) {
     var session = this;
     this._parser.on(
         'start', function() {
-            session._stream('start');
+            session._stream('in', 'open');
         });
     this._parser.on(
         'stop', function() {
-            session._stream('stop');
+            session._stream('in', 'close');
         });
     this._parser.on(
         'stanza', function(domStanza) {
@@ -91,6 +91,7 @@ function open(server) {
               '<stream:stream xmlns="jabber:client" ' +
               'xmlns:stream="http://etherx.jabber.org/streams" ' +
               'to="' + server + '">');
+    this._stream('out', 'open');
     this._isOpen = true;
 }
 open.doc = 'Send the stream prologue.';
@@ -99,7 +100,8 @@ function close() {
     if(!this._isOpen)
         throw new Error('Session already closed.');
 
-    this._isOpen = false;        
+    this._isOpen = false;
+    this._stream('out', 'close');
     this.send('</stream:stream>');
 }
 close.doc = 'Send the stream epilogue.';
@@ -137,15 +139,8 @@ receive.doc = 'Receive text or XML from the other side.';
 // ----------------------------------------------------------------------
 // INTERNALS
 
-function _stream(state) {
-    switch(state) {
-    case 'start':
-        this._handle({event: 'stream', state: 'open', session: this});
-        break;
-    case 'stop':
-        this._handle({event: 'stream', state: 'close', session: this});
-        break;
-    }
+function _stream(direction, state) {
+    this._handle({event: 'stream', direction: direction, state: state, session: this});
 }
 
 function _data(direction, data) {
