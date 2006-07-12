@@ -58,13 +58,13 @@ Author: Massimiliano Mirra, <bard [at] hyperstruct [dot] net>
   <menupopup id="menu_ToolsPopup">
     <menu label="Jabber" accesskey="J" position="1">
       <menupopup>      
-        <menu label="Accounts" accesskey="c">
-          <menupopup onpopupshowing="xmppPopulateAccountMenu(this);"/>
-        </menu>
         <menu label="Apps" accesskey="A">
-          <menupopup>
+          <menupopup id="xmpp-tools-menu-apps">
             <menuitem class="menuitem-iconic" command="xmpp-command-open-tracer"/>
           </menupopup>
+        </menu>
+        <menu label="Accounts" accesskey="c">
+          <menupopup onpopupshowing="xmppPopulateAccountMenu(this);"/>
         </menu>
         <menuitem class="menuitem-iconic" command="xmpp-command-toggle-livebar"/>
         <menuitem class="menuitem-iconic" command="xmpp-command-open-preferences"/>
@@ -127,7 +127,7 @@ Author: Massimiliano Mirra, <bard [at] hyperstruct [dot] net>
                      class="chromeclass-toolbar-additional"
                      type="menu" tooltiptext="Jabber Applications"
                      accesskey="A">
-        <menupopup id="xmpp-menu-apps">
+        <menupopup id="xmpp-toolbar-menu-apps">
           <menuitem command="xmpp-command-open-tracer"/>
         </menupopup>
       </toolbarbutton>
