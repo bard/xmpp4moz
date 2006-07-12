@@ -88,11 +88,6 @@ var XMPP = {
         }
     },
 
-    get activeSessionNames() {
-        return this._service.getSessions().map(
-            function(session) { return session.name; })
-    },
-
     isUp: function(jid) {
         var session = this._service.getSession(jid);
         if(session && session.isOpen())
