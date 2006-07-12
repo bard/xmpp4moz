@@ -152,7 +152,11 @@ function addObserver(observer) {
 
 function notifyObservers(subject, topic, data) {
     for each(var observer in this._observers)
-        observer.observe(subject, topic, data);
+        try {
+            observer.observe(subject, topic, data);
+        } catch(e) {
+            dump('Observer reported exception: ' + e + '\n');
+        }
 }
 
 function removeObserver(observer) {
