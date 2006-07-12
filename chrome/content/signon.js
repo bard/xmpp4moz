@@ -52,7 +52,7 @@ function finish() {
 function doOk() {
     params.jid = _('account').label;
     params.password = _('password').value;
-    params.confirmConnection = true;
+    params.confirm = true;
 
     return true;
 }

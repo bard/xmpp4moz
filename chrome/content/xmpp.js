@@ -96,6 +96,20 @@ var XMPP = {
             return true;
     },
 
+    _promptAccount: function(jid, requester) {        
+        var params = {
+            requester: requester,
+            confirm: false,
+            jid: jid,
+            password: undefined,
+        };
+        window.openDialog(
+            'chrome://xmpp4moz/content/signon.xul',
+            'xmpp-signon', 'modal,centerscreen',
+            params);
+        return params;
+    },
+
     up: function(account, opts) {
         opts = opts || {};
 
@@ -123,20 +137,11 @@ var XMPP = {
         if(!((jid && password) ||
              (jid && this.isUp(jid)))) {
 
-            var params = {
-                requester: opts.requester,
-                confirmConnection: false,
-                jid: jid,
-                password: undefined,
-            };
-            window.openDialog(
-                'chrome://xmpp4moz/content/signon.xul',
-                'xmpp-signon', 'modal,centerscreen',
-                params);
+            var userInput = this._promptAccount(jid, opts.requester);
 
-            if(params.confirmConnection) {
-                password = params.password;
-                jid = params.jid;
+            if(userInput.confirm) {
+                password = userInput.password;
+                jid = userInput.jid;
             }
         }
 
