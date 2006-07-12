@@ -23,7 +23,7 @@
  */
 
 var XMPP = {
-    _service: Components
+    _xmpp: Components
     .classes['@hyperstruct.net/xmpp4moz/xmppservice;1']
     .getService(Components.interfaces.nsIXMPPClientService)
     .wrappedJSObject,
@@ -91,7 +91,7 @@ var XMPP = {
     isUp: function(account) {
         var jid = account.jid || account;
         
-        var session = this._service.getSession(jid);
+        var session = this._xmpp.getSession(jid);
         if(session && session.isOpen())
             return true;
     },
@@ -148,7 +148,7 @@ var XMPP = {
         if(this.isUp(jid) && opts.continuation)
             opts.continuation(jid);
         else if(jid && password) 
-            this._service.signOn(
+            this._xmpp.signOn(
                 jid, password,
                 {continuation: function() {
                         if(opts.continuation)
@@ -159,13 +159,13 @@ var XMPP = {
     // could have a reference count mechanism
 
     down: function(jid) {
-        this._service.signOff(jid);
+        this._xmpp.signOff(jid);
     },
 
     send: function(account, stanza) {
         var _this = this;
         if(this.isUp(account))
-            this._send(account, stanza);
+            this._send(account.jid || account, stanza);
         else
             // TODO will multiple send cause multiple signon dialogs?
             this.up(account, {continuation: function(jid) {
@@ -174,7 +174,7 @@ var XMPP = {
     },
 
     _send: function(jid, stanza) {
-        this._service.send(jid, stanza);
+        this._xmpp.send(jid, stanza);
     },
 
     createChannel: function(baseFilter) {
@@ -253,7 +253,7 @@ var XMPP = {
             },
 
             release: function() {
-                XMPP._service.removeObserver(this);
+                XMPP._xmpp.removeObserver(this);
             },
 
             // not relying on non-local state
@@ -306,7 +306,7 @@ var XMPP = {
             }
         }
 
-        this._service.addObserver(channel)
+        this._xmpp.addObserver(channel)
 
         return channel;
     }
