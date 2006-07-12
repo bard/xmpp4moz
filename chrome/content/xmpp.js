@@ -103,7 +103,7 @@ var XMPP = {
         opts = opts || {};
         var password = opts.password;
 
-        if(!(jid && password)) {
+        if(!((jid && password) || this.isUp(jid))) {
             var params = {
                 requester: opts.requester,
                 confirmConnection: false,
