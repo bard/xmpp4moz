@@ -88,17 +88,41 @@ var XMPP = {
         }
     },
 
-    isUp: function(jid) {
+    isUp: function(account) {
+        var jid = account.jid || account;
+        
         var session = this._service.getSession(jid);
         if(session && session.isOpen())
             return true;
     },
-    
-    up: function(jid, opts) {
+
+    up: function(account, opts) {
+        opts = opts || {};
+
+        if(typeof(account) == 'object') {
+            if(account.jid)
+                this._up(account.jid, opts);
+            else {
+                var userContinuation = opts.continuation;                
+                opts.continuation = function(jid) {
+                    account.jid = jid;
+                    if(userContinuation)
+                        userContinuation(jid);
+                }
+
+                this._up(null, opts);
+            }
+        } else
+            this._up(account, opts);
+    },
+
+    _up: function(jid, opts) {
         opts = opts || {};
         var password = opts.password;
 
-        if(!((jid && password) || this.isUp(jid))) {
+        if(!((jid && password) ||
+             (jid && this.isUp(jid)))) {
+
             var params = {
                 requester: opts.requester,
                 confirmConnection: false,
@@ -115,7 +139,7 @@ var XMPP = {
                 jid = params.jid;
             }
         }
-        
+
         if(this.isUp(jid) && opts.continuation)
             opts.continuation(jid);
         else if(jid && password) 
@@ -133,7 +157,18 @@ var XMPP = {
         this._service.signOff(jid);
     },
 
-    send: function(jid, stanza) {
+    send: function(account, stanza) {
+        var _this = this;
+        if(this.isUp(account))
+            this._send(account, stanza);
+        else
+            // TODO will multiple send cause multiple signon dialogs?
+            this.up(account, {continuation: function(jid) {
+                            _this._send(jid, stanza);
+                        }});
+    },
+
+    _send: function(jid, stanza) {
         this._service.send(jid, stanza);
     },
 
