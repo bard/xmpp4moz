@@ -64,7 +64,7 @@ Author: Massimiliano Mirra, <bard [at] hyperstruct [dot] net>
           </menupopup>
         </menu>
         <menu label="Accounts" accesskey="c">
-          <menupopup onpopupshowing="xmppPopulateAccountMenu(this);"/>
+          <menupopup id="xmpp-menu-accounts-secondary"/>
         </menu>
         <menuitem class="menuitem-iconic" command="xmpp-command-toggle-livebar"/>
         <menuitem class="menuitem-iconic" command="xmpp-command-open-preferences"/>

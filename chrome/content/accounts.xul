@@ -9,4 +9,9 @@
              onpopupshowing="xmppRefreshAccounts(this);"
              oncommand="if(typeof(xmppSelectedAccount) == 'function')
                         xmppSelectedAccount(event.target.value);"/>
+
+  <menupopup id="xmpp-menu-accounts-secondary"
+             onpopupshowing="xmppRefreshAccounts(this);"
+             oncommand="if(typeof(xmppSelectedAccount) == 'function')
+                        xmppSelectedAccount(event.target.value);"/>
 </overlay>
