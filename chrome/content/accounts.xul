@@ -1,0 +1,12 @@
+<?xml version="1.0"?>
+<!DOCTYPE overlay>
+<overlay id="xmpp-accounts"
+         xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
+
+  <script type="application/x-javascript" src="accounts.js"/>
+
+  <menupopup id="xmpp-menu-accounts"
+             onpopupshowing="xmppRefreshAccounts(this);"
+             oncommand="if(typeof(xmppSelectedAccount) == 'function')
+                        xmppSelectedAccount(event.target.value);"/>
+</overlay>
