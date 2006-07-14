@@ -66,7 +66,11 @@ var XMPP = {
         for(var accountIndex in accountTable) {
             var account = accountTable[accountIndex];
             account.index = accountIndex;
-            accountList.push(account);   
+            account.__defineGetter__(
+                'jid', function() {
+                    return this.address + '/' + this.resource;
+                });
+            accountList.push(account);
         }
         
         return accountList;
