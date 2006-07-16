@@ -41,7 +41,9 @@ Author: Massimiliano Mirra, <bard [at] hyperstruct [dot] net>
     <command id="xmpp-command-open-tracer"
              label="Session Tracer (window)"
              accesskey="T"
-             oncommand="xmppOpenTracer();"/>
+             oncommand="window.open(
+                        'chrome://xmpp4moz/content/debug.xul',
+                        'xmpp-session-tracer', 'chrome,alwaysRaised');"/>
     <command id="xmpp-command-open-preferences"
              label="Configure..."
              accesskey="n"
@@ -88,7 +90,7 @@ Author: Massimiliano Mirra, <bard [at] hyperstruct [dot] net>
               flex="1"/>
     </vbox>
 
-    <splitter id="xmpp-splitter"
+    <splitter id="livebar-splitter"
               insertbefore="appcontent"
               state="open"
               collapse="before"

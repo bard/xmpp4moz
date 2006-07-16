@@ -48,7 +48,7 @@ xmppChannel.on(
 
 function xmppToggleLivebar() {
     var sidebar = document.getElementById('livebar');
-    var splitter = document.getElementById('xmpp-splitter');
+    var splitter = document.getElementById('livebar-splitter');
 
     if(sidebar.collapsed) {
         sidebar.collapsed = false;
@@ -59,8 +59,9 @@ function xmppToggleLivebar() {
     }
 }
 
-function xmppOpenTracer() {
-    window.open('chrome://xmpp4moz/content/debug.xul', 'xmpp-session-tracer', 'chrome,alwaysRaised');
+function xmppShowLivebar() {
+    document.getElementById('livebar').collapsed = false;
+    document.getElementById('livebar-splitter').hidden = false;
 }
 
 // ----------------------------------------------------------------------
