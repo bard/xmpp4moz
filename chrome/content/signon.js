@@ -10,38 +10,15 @@ var prefObserver = {
     }
 };
 
-var params;
+var request;
 
 function init() {
-    params = window.arguments[0];
+    request = window.arguments[0];
     
-    if(params.requester) {
-        _('make-default').label =
-            'Always use this account for ' + params.requester;
-        _('make-default').hidden = false;        
-    }
-
     _('main').getButton('accept').disabled = true;
     _('main').getButton('extra1').addEventListener(
         'command', configureAccounts, false);
 
-    refreshAccountList();
-    if(params.jid) 
-        for each(var accountItem in _('accounts').childNodes) {
-            if(accountItem.label == params.jid) {
-                _('account').setAttribute('label', params.jid);
-                accountSelected(params.jid);
-                break;
-            }
-        }
-    else {
-        if(_('accounts').firstChild) {
-            var jid = _('accounts').firstChild.getAttribute('label')
-            _('account').setAttribute('label',  jid);
-            accountSelected(jid);
-        }        
-    }
-    
     prefBranch.addObserver('', prefObserver, false);
 }
 
@@ -50,31 +27,15 @@ function finish() {
 }
 
 function doOk() {
-    params.jid = _('account').label;
-    params.password = _('password').value;
-    params.confirm = true;
+    request.jid = request.jid || _('accounts').value;
+    request.password = _('password').value;
+    request.confirm = true;
 
     return true;
 }
 
 function doCancel() {
     return true;
-}
-
-function refreshAccountList() {
-    var menuPopup = document.getElementById('accounts');
-
-    deleteChildren(menuPopup);
-
-    for each(var account in XMPP.accounts) {
-        var menuItem = document.createElement('menuitem');
-        menuItem.setAttribute('label', account.address + '/' + account.resource);
-        menuItem.addEventListener(
-            'command', function(event) {
-                accountSelected(event.target.getAttribute('label'));
-            }, false);
-        menuPopup.insertBefore(menuItem, menuPopup.firstChild);
-    }
 }
 
 function configureAccounts() {
@@ -88,20 +49,9 @@ function configureAccounts() {
 // ----------------------------------------------------------------------
 // REACTIONS
 
-function accountSelected(jid) {
+function selectedAccount(jid) {
     _('main').getButton('accept').disabled = false;
-    
-    if(XMPP.isUp(jid)) {
-        _('already-online').hidden = false;
-        _('password').hidden = true;
-        _('password').value = '';
-    } else {
-        _('already-online').hidden = true;
-        _('password').hidden = false;
-        _('password').disabled = false;
-        _('password').focus();
-    } 
-    //_('make-default').disabled = false;
+    _('password').focus();
 }
 
 // ----------------------------------------------------------------------
@@ -120,3 +70,29 @@ function deleteChildren(container) {
     }
 }
 
+// ----------------------------------------------------------------------
+// HOOKS
+
+function xmppLoadedAccounts() {
+    if(request.jid) {
+        for each(var account in XMPP.accounts) {
+            if(request.jid == account.jid) {
+                _('account-name').hidden = false;
+                _('account-name').value = request.jid;
+                selectedAccount(account.jid);
+                break;
+            }
+        }
+    } else {
+        _('accounts').hidden = false;
+        for each(var account in XMPP.accounts) {
+            if(XMPP.isUp(account.jid)) {
+                _('accounts').value = account.jid;
+                break;
+            }
+        }
+        if(!_('accounts').value)
+            _('accounts').value = accounts[0].jid;
+        selectedAccount(_('accounts').value);
+    }
+}
