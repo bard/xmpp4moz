@@ -17,6 +17,8 @@ xmppChannel.on(
     { event: 'stream', direction: 'out', state: 'open' },
     function(stream) {
         document
+            .getElementById('xmpp-connecting-account').value = stream.session.name;
+        document
             .getElementById('xmpp-status').hidden = false;
     });
 xmppChannel.on(

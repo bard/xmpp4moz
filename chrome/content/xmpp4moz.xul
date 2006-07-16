@@ -107,9 +107,9 @@ Author: Massimiliano Mirra, <bard [at] hyperstruct [dot] net>
              hidden="false" persist="hidden"
              fullscreentoolbar="true">            
 
-      <toolbaritem>
-        <progressmeter id="xmpp-status" mode="undetermined" hidden="true"/>
-      </toolbaritem>
+<!--       <toolbaritem> -->
+<!--         <progressmeter id="xmpp-status" mode="undetermined" hidden="true"/> -->
+<!--       </toolbaritem> -->
 
       <toolbarbutton id="xmpp-toolbarbutton-accounts"
                      label="Accounts "
@@ -144,4 +144,13 @@ Author: Massimiliano Mirra, <bard [at] hyperstruct [dot] net>
       </toolbaritem>
     </toolbar>
   </toolbox>
+
+  <!-- STATUS BAR -->
+
+  <statusbar id="status-bar">
+    <statusbarpanel id="xmpp-status"  after="statusbarpanel-progress" hidden="true">
+      <label id="xmpp-connecting-account"/>
+      <progressmeter mode="undetermined"/>
+    </statusbarpanel>
+  </statusbar>
 </overlay>
