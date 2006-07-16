@@ -1,5 +1,6 @@
 <?xml version="1.0"?>
 <?xml-stylesheet href="chrome://xmpp4moz/skin/xmpp4moz.css" type="text/css"?>
+<?xul-overlay href="chrome://xmpp4moz/content/accounts.xul"?>
 
 <!--
 Copyright (C) 2006 by Massimiliano Mirra
@@ -115,7 +116,7 @@ Author: Massimiliano Mirra, <bard [at] hyperstruct [dot] net>
                      class="chromeclass-toolbar-additional"
                      type="menu" tooltiptext="Available and connected accounts"
                      accesskey="c">
-        <menupopup onpopupshowing="xmppPopulateAccountMenu(this);">
+        <menupopup id="xmpp-menu-accounts">
           <menuseparator/>
           <menuitem command="xmpp-command-open-preferences"
                     class="menuitem-iconic"/>

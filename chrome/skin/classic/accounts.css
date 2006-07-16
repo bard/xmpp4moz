@@ -1,0 +1,8 @@
+/* TODO: examine mozilla css and grab the proper way to display
+disabled entries, although the use of disabled entries themselves here
+is questionable */
+
+menuitem.xmpp-offline
+{
+  color: gray;
+  }
