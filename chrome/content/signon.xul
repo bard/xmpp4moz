@@ -3,7 +3,7 @@
 <?xul-overlay href="chrome://xmpp4moz/content/accounts.xul"?>
 
 <dialog id="main" title="Bringing Up Jabber Connection..."
-	xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul"
+        xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul"
         ondialogaccept="return doOk();"
         ondialogcancel="return doCancel();"
         buttonlabelextra1="Configure..."
@@ -14,21 +14,28 @@
   <script type="application/x-javascript" src="xmpp.js"/>
   <script type="application/x-javascript" src="signon.js"/>
 
-  <hbox flex="1" align="center">
-    <label value="Account:"/>
-    <hbox flex="1">
-      <label id="account-name" value="" hidden="true"/>
-      <menulist id="accounts" flex="1" label="" sizetopopup="none"
-                hidden="true">
-        <menupopup id="xmpp-menu-accounts"/>
-      </menulist>      
-    </hbox>
-  </hbox>
+  <grid flex="1">
+    <columns>
+      <column/>
+      <column flex="1"/>
+    </columns>
 
-  <spacer/>
-  <hbox pack="center">
-    <label id="already-online" value="Online" hidden="true"/>
-  </hbox>
-  <textbox type="password" id="password"/>
-  <checkbox id="make-default" value="checked" disabled="true" hidden="true"/>
+    <rows>
+      <row align="center">
+        <label value="Account:" accesskey="A" control="accounts"/>
+        <hbox flex="1">
+          <label id="account-name" value="" hidden="true"/>
+          <menulist id="accounts" flex="1" label="" sizetopopup="none"
+                    hidden="true">
+            <menupopup id="xmpp-menu-accounts"/>
+          </menulist>      
+        </hbox>        
+      </row>
+
+      <row align="center">
+        <label value="Password:" accesskey="P" control="password"/>
+        <textbox flex="1" type="password" id="password"/>
+      </row>
+    </rows>
+  </grid>
 </dialog>
