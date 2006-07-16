@@ -2,6 +2,8 @@ window.addEventListener(
     'load', function(event) {
         xmppRefreshAccounts(
             document.getElementById('xmpp-menu-accounts'));
+        if(typeof(xmppLoadedAccounts) == 'function')
+            xmppLoadedAccounts();
     }, false);
 
 function xmppRefreshAccounts(menuPopup) {
@@ -18,3 +20,4 @@ function xmppRefreshAccounts(menuPopup) {
         menuPopup.insertBefore(menuItem, menuPopup.firstChild);
     }
 }
+
