@@ -97,7 +97,7 @@ Author: Massimiliano Mirra, <bard [at] hyperstruct [dot] net>
               resizebefore="closest"
               resizeafter="closest"
               class="chromeclass-extracontent"
-              hidden="false"/>
+              hidden="true"/>
   </hbox>
 
   <!-- TOOLBAR -->
@@ -108,10 +108,6 @@ Author: Massimiliano Mirra, <bard [at] hyperstruct [dot] net>
              class="chromeclass-toolbar" context="toolbar-context-menu" 
              hidden="false" persist="hidden"
              fullscreentoolbar="true">            
-
-<!--       <toolbaritem> -->
-<!--         <progressmeter id="xmpp-status" mode="undetermined" hidden="true"/> -->
-<!--       </toolbaritem> -->
 
       <toolbarbutton id="xmpp-toolbarbutton-accounts"
                      label="Accounts "
