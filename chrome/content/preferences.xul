@@ -16,12 +16,12 @@
       <groupbox flex="1">
         <caption label="Jabber Accounts"/>
         <hbox flex="1">
-          <vbox>
+          <vbox flex="1">
             <listbox id="xmpp-accounts" rows="12" flex="1" onselect="xmppAccountSelected();"/>
             <button label="Create New" accesskey="N" flex="1" oncommand="xmppCreateAccount();"/>
           </vbox>
 
-          <vbox id="xmpp-account-info" flex="1" hidden="true">
+          <vbox id="xmpp-account-info" flex="2" hidden="true">
             <grid>
               <columns>
                 <column flex="0"/>

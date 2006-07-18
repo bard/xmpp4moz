@@ -13,7 +13,7 @@ function xmppRefreshAccountList() {
         accountList.removeItemAt(i);
 
     for each(var account in XMPP.accounts) 
-        accountList.appendItem(account.address, account.index);
+        accountList.appendItem(account.jid, account.index);
 }
 
 function xmppShowAccount(accountId) {
