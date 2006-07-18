@@ -30,7 +30,7 @@ function xmppShowAccount(accountId) {
     }
 
     document.getElementById('xmpp-account-info').hidden = false;
-    var account = XMPP.getAccountByIndex(accountId);
+    var account = XMPP.getAccountById(accountId);
 
     for each(var accountField in
              ['address', 'password', 'resource',

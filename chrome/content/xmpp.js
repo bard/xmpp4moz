@@ -76,16 +76,8 @@ var XMPP = {
         return accountList;
     },
 
-    getAccountByAddress: function(address) {
-        for each(var account in this.accounts) {
-            if(account.address == address)
-                return account;
-        }
-    },
-
     // TODO: unefficient
-    // TODO: rename to getAccountById
-    getAccountByIndex: function(index) {
+    getAccountById: function(index) {
         for each(var account in this.accounts) { 
             if(account.index == index)
                 return account;
