@@ -93,7 +93,7 @@ function xmppLoadedAccounts() {
             }
         }
         if(!_('accounts').value)
-            _('accounts').value = XMPP.accounts[0].jid;
+            _('accounts').value = accounts[0].jid;
         selectedAccount(_('accounts').value);
     }
 }
