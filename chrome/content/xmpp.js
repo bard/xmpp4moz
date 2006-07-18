@@ -82,6 +82,7 @@ var XMPP = {
             if(account.index == index)
                 return account;
         }
+        return null;
     },
 
     isUp: function(account) {
@@ -97,7 +98,7 @@ var XMPP = {
             requester: requester,
             confirm: false,
             jid: jid,
-            password: undefined,
+            password: undefined
         };
         window.openDialog(
             'chrome://xmpp4moz/content/signon.xul',
