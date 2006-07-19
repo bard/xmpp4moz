@@ -86,7 +86,7 @@ var XMPP = {
     },
 
     isUp: function(account) {
-        var jid = account.jid || account;
+        var jid = typeof(account) == 'object' ? account.jid : account;
         
         var session = this._xmpp.getSession(jid);
         if(session && session.isOpen())

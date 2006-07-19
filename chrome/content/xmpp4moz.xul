@@ -38,12 +38,12 @@ Author: Massimiliano Mirra, <bard [at] hyperstruct [dot] net>
              label="Livebar"
              oncommand="xmppToggleLivebar();"
              accesskey="L"/>
-    <command id="xmpp-command-open-tracer"
-             label="Session Tracer (window)"
-             accesskey="T"
+    <command id="xmpp-command-open-console"
+             label="XMPP Console (window)"
+             accesskey="C"
              oncommand="window.open(
-                        'chrome://xmpp4moz/content/debug.xul',
-                        'xmpp-session-tracer', 'chrome,alwaysRaised');"/>
+                        'chrome://xmpp4moz/content/console.xul',
+                        'xmpp-console', 'chrome,alwaysRaised');"/>
     <command id="xmpp-command-open-preferences"
              label="Configure..."
              accesskey="n"
@@ -63,7 +63,7 @@ Author: Massimiliano Mirra, <bard [at] hyperstruct [dot] net>
       <menupopup>      
         <menu label="Apps" accesskey="A">
           <menupopup id="xmpp-tools-menu-apps">
-            <menuitem class="menuitem-iconic" command="xmpp-command-open-tracer"/>
+            <menuitem class="menuitem-iconic" command="xmpp-command-open-console"/>
           </menupopup>
         </menu>
         <menu label="Accounts" accesskey="c">
@@ -127,7 +127,7 @@ Author: Massimiliano Mirra, <bard [at] hyperstruct [dot] net>
                      type="menu" tooltiptext="Jabber Applications"
                      accesskey="A">
         <menupopup id="xmpp-toolbar-menu-apps">
-          <menuitem command="xmpp-command-open-tracer"/>
+          <menuitem command="xmpp-command-open-console"/>
         </menupopup>
       </toolbarbutton>
 

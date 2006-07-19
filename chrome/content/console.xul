@@ -1,0 +1,37 @@
+<?xml version="1.0"?>
+<?xml-stylesheet href="chrome://global/skin/" type="text/css"?>
+<?xul-overlay href="chrome://xmpp4moz/content/accounts.xul"?>
+
+<!DOCTYPE window>
+<window id="xmpp-console" title="XMPP Console"
+        xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul"
+        xmlns:html="http://www.w3.org/1999/xhtml"
+        onload="init(event);"
+        onunload="finish(event);"
+        orient="vertical"
+        width="640" height="480">
+
+  <script type="application/x-javascript" src="console.js"/>
+  <script type="application/x-javascript" src="xmpp.js"/>
+
+  <richlistbox id="jabber-log" flex="5"
+               class="box-inset"
+               style="font-family: mono; font-size: small;"/>
+
+  <label control="input" accesskey="I" value="Input:"/>
+
+  <textbox id="input" rows="5" multiline="true" onkeypress="pressedKeyInInputArea(event);"/>
+
+  <hbox align="center">
+    <label value="Account:" accesskey="A" control="accounts"/>
+    <menulist id="accounts" flex="1" label="" sizetopopup="none">
+      <menupopup id="xmpp-menu-accounts"/>
+    </menulist>      
+  </hbox>
+
+  <box hidden="true" id="blueprints">
+    <richlistitem style="width: 100%;" role="log-line">
+      <description flex="1" role="content"/>
+    </richlistitem>
+  </box>
+</window>
