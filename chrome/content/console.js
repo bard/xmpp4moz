@@ -34,16 +34,38 @@ function cloneBlueprint(name) {
 // ----------------------------------------------------------------------
 // GUI ACTIONS
 
+function clearLog() {
+    while(_('log').firstChild)
+        _('log').removeChild(_('log').firstChild);
+}
+
 function display(message) {
     var logLine = cloneBlueprint('log-line');
     logLine.getElementsByAttribute('role', 'content')[0].textContent = message;
     
-    _('jabber-log').appendChild(logLine);
-    _('jabber-log').ensureElementIsVisible(logLine);
+    _('log').appendChild(logLine);
+    _('log').ensureElementIsVisible(logLine);
 }
 
-function insert(stanzaName) {
-    _('input').value += '<' + stanzaName + '></' + stanzaName + '>';
+function insert(item) {
+    var xml;
+    switch(item) {
+    case 'message':
+        xml = <message></message>;
+        break;
+    case 'iq':
+        xml = <iq></iq>;
+        break;
+    case 'iq-disco':
+        xml = <iq type="get" to="">
+            <query xmlns="http://jabber.org/protocol/disco#info"/>
+            </iq>;
+        break;
+    case 'presence':
+        xml = <presence/>;
+        break;
+    }
+    _('input').value += xml.toXMLString();
 }
 
 // ----------------------------------------------------------------------
@@ -51,26 +73,27 @@ function insert(stanzaName) {
 
 function pressedKeyInInputArea(event) {
     var textBox = event.currentTarget;
-    //switch
-    if(event.keyCode == KeyEvent.DOM_VK_UP) {
+
+    switch(event.keyCode) {
+    case KeyEvent.DOM_VK_UP:
         event.preventDefault();
         if(inputHistoryCursor == 0)
             inputHistoryCursor = inputHistory.length-1;
         else
             inputHistoryCursor--;
-
-        textBox.value = inputHistory[inputHistoryCursor];        
-    }
-    else if(event.keyCode == KeyEvent.DOM_VK_DOWN) {
+        
+        textBox.value = inputHistory[inputHistoryCursor];
+        break;
+    case KeyEvent.DOM_VK_DOWN:
         event.preventDefault();
         if(inputHistoryCursor == inputHistory.length-1)
             inputHistoryCursor = 0;
         else
             inputHistoryCursor++;
-
+        
         textBox.value = inputHistory[inputHistoryCursor];
-    }
-    else if(event.keyCode == KeyEvent.DOM_VK_RETURN) {
+        break;
+    case KeyEvent.DOM_VK_RETURN:
         if(event.ctrlKey)
             textBox.value += '\n';
         else {
@@ -86,6 +109,7 @@ function pressedKeyInInputArea(event) {
                 alert(e);
             }
         }
+        break;
     }
 }
 

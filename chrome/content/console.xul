@@ -14,19 +14,37 @@
   <script type="application/x-javascript" src="console.js"/>
   <script type="application/x-javascript" src="xmpp.js"/>
 
-  <richlistbox id="jabber-log" flex="5"
+  <richlistbox id="log" flex="5"
                class="box-inset"
                style="font-family: mono; font-size: x-small; white-space: -moz-pre-wrap;"/>
 
   <toolbox>
-    <toolbar>
-      <toolbaritem align="center">
-        <label control="input" accesskey="n" value="Input:"/>
-      </toolbaritem>
-      <toolbarbutton label="&lt;message&gt;" accesskey="m" oncommand="insert('message');"/>
-      <toolbarbutton label="&lt;iq&gt;" accesskey="i" oncommand="insert('iq');"/>
-      <toolbarbutton label="&lt;presence&gt;" accesskey="p" oncommand="insert('presence');"/>
-    </toolbar>
+    <menubar>
+      <menu label="Message" accesskey="M">
+        <menupopup>
+          <menuitem label="Simple" accesskey="S" oncommand="insert('message');"/>
+        </menupopup>
+      </menu>
+
+      <menu label="Iq" accesskey="I">
+        <menupopup>
+          <menuitem label="Simple" accesskey="S" oncommand="insert('iq');"/>          
+          <menuitem label="Disco" accesskey="D" oncommand="insert('iq-disco');"/>
+        </menupopup>
+      </menu>
+
+      <menu label="Presence" accesskey="P">
+        <menupopup>
+          <menuitem label="Simple" accesskey="S" oncommand="insert('presence');"/>          
+        </menupopup>
+      </menu>
+
+      <menu label="View" accesskey="V">
+        <menupopup>
+          <menuitem label="Clear" accesskey="C" oncommand="clearLog();"/>
+        </menupopup>
+      </menu>
+    </menubar>
   </toolbox>
 
   <textbox id="input" rows="5" multiline="true" onkeypress="pressedKeyInInputArea(event);"/>
