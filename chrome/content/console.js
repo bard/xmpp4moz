@@ -1,4 +1,4 @@
-var channel;
+var channel, inputHistory = [], inputHistoryCursor;
 
 function init() {
     channel = XMPP.createChannel();
@@ -7,7 +7,7 @@ function init() {
         {event: 'data'}, function(data) {
             display(data.session.name + ' ' +
                     (data.direction == 'in' ? 'S' : 'C') + ': ' +
-                    data.content);
+                    new XML(data.content).toXMLString());
         });
 
     _('input').focus();
@@ -42,12 +42,35 @@ function display(message) {
     _('jabber-log').ensureElementIsVisible(logLine);
 }
 
+function insert(stanzaName) {
+    _('input').value += '<' + stanzaName + '></' + stanzaName + '>';
+}
+
 // ----------------------------------------------------------------------
 // GUI REACTIONS
 
 function pressedKeyInInputArea(event) {
-    if(event.keyCode == KeyEvent.DOM_VK_RETURN) {
-        var textBox = event.currentTarget;
+    var textBox = event.currentTarget;
+    //switch
+    if(event.keyCode == KeyEvent.DOM_VK_UP) {
+        event.preventDefault();
+        if(inputHistoryCursor == 0)
+            inputHistoryCursor = inputHistory.length-1;
+        else
+            inputHistoryCursor--;
+
+        textBox.value = inputHistory[inputHistoryCursor];        
+    }
+    else if(event.keyCode == KeyEvent.DOM_VK_DOWN) {
+        event.preventDefault();
+        if(inputHistoryCursor == inputHistory.length-1)
+            inputHistoryCursor = 0;
+        else
+            inputHistoryCursor++;
+
+        textBox.value = inputHistory[inputHistoryCursor];
+    }
+    else if(event.keyCode == KeyEvent.DOM_VK_RETURN) {
         if(event.ctrlKey)
             textBox.value += '\n';
         else {
@@ -71,6 +94,8 @@ function pressedKeyInInputArea(event) {
 
 function sendStanza(account, xml) {
     XMPP.send(account, xml);
+    inputHistoryCursor = 0;
+    inputHistory.push(xml.toXMLString());
 }
 
 // ----------------------------------------------------------------------
