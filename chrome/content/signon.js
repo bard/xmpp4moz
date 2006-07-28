@@ -51,7 +51,14 @@ function configureAccounts() {
 
 function selectedAccount(jid) {
     _('main').getButton('accept').disabled = false;
-    _('password').focus();
+    if(XMPP.isUp(jid)) {
+        _('password-area').hidden = true;
+        _('already-connected').hidden = false;
+    } else {        
+        _('password-area').hidden = false;
+        _('already-connected').hidden = true;
+        _('password').focus();
+    }
 }
 
 // ----------------------------------------------------------------------

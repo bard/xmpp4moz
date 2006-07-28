@@ -26,15 +26,20 @@
         <hbox flex="1">
           <label id="account-name" value="" hidden="true"/>
           <menulist id="accounts" flex="1" label="" sizetopopup="none"
-                    hidden="true">
+                    hidden="true" oncommand="selectedAccount(this.value);">
             <menupopup id="xmpp-menu-accounts"/>
           </menulist>      
         </hbox>        
       </row>
 
-      <row align="center">
+      <row align="center" id="password-area">
         <label value="Password:" accesskey="P" control="password"/>
         <textbox flex="1" type="password" id="password"/>
+      </row>
+
+      <row align="center" id="already-connected">
+        <spacer/>
+        <label value="Online" style="text-align: center;"/>
       </row>
     </rows>
   </grid>
