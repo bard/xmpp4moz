@@ -76,6 +76,14 @@ var XMPP = {
         return accountList;
     },
 
+    getAccountByJid: function(jid) {
+        for each(var account in this.accounts) {
+            if(account.jid == jid)
+                return account;
+        }
+        return null;
+    },
+
     // TODO: unefficient
     getAccountById: function(index) {
         for each(var account in this.accounts) { 
@@ -130,6 +138,9 @@ var XMPP = {
     _up: function(jid, opts) {
         opts = opts || {};
         var password = opts.password;
+        var server = opts.host || this.getAccountByJid(jid).connectionHost;
+        var port = opts.port || this.getAccountByJid(jid).connectionPort;
+        // should get security too, here...
 
         if(!((jid && password) ||
              (jid && this.isUp(jid)))) {
@@ -146,8 +157,10 @@ var XMPP = {
             opts.continuation(jid);
         else if(jid && password) 
             this._xmpp.signOn(
-                jid, password,
-                {continuation: function() {
+                jid, password, {
+                server: server,
+                        port: port,
+                        continuation: function() {
                         if(opts.continuation)
                             opts.continuation(jid);
                     }});
