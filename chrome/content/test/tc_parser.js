@@ -163,7 +163,7 @@ spec.stateThat = {
     'Whitespace and garbage out of elements is ignored': function() {
         var parser = new Parser();
 
-        assert.fail('Undecided.')
+        //assert.fail('Undecided.')
 
         parser.parse(' ');
         assert.equals(null, parser._current);

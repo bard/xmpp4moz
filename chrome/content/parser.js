@@ -18,8 +18,10 @@ function constructor() {
 }
     
 function parse(string) {
+    if(_isWhiteSpace(string))
+        return;
+
     var event;
-    
     this._scanner.feed(string);
 
     do {
@@ -78,7 +80,7 @@ function parse(string) {
 }
 
 function _handleCharacterData() {
-    if(this._characterData != '')
+    if(!_isWhiteSpace(this._characterData))
         this._fullCharacterDataReceived();
     this._characterData = '';
 }
@@ -87,6 +89,7 @@ function _fullCharacterDataReceived() {
     this._current.appendChild(
         _document.createTextNode(this._characterData));
 }
-        
 
-    
+function _isWhiteSpace(string) {
+    return /^\s*$/.test(string);
+}
