@@ -95,7 +95,13 @@ function connect(jid, opts) {
     transport.on(
         'data', function(data) {
             session.receive(data);
-        },
+        });
+
+    transport.on(
+        'start',
+        function() {});
+
+    transport.on(
         'stop', function() {
             try {
                 session.close();
@@ -103,12 +109,11 @@ function connect(jid, opts) {
             catch(e) {}
         });
 
+    var client = this;
     session.on(
         {event: 'data', direction: 'out'}, function(data) {
             transport.write(data.content);
         });
-
-    var client = this;
     session.on(
         {stanza: function(s) { return s; }}, function(object) {
             client.notifyObservers(
@@ -126,7 +131,7 @@ function connect(jid, opts) {
         });
 
     transport.connect();
-    session.open(jid.match(/@([^\/]+)/)[1]);        
+    session.open(jid.match(/@([^\/]+)/)[1]);
     this._sessions.push(session);
     return session;
 }
