@@ -5,9 +5,16 @@ function init() {
 
     channel.on(
         {event: 'data'}, function(data) {
+            var content;
+            try {
+                content = new XML(data.content).toXMLString();
+            } catch(e if e.name == 'SyntaxError') {
+                content = data.content;
+            }
+            
             display(data.session.name + ' ' +
                     (data.direction == 'in' ? 'S' : 'C') + ': ' +
-                    new XML(data.content).toXMLString());
+                    content);
         });
 
     _('input').focus();
