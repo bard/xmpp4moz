@@ -1,17 +1,5 @@
 var xmppChannel = XMPP.createChannel();
 
-// Show most recent message in toolbar
-xmppChannel.on(
-    { event: 'message', direction: 'in', stanza: function(s) { return s.body && s.body.toString(); }},
-    function(message) {
-        document
-            .getElementById('xmpp-last-speaker')
-            .value = message.stanza.@from + ': ';
-        document
-            .getElementById('xmpp-last-message')
-            .value = message.stanza.body;
-    });
-
 // Show connection status
 xmppChannel.on(
     { event: 'stream', direction: 'out', state: 'open' },

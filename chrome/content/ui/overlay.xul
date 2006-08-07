@@ -29,7 +29,7 @@ Author: Massimiliano Mirra, <bard [at] hyperstruct [dot] net>
   <!-- SCRIPTS -->
 
   <script type="application/x-javascript" src="../xmpp.js"/>
-  <script type="application/x-javascript" src="xmpp4moz.js"/>
+  <script type="application/x-javascript" src="overlay.js"/>
 
   <!-- COMMANDS -->
 
@@ -67,7 +67,7 @@ Author: Massimiliano Mirra, <bard [at] hyperstruct [dot] net>
           </menupopup>
         </menu>
         <menu label="Accounts" accesskey="c">
-          <menupopup id="xmpp-menu-accounts-secondary"/>
+          <menupopup id="xmpp-menu-accounts"/>
         </menu>
         <menuitem class="menuitem-iconic" command="xmpp-command-toggle-livebar"/>
         <menuitem class="menuitem-iconic" command="xmpp-command-open-preferences"/>
@@ -102,46 +102,7 @@ Author: Massimiliano Mirra, <bard [at] hyperstruct [dot] net>
 
   <!-- TOOLBAR -->
  
-  <toolbox id="navigator-toolbox">
-    
-    <toolbar id="xmpp-toolbar" toolbarname="XMPP Toolbar" 
-             class="chromeclass-toolbar" context="toolbar-context-menu" 
-             hidden="false" persist="hidden"
-             fullscreentoolbar="true">            
-
-      <toolbarbutton id="xmpp-toolbarbutton-accounts"
-                     label="Accounts "
-                     class="chromeclass-toolbar-additional"
-                     type="menu" tooltiptext="Available and connected accounts"
-                     accesskey="c">
-        <menupopup id="xmpp-menu-accounts">
-          <menuseparator/>
-          <menuitem command="xmpp-command-open-preferences"
-                    class="menuitem-iconic"/>
-        </menupopup>
-      </toolbarbutton>
-
-      <toolbarbutton id="xmpp-toolbarbutton-apps"
-                     label="Apps "
-                     class="chromeclass-toolbar-additional"
-                     type="menu" tooltiptext="Jabber Applications"
-                     accesskey="A">
-        <menupopup id="xmpp-toolbar-menu-apps">
-          <menuitem command="xmpp-command-open-console"/>
-        </menupopup>
-      </toolbarbutton>
-
-      <toolbarbutton class="chromeclass-toolbar-additional"
-                     command="xmpp-command-toggle-livebar"
-                     flex="0"/>
-      <toolbarseparator/>
-
-      <toolbaritem flex="1" align="center">
-        <label value="Last Message:" id="xmpp-last-speaker" flex="0"/>
-        <textbox readonly="true" id="xmpp-last-message" crop="end" value="" flex="1"/>
-      </toolbaritem>
-    </toolbar>
-  </toolbox>
+  <toolbox id="navigator-toolbox"/>
 
   <!-- STATUS BAR -->
 
