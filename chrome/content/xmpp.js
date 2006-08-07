@@ -85,7 +85,7 @@ var XMPP = {
     },
 
     // TODO: unefficient
-    getAccountById: function(index) {
+    getAccountByKey: function(index) {
         for each(var account in this.accounts) { 
             if(account.index == index)
                 return account;

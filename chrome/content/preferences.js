@@ -1,6 +1,6 @@
 // Set by xmppShowAccount();
 
-var xmppSelectedAccountId;
+var xmppSelectedAccountKey;
 
 
 // ----------------------------------------------------------------------
@@ -16,8 +16,8 @@ function xmppRefreshAccountList() {
         accountList.appendItem(account.jid, account.index);
 }
 
-function xmppShowAccount(accountId) {
-    xmppSelectedAccountId = accountId;
+function xmppShowAccount(accountKey) {
+    xmppSelectedAccountKey = accountKey;
 
     var pref = Components
         .classes["@mozilla.org/preferences-service;1"]
@@ -30,7 +30,7 @@ function xmppShowAccount(accountId) {
     }
 
     document.getElementById('xmpp-account-info').hidden = false;
-    var account = XMPP.getAccountById(accountId);
+    var account = XMPP.getAccountById(accountKey);
 
     for each(var accountField in
              ['address', 'password', 'resource',
@@ -54,12 +54,12 @@ function xmppShowAccount(accountId) {
 }
 
 function xmppCreateAccount() {
-    var newAccountId = (new Date()).getTime();
+    var newAccountKey = (new Date()).getTime();
     
     var pref = Components
         .classes["@mozilla.org/preferences-service;1"]
         .getService(Components.interfaces.nsIPrefService)
-        .getBranch('xmpp.account.' + newAccountId + '.');
+        .getBranch('xmpp.account.' + newAccountKey + '.');
 
     pref.setCharPref('address', 'user@server.org');
     pref.setCharPref('resource', 'Firefox');
@@ -69,19 +69,19 @@ function xmppCreateAccount() {
     pref.setIntPref('connectionSecurity', 1);
 
     xmppRefreshAccountList();
-    xmppShowAccount(newAccountId);
+    xmppShowAccount(newAccountKey);
 }
 
-function xmppDeleteAccount(accountId) {
+function xmppDeleteAccount(accountKey) {
     // TODO: ask for confirmation here
-    accountId = accountId || xmppSelectedAccountId;
-    if(!accountId)
+    accountKey = accountKey || xmppSelectedAccountKey;
+    if(!accountKey)
         return;
 
     Components
         .classes["@mozilla.org/preferences-service;1"]
         .getService(Components.interfaces.nsIPrefBranch)
-        .deleteBranch('xmpp.account.' + accountId + '.');
+        .deleteBranch('xmpp.account.' + accountKey + '.');
 
     xmppRefreshAccountList();
     document.getElementById('xmpp-account-info').hidden = true;
@@ -109,7 +109,7 @@ function xmppFieldChanged(field) {
     var pref = Components
         .classes["@mozilla.org/preferences-service;1"]
         .getService(Components.interfaces.nsIPrefService)
-        .getBranch('xmpp.account.' + xmppSelectedAccountId + '.');
+        .getBranch('xmpp.account.' + xmppSelectedAccountKey + '.');
 
     try {
         pref.setCharPref(prefName, field.value);
