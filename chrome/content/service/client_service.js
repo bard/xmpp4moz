@@ -1,8 +1,9 @@
 Components
 .classes['@mozilla.org/moz/jssubscript-loader;1']
 .getService(Components.interfaces.mozIJSSubScriptLoader)
-    .loadSubScript('chrome://xmpp4moz/content/module_manager.js');
-const module = new ModuleManager();
+    .loadSubScript('chrome://xmpp4moz/content/lib/module_manager.js');
+
+const module = new ModuleManager(['chrome://xmpp4moz/content']);
 
 var Transport = module.require('class', 'lib/socket');
 var Session = module.require('class', 'session');

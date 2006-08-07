@@ -4,7 +4,7 @@
 const CLASS_ID = Components.ID('{6dd44497-a4d9-4590-a629-5116a30b54b3}');
 const CLASS_NAME = 'XMPP Service';
 const CONTRACT_ID = '@hyperstruct.net/xmpp4moz/xmppservice;1';
-const SOURCE = 'chrome://xmpp4moz/content/client_service.js';
+const SOURCE = 'chrome://xmpp4moz/content/service/client_service.js';
 const INTERFACE = Components.interfaces.nsIXMPPClientService;
 
 /* ---------------------------------------------------------------------- */

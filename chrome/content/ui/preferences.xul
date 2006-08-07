@@ -5,8 +5,8 @@
 
   <prefwindow id="BrowserPreferences">
 
+    <script type="application/x-javascript" src="../xmpp.js"/>
     <script type="application/x-javascript" src="preferences.js"/>
-    <script type="application/x-javascript" src="xmpp.js"/>
     
     <prefpane id="xmpp-pane" label="Jabber"
               onpaneload="xmppRefreshAccountList();"

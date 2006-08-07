@@ -109,7 +109,7 @@ var XMPP = {
             password: undefined
         };
         window.openDialog(
-            'chrome://xmpp4moz/content/signon.xul',
+            'chrome://xmpp4moz/content/ui/signon.xul',
             'xmpp-signon', 'modal,centerscreen',
             params);
         return params;
