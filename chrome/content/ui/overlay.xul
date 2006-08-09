@@ -42,7 +42,7 @@ Author: Massimiliano Mirra, <bard [at] hyperstruct [dot] net>
              label="XMPP Console (window)"
              accesskey="C"
              oncommand="window.open(
-                        'chrome://xmpp4moz/content/console.xul',
+                        'chrome://xmpp4moz/content/ui/console.xul',
                         'xmpp-console', 'chrome,alwaysRaised');"/>
     <command id="xmpp-command-open-preferences"
              label="Configure..."
