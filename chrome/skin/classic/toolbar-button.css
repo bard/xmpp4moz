@@ -1,0 +1,12 @@
+#xmpp-button
+{ 
+  list-style-image: url("chrome://xmpp4moz/skin/bulb-medium.png"); 
+  /* -moz-image-region: rect(64px 32px 96px 0px); */
+  }
+
+toolbar[iconsize="small"] #xmpp-button
+{
+  list-style-image: url("chrome://xmpp4moz/skin/bulb-small.png");
+  /* -moz-image-region: rect(48px 24px 72px 0px); */
+  }
+

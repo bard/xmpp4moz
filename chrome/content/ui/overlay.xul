@@ -1,5 +1,6 @@
 <?xml version="1.0"?>
 <?xml-stylesheet href="chrome://xmpp4moz/skin/xmpp4moz.css" type="text/css"?>
+<?xml-stylesheet href="chrome://xmpp4moz/skin/toolbar-button.css" type="text/css"?>
 <?xul-overlay href="chrome://xmpp4moz/content/ui/accounts.xul"?>
 
 <!--
@@ -103,6 +104,21 @@ Author: Massimiliano Mirra, <bard [at] hyperstruct [dot] net>
   <!-- TOOLBAR -->
  
   <toolbox id="navigator-toolbox"/>
+
+  <toolbarpalette id="BrowserToolbarPalette">
+    <toolbarbutton id="xmpp-button"
+                   class="toolbarbutton-1 chromeclass-toolbar-additional"
+                   type="menu-button"
+                   label="Jabber"
+                   oncommand="if(event.target == this) xmppToggleLivebar();">
+      <menupopup id="xmpp-menu-accounts-secondary">
+        <menuseparator/>
+        <menuitem class="menuitem-iconic" command="xmpp-command-toggle-livebar"/>
+        <menuitem class="menuitem-iconic" command="xmpp-command-open-preferences"/>
+        <menuitem class="menuitem-iconic" command="xmpp-command-open-console"/>
+      </menupopup>
+    </toolbarbutton>
+  </toolbarpalette>
 
   <!-- STATUS BAR -->
 
