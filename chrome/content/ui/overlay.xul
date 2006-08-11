@@ -47,7 +47,7 @@ Author: Massimiliano Mirra, <bard [at] hyperstruct [dot] net>
                         'xmpp-console', 'chrome,alwaysRaised');"/>
     <command id="xmpp-command-open-preferences"
              label="Configure..."
-             accesskey="n"
+             accesskey="C"
              oncommand="window.openPreferences('xmpp-pane');"/>
   </commandset>
 
@@ -59,22 +59,20 @@ Author: Massimiliano Mirra, <bard [at] hyperstruct [dot] net>
 
   <!-- MENUS -->
 
-  <menupopup id="menu_ToolsPopup">
-    <menu label="Jabber" accesskey="J" position="1">
-      <menupopup>      
-        <menu label="Apps" accesskey="A">
+  <menubar id="main-menubar">
+    <menu label="Jabber" accesskey="J" position="1" insertafter="helpMenu">
+      <menupopup id="xmpp-menu-accounts">
+        <menuseparator/>
+        <menu label="Applications" accesskey="A">
           <menupopup id="xmpp-tools-menu-apps">
             <menuitem class="menuitem-iconic" command="xmpp-command-open-console"/>
           </menupopup>
-        </menu>
-        <menu label="Accounts" accesskey="c">
-          <menupopup id="xmpp-menu-accounts"/>
         </menu>
         <menuitem class="menuitem-iconic" command="xmpp-command-toggle-livebar"/>
         <menuitem class="menuitem-iconic" command="xmpp-command-open-preferences"/>
       </menupopup>
     </menu>
-  </menupopup>
+  </menubar>
 
   <hbox id="browser">
 
