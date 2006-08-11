@@ -137,9 +137,10 @@ var XMPP = {
 
     _up: function(jid, opts) {
         opts = opts || {};
-        var password = opts.password;
+        var password = opts.password || this.getAccountByJid(jid).password;
         var server = opts.host || this.getAccountByJid(jid).connectionHost;
         var port = opts.port || this.getAccountByJid(jid).connectionPort;
+        var ssl = opts.ssl || (this.getAccountByJid(jid).connectionSecurity == 1);
         // should get security too, here...
 
         if(!((jid && password) ||
@@ -160,6 +161,7 @@ var XMPP = {
                 jid, password, {
                 server: server,
                         port: port,
+                        ssl: ssl,
                         continuation: function() {
                         if(opts.continuation)
                             opts.continuation(jid);
