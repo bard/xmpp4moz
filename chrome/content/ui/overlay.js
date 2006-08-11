@@ -1,6 +1,14 @@
+// GLOBAL STATE
+// ----------------------------------------------------------------------
+
 var xmppChannel = XMPP.createChannel();
 
-// Show connection status
+
+// NETWORK REACTIONS
+// ----------------------------------------------------------------------
+
+// Show progress bar when waiting for connection
+
 xmppChannel.on(
     { event: 'stream', direction: 'out', state: 'open' },
     function(stream) {
@@ -9,12 +17,17 @@ xmppChannel.on(
         document
             .getElementById('xmpp-status').hidden = false;
     });
+
+// Hiding progress bar when stream is closed
+
 xmppChannel.on(
     { event: 'stream', state: 'close' },
     function(stream) {
         document
             .getElementById('xmpp-status').hidden = true;
     });
+
+// Hiding progress bar when authentication is accepted
 
 xmppChannel.on(
     { event: 'iq', direction: 'out', stanza: function(s) {
@@ -33,6 +46,8 @@ xmppChannel.on(
     });
 
 
+// GUI ACTIONS
+// ----------------------------------------------------------------------
 
 function xmppToggleLivebar() {
     var sidebar = document.getElementById('livebar');
@@ -52,11 +67,49 @@ function xmppShowLivebar() {
     document.getElementById('livebar-splitter').hidden = false;
 }
 
+
+function xmppAddToolbarButton() {
+    var toolbox = document.getElementById('navigator-toolbox');
+    var toolbar = toolbox.getElementsByAttribute('id', 'nav-bar')[0];
+        
+    if(toolbar &&
+       toolbar.currentSet.indexOf('xmpp-button') == -1 &&
+       toolbar.getAttribute('customizable') == 'true') {
+
+        toolbar.currentSet = toolbar.currentSet.replace(
+            /urlbar-container/,
+            'xmpp-button,urlbar-container');
+        toolbar.setAttribute('currentset', toolbar.currentSet);
+        toolbox.ownerDocument.persist(toolbar.id, 'currentset');
+    }
+}
+
+
+// GUI REACTIONS
 // ----------------------------------------------------------------------
+
+window.addEventListener(
+    'load', function(event) {
+        var pref = Components
+            .classes["@mozilla.org/preferences-service;1"]
+            .getService(Components.interfaces.nsIPrefBranch);
+
+        if(pref.getBoolPref('xmpp.firstInstall')) {
+            pref.setBoolPref('xmpp.firstInstall', false);
+            xmppAddToolbarButton();
+        }
+    }, false);
+
+
 // HOOKS
+// ----------------------------------------------------------------------
 
 function xmppSelectedAccount(accountJid) {
-    XMPP.isUp(accountJid) ?
-        XMPP.down(accountJid) :
+    if(XMPP.isUp(accountJid))
+        XMPP.down(accountJid);
+    else
         XMPP.up(accountJid);
 }
+
+
+

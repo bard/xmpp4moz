@@ -1,0 +1,1 @@
+pref("xmpp.firstInstall", true);
