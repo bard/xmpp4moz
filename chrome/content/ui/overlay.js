@@ -23,8 +23,9 @@ xmppChannel.on(
 xmppChannel.on(
     { event: 'stream', state: 'close' },
     function(stream) {
-        document
-            .getElementById('xmpp-status').hidden = true;
+        if(document)
+            document
+                .getElementById('xmpp-status').hidden = true;
     });
 
 // Hiding progress bar when authentication is accepted
@@ -90,12 +91,12 @@ function xmppAddToolbarButton() {
 
 window.addEventListener(
     'load', function(event) {
-        var pref = Components
+        var prefBranch = Components
             .classes["@mozilla.org/preferences-service;1"]
             .getService(Components.interfaces.nsIPrefBranch);
 
-        if(pref.getBoolPref('xmpp.firstInstall')) {
-            pref.setBoolPref('xmpp.firstInstall', false);
+        if(prefBranch.getBoolPref('xmpp.firstInstall')) {
+            prefBranch.setBoolPref('xmpp.firstInstall', false);
             xmppAddToolbarButton();
         }
     }, false);
