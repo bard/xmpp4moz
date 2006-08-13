@@ -94,11 +94,8 @@ var XMPP = {
     },
 
     isUp: function(account) {
-        var jid = typeof(account) == 'object' ? account.jid : account;
-        
-        var session = this._xmpp.getSession(jid);
-        if(session && session.isOpen())
-            return true;
+        return this._xmpp.isUp(
+            typeof(account) == 'object' ? account.jid : account);
     },
 
     _promptAccount: function(jid, requester) {        

@@ -32,6 +32,12 @@ function init() {
  *
  */
 
+function isUp(jid) {
+    var session = this.getSession(jid);
+    if(session && session.isOpen())
+        return true;
+}
+
 function signOn(jid, password, opts) {
     opts = opts || {};
         
