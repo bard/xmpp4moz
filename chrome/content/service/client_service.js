@@ -123,15 +123,13 @@ function close(jid) {
 }
 
 function send(sessionName, stanza, observer) {
-    // XXX stanza is still typeof() == 'xml' at this point, change this!
-    
     var handler;
     if(observer)
         handler = function(reply) {
             observer.observe(sessionName, 'reply', reply);
         };
 
-    this.getSession(sessionName).send(stanza, handler);
+    this.getSession(sessionName).send(new XML(stanza), handler);
 }
 
 function getSession(name) {

@@ -161,20 +161,21 @@ var XMPP = {
             var username = m[1];
             var server   = m[2];
             var resource = m[3];
-            xmpp.send(jid,
-                      <iq to={server} type="set"><query xmlns="jabber:iq:auth">
-                      <username>{username}</username>
-                      <password>{password}</password>
-                      <resource>{resource}</resource>
-                      </query></iq>,
-                      { observe: function(jid, topic, reply) {
-                              if(reply.stanza.@type == 'result') {
-                                  xmpp.send(jid, <iq type="get"><query xmlns="jabber:iq:roster"/></iq>);
-                                  xmpp.send(jid, <presence/>);
-                                  if(continuation)
-                                      continuation();
-                              }
-                          }});
+            this.send(
+                jid,
+                <iq to={server} type="set"><query xmlns="jabber:iq:auth">
+                <username>{username}</username>
+                <password>{password}</password>
+                <resource>{resource}</resource>
+                </query></iq>,
+                function(reply) {
+                    if(reply.stanza.@type == 'result') {
+                        xmpp.send(jid, <iq type="get"><query xmlns="jabber:iq:roster"/></iq>);
+                        xmpp.send(jid, <presence/>);
+                        if(continuation)
+                            continuation();
+                    }
+                });
         }
     },
 
@@ -184,19 +185,23 @@ var XMPP = {
         this._xmpp.close(jid);
     },
 
-    send: function(account, stanza) {
+    send: function(account, stanza, handler) {
         var _this = this;
         if(this.isUp(account))
-            this._send(account.jid || account, stanza);
+            this._send(account.jid || account, stanza, handler);
         else
             // TODO will multiple send cause multiple signon dialogs?
             this.up(account, {continuation: function(jid) {
-                            _this._send(jid, stanza);
+                            _this._send(jid, stanza, handler);
                         }});
     },
 
-    _send: function(jid, stanza) {
-        this._xmpp.send(jid, stanza);
+    _send: function(jid, stanza, handler) {
+        this._xmpp.send(
+            jid, typeof(stanza) == 'xml' ? stanza.toXMLString() : stanza.toString(),
+            { observe: function(jid, topic, reply) {
+                    handler(reply);
+                }});
     },
 
     createChannel: function(baseFilter) {
