@@ -126,4 +126,33 @@ Author: Massimiliano Mirra, <bard [at] hyperstruct [dot] net>
       <progressmeter mode="undetermined"/>
     </statusbarpanel>
   </statusbar>
+
+  <!-- CONTENT AREA -->
+
+  <vbox id="appcontent">
+    <toolbox id="xmpp-toolbox" hidden="true">
+      <toolbar>
+        <toolbaritem align="center">
+          <label value="Your Account:" class="small-margin"/>
+          <textbox readonly="true" role="account" class="small-margin"/>
+        </toolbaritem>
+
+        <toolbaritem align="center">
+          <label value="Contact Address:" class="small-margin"/>
+          <textbox readonly="true" role="address" class="small-margin"/>
+        </toolbaritem>
+
+        <toolbaritem align="center">
+          <label value="Message Type:" class="small-margin"/>
+          <textbox readonly="true" role="type" class="small-margin"/>
+        </toolbaritem>
+
+        <toolbarspring/>
+
+        <toolbaritem align="center">
+          <label class="header" value="Jabber"/>
+        </toolbaritem>
+      </toolbar>
+    </toolbox>
+  </vbox>
 </overlay>
