@@ -7,23 +7,44 @@ Components
     .loadSubScript('chrome://xmpp4moz/content/lib/module_manager.js');
 
 const module = new ModuleManager(['chrome://xmpp4moz/content']);
-
-var Transport = module.require('class', 'lib/socket');
-var Session = module.require('class', 'session');
+const Transport = module.require('class', 'lib/socket');
+const Session = module.require('class', 'session');
 
 
 // GLOBAL STATE
 // ----------------------------------------------------------------------
 
-var sessions = [];
 var observers = [];
+
+var sessions = {
+    _list: [],
+
+    opened: function(session) {
+        this._list.push(session)
+    },
+
+    closed: function(thing) {
+        var session = (typeof(thing) == 'string' ?
+                       this.get(thing) : thing);
+
+        this._list.splice(
+            this._list.indexOf(session), 1);
+    },
+
+    get: function(jid) {
+        for each(var session in this._list) {
+            if(session.name == jid)
+                return session;
+        }
+    }
+};
 
 
 // PUBLIC FUNCTIONALITY
 // ----------------------------------------------------------------------
 
 function isUp(jid) {
-    var session = getSessionByName(jid);
+    var session = sessions.get(jid);
     return (session && session.isOpen());
 }
 
@@ -75,16 +96,15 @@ function open(jid, server, port, ssl) {
 
     transport.connect();
     session.open(jid.match(/@([^\/]+)/)[1]);
-    sessions.push(session);
+    sessions.opened(session);
     return session;
 }
 
 function close(jid) {
-    var session = getSessionByName(jid);
-    session.close();
+    sessions.get(jid).close();
     // TODO: actually session should be removed on close event, not on
     // signOff request
-    sessions.splice(sessions.indexOf(session), 1);    
+    sessions.closed(jid);
 }
 
 function send(sessionName, stanza, observer) {
@@ -96,7 +116,7 @@ function send(sessionName, stanza, observer) {
                              reply.stanza.toXMLString());
         };
 
-    getSessionByName(sessionName).send(new XML(stanza), handler);
+    sessions.get(sessionName).send(new XML(stanza), handler);
 }
 
 function addObserver(observer) {
@@ -116,15 +136,5 @@ function removeObserver(observer) {
     var index = observers.indexOf(observer);
     if(index != -1) 
         observers.splice(index, 1);
-}
-
-
-// INTERNALS
-// ----------------------------------------------------------------------
-
-function getSessionByName(name) {
-    for each(var session in sessions)
-        if(session.name == name)
-            return session;
 }
 
