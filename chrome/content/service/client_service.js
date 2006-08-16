@@ -1,3 +1,6 @@
+// GLOBAL DEFINITIONS
+// ----------------------------------------------------------------------
+
 Components
 .classes['@mozilla.org/moz/jssubscript-loader;1']
 .getService(Components.interfaces.mozIJSSubScriptLoader)
@@ -8,58 +11,20 @@ const module = new ModuleManager(['chrome://xmpp4moz/content']);
 var Transport = module.require('class', 'lib/socket');
 var Session = module.require('class', 'session');
 
-function init() {
-    this._sessions = [];
-    this._observers = [];
-}
 
-/**
- * Manages multiple sessions and their transports.
- *
- * Provides single entry point to "toplevel" structures, i.e. sign on:
- *
- *  - transport connection
- *  - stream opening
- *  - authentication
- *  - roster request
- *  - initial presence
- *
- * And registration:
- *
- *  - transport connection
- *  - stream opening
- *  - ...
- *
- */
+// GLOBAL STATE
+// ----------------------------------------------------------------------
+
+var sessions = [];
+var observers = [];
+
+
+// PUBLIC FUNCTIONALITY
+// ----------------------------------------------------------------------
 
 function isUp(jid) {
-    var session = this.getSession(jid);
-    if(session && session.isOpen())
-        return true;
-}
-
-// XXX migrate to js layer
-function register(jid, password, opts) {
-    opts = opts || {};
-
-    var m = jid.match(/^([^@]+)@([^\/]+)\/(.+)$/);
-    var username = m[1];
-    var server   = m[2];
-    var resource = m[3];
-    var session = this.connect(jid, opts);
-    
-    session.send(
-        <iq to={server} type="set"><query xmlns="jabber:iq:auth">
-        <username>{username}</username>
-        <password>{password}</password>
-        <resource>{resource}</resource>
-        </query></iq>,
-        function(reply) {
-             if(reply.stanza.@type == 'result') {
-                 session.send(<iq type="get"><query xmlns="jabber:iq:roster"/></iq>);
-                 session.send(<presence/>);
-             }
-         });
+    var session = getSessionByName(jid);
+    return (session && session.isOpen());
 }
 
 function open(jid, server, port, ssl) {
@@ -110,16 +75,16 @@ function open(jid, server, port, ssl) {
 
     transport.connect();
     session.open(jid.match(/@([^\/]+)/)[1]);
-    this._sessions.push(session);
+    sessions.push(session);
     return session;
 }
 
 function close(jid) {
-    var session = this.getSession(jid);
+    var session = getSessionByName(jid);
     session.close();
     // TODO: actually session should be removed on close event, not on
     // signOff request
-    this._sessions.splice(this._sessions.indexOf(session), 1);    
+    sessions.splice(sessions.indexOf(session), 1);    
 }
 
 function send(sessionName, stanza, observer) {
@@ -131,25 +96,15 @@ function send(sessionName, stanza, observer) {
                              reply.stanza.toXMLString());
         };
 
-    this.getSession(sessionName).send(new XML(stanza), handler);
-}
-
-function getSession(name) {
-    for each(var session in this._sessions)
-        if(session.name == name)
-            return session;
-}
-
-function getSessions() {
-    return this._sessions;
+    getSessionByName(sessionName).send(new XML(stanza), handler);
 }
 
 function addObserver(observer) {
-    this._observers.push(observer);
+    observers.push(observer);
 }
 
 function notifyObservers(subject, topic, data) {
-    for each(var observer in this._observers)
+    for each(var observer in observers)
         try {
             observer.observe(subject, topic, data);
         } catch(e) {
@@ -158,7 +113,18 @@ function notifyObservers(subject, topic, data) {
 }
 
 function removeObserver(observer) {
-    var index = this._observers.indexOf(observer);
+    var index = observers.indexOf(observer);
     if(index != -1) 
-        this._observers.splice(index, 1);
+        observers.splice(index, 1);
 }
+
+
+// INTERNALS
+// ----------------------------------------------------------------------
+
+function getSessionByName(name) {
+    for each(var session in sessions)
+        if(session.name == name)
+            return session;
+}
+

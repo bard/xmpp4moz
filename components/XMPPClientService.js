@@ -39,7 +39,8 @@ var Factory = {
         if(aOuter != null)
             throw Cr.NS_ERROR_NO_AGGREGATION;
         var component = new Component();
-        component.init();
+        if(typeof(component.init) == 'function')
+            component.init();
 
         return component.QueryInterface(aIID);
     }
