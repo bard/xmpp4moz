@@ -134,16 +134,17 @@ var XMPP = {
 
     _up: function(jid, opts) {
         opts = opts || {};
-        var password = opts.password || this.getAccountByJid(jid).password;
-        var server = opts.host || this.getAccountByJid(jid).connectionHost;
-        var port = opts.port || this.getAccountByJid(jid).connectionPort;
+        var connectionHost = opts.host || this.getAccountByJid(jid).connectionHost;
+        var connectionPort = opts.port || this.getAccountByJid(jid).connectionPort;
         var ssl = opts.ssl || (this.getAccountByJid(jid).connectionSecurity == 1);
-        // should get security too, here...
+        var password = opts.password || this.getAccountByJid(jid).password;
+        var continuation = opts.continuation;
+        var requester = opts.requester;
 
         if(!((jid && password) ||
              (jid && this.isUp(jid)))) {
 
-            var userInput = this._promptAccount(jid, opts.requester);
+            var userInput = this._promptAccount(jid, requester);
 
             if(userInput.confirm) {
                 password = userInput.password;
@@ -151,24 +152,36 @@ var XMPP = {
             }
         }
 
-        if(this.isUp(jid) && opts.continuation)
-            opts.continuation(jid);
-        else if(jid && password) 
-            this._xmpp.signOn(
-                jid, password, {
-                server: server,
-                        port: port,
-                        ssl: ssl,
-                        continuation: function() {
-                        if(opts.continuation)
-                            opts.continuation(jid);
-                    }});
+        if(this.isUp(jid) && continuation)
+            continuation(jid);
+        else if(jid && password) {
+            var xmpp = this._xmpp;
+            xmpp.open(jid, connectionHost, connectionPort, ssl);
+            var m = jid.match(/^([^@]+)@([^\/]+)\/(.+)$/);
+            var username = m[1];
+            var server   = m[2];
+            var resource = m[3];
+            xmpp.send(jid,
+                      <iq to={server} type="set"><query xmlns="jabber:iq:auth">
+                      <username>{username}</username>
+                      <password>{password}</password>
+                      <resource>{resource}</resource>
+                      </query></iq>,
+                      { observe: function(jid, topic, reply) {
+                              if(reply.stanza.@type == 'result') {
+                                  xmpp.send(jid, <iq type="get"><query xmlns="jabber:iq:roster"/></iq>);
+                                  xmpp.send(jid, <presence/>);
+                                  if(continuation)
+                                      continuation();
+                              }
+                          }});
+        }
     },
 
     // could have a reference count mechanism
 
     down: function(jid) {
-        this._xmpp.signOff(jid);
+        this._xmpp.close(jid);
     },
 
     send: function(account, stanza) {

@@ -38,39 +38,7 @@ function isUp(jid) {
         return true;
 }
 
-function signOn(jid, password, opts) {
-    opts = opts || {};
-        
-    var m = jid.match(/^([^@]+)@([^\/]+)\/(.+)$/);
-    var username = m[1];
-    var server   = m[2];
-    var resource = m[3];
-    var session = this.connect(jid, opts);
-        
-    session.send(
-        <iq to={server} type="set"><query xmlns="jabber:iq:auth">
-        <username>{username}</username>
-        <password>{password}</password>
-        <resource>{resource}</resource>
-        </query></iq>,
-        function(reply) {
-             if(reply.stanza.@type == 'result') {
-                 session.send(<iq type="get"><query xmlns="jabber:iq:roster"/></iq>);
-                 session.send(<presence/>);
-                 if(opts.continuation)
-                     opts.continuation();
-             }
-         });
-}
-
-function signOff(jid) {
-    var session = this.getSession(jid);
-    session.close();
-    // TODO: actually session should be removed on close event, not on
-    // signOff request
-    this._sessions.splice(this._sessions.indexOf(session), 1);    
-}
-
+// XXX migrate to js layer
 function register(jid, password, opts) {
     opts = opts || {};
 
@@ -94,14 +62,12 @@ function register(jid, password, opts) {
          });
 }
 
-function connect(jid, opts) {
-    opts = opts || {};
-    var server = opts.server || jid.match(/@([^\/]+)/)[1];
-    var port = opts.port || 5223;
-    if(opts.ssl == undefined)
-        opts.ssl = true;
+function open(jid, server, port, ssl) {
+    server = server || jid.match(/@([^\/]+)/)[1];
+    port = port || 5223;
+    ssl = ssl || true;
     
-    var transport = new Transport(server, port, { ssl: opts.ssl });
+    var transport = new Transport(server, port, { ssl: ssl });
     var session = new Session(jid);
 
     transport.on(
@@ -148,9 +114,24 @@ function connect(jid, opts) {
     return session;
 }
 
-function send(sessionName) {
-    var session = this.getSession(sessionName);
-    session.send.apply(session, Array.prototype.slice.call(arguments, 1));
+function close(jid) {
+    var session = this.getSession(jid);
+    session.close();
+    // TODO: actually session should be removed on close event, not on
+    // signOff request
+    this._sessions.splice(this._sessions.indexOf(session), 1);    
+}
+
+function send(sessionName, stanza, observer) {
+    // XXX stanza is still typeof() == 'xml' at this point, change this!
+    
+    var handler;
+    if(observer)
+        handler = function(reply) {
+            observer.observe(sessionName, 'reply', reply);
+        };
+
+    this.getSession(sessionName).send(stanza, handler);
 }
 
 function getSession(name) {
