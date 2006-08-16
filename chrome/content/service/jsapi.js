@@ -2,18 +2,21 @@
  * This is a convenience stateless wrapper to the bare XPCOM service,
  * to allow using it more comfortably from javascript.
  *
- * Example of creating a channel that filters incoming events,
- * bringing a session up, and sending a message.
+ * Creating a channel that filters incoming events:
  *
  *     var channel = XMPP.createChannel();
  *     channel.on(
  *         {event: 'message', direction: 'in'},
  *         function(message) { alert(message.stanza); } );
+ *
+ * Bringing up a session: 
  *     
  *     XMPP.up(
  *         'user@server.org/Resource',
  *         {password: 'secret'});
- *     
+ *
+ * Sending a stanza:
+ *
  *     XMPP.send(
  *         'user@server.org/Resource',
  *         <message to="contact@server.org">
@@ -22,96 +25,22 @@
  *     
  */
 
-const _xmpp = Components
+// GLOBAL DEFINITIONS
+// ----------------------------------------------------------------------
+
+const service = Components
     .classes['@hyperstruct.net/xmpp4moz/xmppservice;1']
     .getService(Components.interfaces.nsIXMPPClientService)
     .wrappedJSObject;
     
-const _serializer = Components
-    .classes['@mozilla.org/xmlextras/xmlserializer;1']
-    .getService(Components.interfaces.nsIDOMSerializer);
-    
-const _pref = Components
+const pref = Components
     .classes['@mozilla.org/preferences-service;1']
     .getService(Components.interfaces.nsIPrefService)
     .getBranch('xmpp.');
-    
-const _prompter = Components
-    .classes["@mozilla.org/embedcomp/prompt-service;1"]
-    .getService(Components.interfaces.nsIPromptService);
-    
-this.__defineGetter__(
-    'accounts', function() {
-        var accountTable = {};
-        for each(var accountInfo in
-                 this._pref.getChildList('account.', {})) {
-            var infoParts    = accountInfo.split('.');
-            var accountIndex = infoParts[1];
-            var propertyName = infoParts[2];
-            if(!accountTable[accountIndex])
-                accountTable[accountIndex] = {};
 
-            var prefReaders = ['getCharPref', 'getIntPref', 'getBoolPref'];
-            var propertyValue;
-            for each(var reader in prefReaders) 
-                try {
-                    propertyValue = this._pref[reader](accountInfo);
-                    break;
-                } catch(e) {}
 
-            accountTable[accountIndex][propertyName] = propertyValue;
-        }
-        
-        var accountList = [];
-        for(var accountIndex in accountTable) {
-            var account = accountTable[accountIndex];
-            account.index = accountIndex;
-            account.__defineGetter__(
-                'jid', function() {
-                    return this.address + '/' + this.resource;
-                });
-            accountList.push(account);
-        }
-        
-        return accountList;
-    });
-
-function getAccountByJid(jid) {
-    for each(var account in this.accounts) {
-        if(account.jid == jid)
-            return account;
-    }
-    return null;
-}
-
-function getAccountByKey(index) {
-    // XXX inefficient
-    for each(var account in this.accounts) {
-        if(account.index == index)
-            return account;
-        
-        return null;
-    }
-}
-
-function isUp(account) {
-    return this._xmpp.isUp(
-        typeof(account) == 'object' ? account.jid : account);
-}
-
-function _promptAccount(jid, requester) {        
-    var params = {
-        requester: requester,
-        confirm: false,
-        jid: jid,
-        password: undefined
-    };
-    window.openDialog(
-        'chrome://xmpp4moz/content/ui/signon.xul',
-        'xmpp-signon', 'modal,centerscreen',
-        params);
-    return params;
-}
+// DEVELOPER INTERFACE
+// ----------------------------------------------------------------------
 
 function up(account, opts) {
     opts = opts || {};
@@ -133,57 +62,13 @@ function up(account, opts) {
         this._up(account, opts);
 }
 
-function _up(jid, opts) {
-    opts = opts || {};
-    var connectionHost = opts.host || this.getAccountByJid(jid).connectionHost;
-    var connectionPort = opts.port || this.getAccountByJid(jid).connectionPort;
-    var ssl = opts.ssl || (this.getAccountByJid(jid).connectionSecurity == 1);
-    var password = opts.password || this.getAccountByJid(jid).password;
-    var continuation = opts.continuation;
-    var requester = opts.requester;
-
-    if(!((jid && password) ||
-         (jid && this.isUp(jid)))) {
-
-        var userInput = this._promptAccount(jid, requester);
-
-        if(userInput.confirm) {
-            password = userInput.password;
-            jid = userInput.jid;
-        }
-    }
-
-    if(this.isUp(jid) && continuation)
-        continuation(jid);
-    else if(jid && password) {
-        var xmpp = this._xmpp;
-        xmpp.open(jid, connectionHost, connectionPort, ssl);
-        var m = jid.match(/^([^@]+)@([^\/]+)\/(.+)$/);
-        var username = m[1];
-        var server   = m[2];
-        var resource = m[3];
-        this.send(
-            jid,
-            <iq to={server} type="set"><query xmlns="jabber:iq:auth">
-            <username>{username}</username>
-            <password>{password}</password>
-            <resource>{resource}</resource>
-            </query></iq>,
-            function(reply) {
-                if(reply.stanza.@type == 'result') {
-                    xmpp.send(jid, <iq type="get"><query xmlns="jabber:iq:roster"/></iq>);
-                    xmpp.send(jid, <presence/>);
-                    if(continuation)
-                        continuation();
-                }
-            });
-    }
+function down(jid) {
+    service.close(jid);
 }
 
-// could have a reference count mechanism
-
-function down(jid) {
-    this._xmpp.close(jid);
+function isUp(account) {
+    return service.isUp(
+        typeof(account) == 'object' ? account.jid : account);
 }
 
 function send(account, stanza, handler) {
@@ -195,14 +80,6 @@ function send(account, stanza, handler) {
         this.up(account, {continuation: function(jid) {
                         _this._send(jid, stanza, handler);
                     }});
-}
-
-function _send(jid, stanza, handler) {
-    this._xmpp.send(
-        jid, typeof(stanza) == 'xml' ? stanza.toXMLString() : stanza.toString(),
-        { observe: function(jid, topic, reply) {
-                handler(reply);
-            }});
 }
 
 function createChannel(baseFilter) {
@@ -279,7 +156,7 @@ function createChannel(baseFilter) {
         },
 
         release: function() {
-            XMPP._xmpp.removeObserver(this);
+            XMPP.service.removeObserver(this);
         },
 
         // not relying on non-local state
@@ -332,7 +209,134 @@ function createChannel(baseFilter) {
         }
     }
 
-    this._xmpp.addObserver(channel);
+    service.addObserver(channel);
         
     return channel;
+}
+
+
+// INTERNALS
+// ----------------------------------------------------------------------
+
+function _promptAccount(jid, requester) {        
+    var params = {
+        requester: requester,
+        confirm: false,
+        jid: jid,
+        password: undefined
+    };
+    window.openDialog(
+        'chrome://xmpp4moz/content/ui/signon.xul',
+        'xmpp-signon', 'modal,centerscreen',
+        params);
+    return params;
+}
+
+function _up(jid, opts) {
+    opts = opts || {};
+    var connectionHost = opts.host || this.getAccountByJid(jid).connectionHost;
+    var connectionPort = opts.port || this.getAccountByJid(jid).connectionPort;
+    var ssl = opts.ssl || (this.getAccountByJid(jid).connectionSecurity == 1);
+    var password = opts.password || this.getAccountByJid(jid).password;
+    var continuation = opts.continuation;
+    var requester = opts.requester;
+
+    if(!((jid && password) ||
+         (jid && this.isUp(jid)))) {
+
+        var userInput = this._promptAccount(jid, requester);
+
+        if(userInput.confirm) {
+            password = userInput.password;
+            jid = userInput.jid;
+        }
+    }
+
+    if(this.isUp(jid) && continuation)
+        continuation(jid);
+    else if(jid && password) {
+        var xmpp = service;
+        xmpp.open(jid, connectionHost, connectionPort, ssl);
+        var m = jid.match(/^([^@]+)@([^\/]+)\/(.+)$/);
+        var username = m[1];
+        var server   = m[2];
+        var resource = m[3];
+        this.send(
+            jid,
+            <iq to={server} type="set"><query xmlns="jabber:iq:auth">
+            <username>{username}</username>
+            <password>{password}</password>
+            <resource>{resource}</resource>
+            </query></iq>,
+            function(reply) {
+                if(reply.stanza.@type == 'result') {
+                    xmpp.send(jid, <iq type="get"><query xmlns="jabber:iq:roster"/></iq>);
+                    xmpp.send(jid, <presence/>);
+                    if(continuation)
+                        continuation();
+                }
+            });
+    }
+}
+
+function _send(jid, stanza, handler) {
+    service.send(
+        jid, typeof(stanza) == 'xml' ? stanza.toXMLString() : stanza.toString(),
+        { observe: function(jid, topic, reply) {
+                handler(reply);
+            }});
+}
+
+this.__defineGetter__(
+    'accounts', function() {
+        var accountTable = {};
+        for each(var accountInfo in
+                 pref.getChildList('account.', {})) {
+            var infoParts    = accountInfo.split('.');
+            var accountIndex = infoParts[1];
+            var propertyName = infoParts[2];
+            if(!accountTable[accountIndex])
+                accountTable[accountIndex] = {};
+
+            var prefReaders = ['getCharPref', 'getIntPref', 'getBoolPref'];
+            var propertyValue;
+            for each(var reader in prefReaders) 
+                try {
+                    propertyValue = pref[reader](accountInfo);
+                    break;
+                } catch(e) {}
+
+            accountTable[accountIndex][propertyName] = propertyValue;
+        }
+        
+        var accountList = [];
+        for(var accountIndex in accountTable) {
+            var account = accountTable[accountIndex];
+            account.index = accountIndex;
+            account.__defineGetter__(
+                'jid', function() {
+                    return this.address + '/' + this.resource;
+                });
+            accountList.push(account);
+        }
+        
+        return accountList;
+    });
+
+function getAccountByJid(jid) {
+    for each(var account in this.accounts) {
+        if(account.jid == jid)
+            return account;
+    }
+    return null;
+}
+
+function getAccountByKey(index) {
+    // XXX inefficient
+    for each(var account in this.accounts) {
+        if(account.index == index)
+            return account;
+        
+        return null;
+    }
 }
