@@ -30,8 +30,7 @@
 
 const service = Components
     .classes['@hyperstruct.net/xmpp4moz/xmppservice;1']
-    .getService(Components.interfaces.nsIXMPPClientService)
-    .wrappedJSObject;
+    .getService(Components.interfaces.nsIXMPPClientService);
     
 const pref = Components
     .classes['@mozilla.org/preferences-service;1']
@@ -124,35 +123,28 @@ function createChannel(baseFilter) {
         },
 
         observe: function(subject, topic, data) {
-            switch(topic) {
-                case 'stream-in':
-                case 'stream-out':
-                this.handle({
-                    event: 'stream',
-                    session: subject,
-                    direction: topic == 'stream-in' ? 'in' : 'out',
-                    state: data
-                    });
-                break;
-                case 'data-in':
-                case 'data-out':
-                this.handle({
-                    event: 'data',
-                    session: subject,
-                    direction: topic == 'data-in' ? 'in' : 'out',
-                    content: data
-                    });
-                break;
-                case 'stanza-in':
-                case 'stanza-out':
-                var stanza = new XML(data);
-                this.handle({
-                    event: stanza.name(),
-                    session: subject,
-                    direction: topic == 'stanza-in' ? 'in' : 'out',
-                    stanza: stanza
-                    });
+            var match = topic.match(/^(stream|data|stanza)-(in|out)-(.+?)$/);
+            
+            var pattern = {
+                event: match[1],
+                direction: match[2],
+                session: {name: match[3]}
             }
+
+            switch(pattern.event) {
+                case 'stream':
+                pattern.state = data;
+                break;
+                case 'data':
+                pattern.content = data;
+                break;
+                case 'stanza':
+                var stanza = new XML(data);
+                pattern.event = stanza.name();
+                pattern.stanza = stanza;
+                break;
+            }
+            this.handle(pattern)
         },
 
         release: function() {
@@ -209,7 +201,8 @@ function createChannel(baseFilter) {
         }
     }
 
-    service.addObserver(channel);
+    // PROVIDE TOPIC!
+    service.addObserver(channel, null, null);
         
     return channel;
 }
@@ -255,8 +248,8 @@ function _up(jid, opts) {
     if(this.isUp(jid) && continuation)
         continuation(jid);
     else if(jid && password) {
-        var xmpp = service;
-        xmpp.open(jid, connectionHost, connectionPort, ssl);
+        service.open(jid, connectionHost, connectionPort, ssl);
+        var XMPP = this;
         var m = jid.match(/^([^@]+)@([^\/]+)\/(.+)$/);
         var username = m[1];
         var server   = m[2];
@@ -269,9 +262,9 @@ function _up(jid, opts) {
             <resource>{resource}</resource>
             </query></iq>,
             function(reply) {
-                if(reply.stanza.@type == 'result') {
-                    xmpp.send(jid, <iq type="get"><query xmlns="jabber:iq:roster"/></iq>);
-                    xmpp.send(jid, <presence/>);
+                if(reply.@type == 'result') {
+                    XMPP.send(jid, <iq type="get"><query xmlns="jabber:iq:roster"/></iq>);
+                    XMPP.send(jid, <presence/>);
                     if(continuation)
                         continuation();
                 }
@@ -280,11 +273,18 @@ function _up(jid, opts) {
 }
 
 function _send(jid, stanza, handler) {
+    var replyObserver;
+    if(handler)
+        replyObserver = {
+            observe: function(subject, topic, replyStanza) {
+                handler(new XML(replyStanza));                
+            }
+        };
+    
     service.send(
-        jid, typeof(stanza) == 'xml' ? stanza.toXMLString() : stanza.toString(),
-        { observe: function(jid, topic, reply) {
-                handler(reply);
-            }});
+        jid,
+        typeof(stanza) == 'xml' ? stanza.toXMLString() : stanza.toString(),
+        replyObserver);
 }
 
 this.__defineGetter__(

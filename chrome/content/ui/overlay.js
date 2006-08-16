@@ -36,8 +36,13 @@ xmppChannel.on(
                     s.*::query.length() > 0 &&
                     s.*::query.name().uri == 'jabber:iq:auth') }},
     function(iq) {
-        xmppChannel.on( // TODO: need one-shot listeners here!
-            { event: 'iq', direction: 'in', session: iq.session, stanza: function(s) {
+        xmppChannel.on({
+            event: 'iq',  // TODO: need one-shot listeners here!
+            direction: 'in',
+            session: function(s) {
+                    return s.name == iq.session.name;
+                },
+            stanza: function(s) {
                     return s.@id == iq.stanza.@id;
                 }},
             function(reply) {

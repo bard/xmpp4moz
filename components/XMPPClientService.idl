@@ -1,7 +1,24 @@
 #include "nsISupports.idl"
+#include "nsIObserver.idl"
+
+interface nsIObserver;
 
 [scriptable, uuid(6dd44497-a4d9-4590-a629-5116a30b54b3)]
 interface nsIXMPPClientService: nsISupports
 {
     void reload();
+
+    void open(in string accountJid);
+
+    void close(in string accountJid);
+
+    boolean isUp(in string accountJid);
+
+    void send(in string accountJid, in string stanza, in nsIObserver anObserver);
+
+ 	void addObserver(in nsIObserver anObserver, in string aTopic, in boolean ownsWeak);
+
+    void removeObserver(in nsIObserver anObserver, in string aTopic);
+
+    void notifyObservers(in nsISupports aSubject, in string aTopic, in wstring someData);
 };  

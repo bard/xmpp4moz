@@ -95,17 +95,17 @@ function open(jid, server, port, ssl) {
     session.on(
         {stanza: function(s) { return s; }}, function(object) {
             client.notifyObservers(
-                object.session, 'stanza-' + object.direction, object.stanza);
+                null, 'stanza-' + object.direction + '-' + object.session.name, object.stanza);
         });
     session.on(
         {event: 'data'}, function(data) {
             client.notifyObservers(
-                data.session, 'data-' + data.direction, data.content);
+                null, 'data-' + data.direction + '-' + data.session.name, data.content);
         });
     session.on(
         {event: 'stream'}, function(stream) {
             client.notifyObservers(
-                stream.session, 'stream-' + stream.direction, stream.state);
+                null, 'stream-' + stream.direction + '-' + stream.session.name, stream.state);
         });
 
     transport.connect();
@@ -124,9 +124,11 @@ function close(jid) {
 
 function send(sessionName, stanza, observer) {
     var handler;
-    if(observer)
+    if(observer) 
         handler = function(reply) {
-            observer.observe(sessionName, 'reply', reply);
+            // XXX apparently does not like string as first arg, not nsISupports?
+            observer.observe(null, 'reply-in-' + sessionName,
+                             reply.stanza.toXMLString());
         };
 
     this.getSession(sessionName).send(new XML(stanza), handler);
