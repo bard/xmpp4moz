@@ -131,7 +131,7 @@ Author: Massimiliano Mirra, <bard [at] hyperstruct [dot] net>
 
   <vbox id="appcontent">
     <toolbox id="xmpp-toolbox" hidden="true">
-      <toolbar>
+      <toolbar fullscreentoolbar="true">
         <toolbaritem align="center">
           <label value="Your Account:" class="small-margin"/>
           <textbox readonly="true" role="account" class="small-margin"/>
