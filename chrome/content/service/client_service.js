@@ -132,6 +132,7 @@ function notifyObservers(subject, topic, data) {
         }
 }
 
+// XXX add other parameters as required by IDL
 function removeObserver(observer) {
     var index = observers.indexOf(observer);
     if(index != -1) 

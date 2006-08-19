@@ -152,7 +152,7 @@ function createChannel(baseFilter) {
         },
 
         release: function() {
-            XMPP.service.removeObserver(this);
+            XMPP.service.removeObserver(this, null, null);
         },
 
         // not relying on non-local state
