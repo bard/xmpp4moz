@@ -1,0 +1,46 @@
+body
+{
+  font-family: mono;
+  font-size: smaller;
+  margin: 0;
+  }
+
+#entries
+{
+  margin: 0;
+  }
+
+#entries > li
+{
+  margin-left: -3em;
+  padding: 0;
+  list-style-type: none;
+  }
+
+#blueprint
+{
+  display: none;
+  }
+
+.account
+{
+  font-style: italic;
+  display: block;
+  text-align: right;
+  border-bottom: thin solid lightgrey;
+  font-size: smaller;
+  }
+
+.direction
+{
+  font-weight: bold;
+  display: block;
+  float: left;
+  }
+
+.content
+{
+  padding-left: 2em;
+  white-space: -moz-pre-wrap;
+  display: block;
+  }

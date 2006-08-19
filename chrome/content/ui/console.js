@@ -1,6 +1,15 @@
-var channel, inputHistory = [], inputHistoryCursor;
+// GLOBAL STATE
+// ----------------------------------------------------------------------
 
-function init() {
+var channel;
+var inputHistory = [];
+var inputHistoryCursor;
+
+
+// GUI INITIALIZATION/FINALIZATION
+// ----------------------------------------------------------------------
+
+function init(event) {
     channel = XMPP.createChannel();
 
     channel.on(
@@ -11,10 +20,8 @@ function init() {
             } catch(e if e.name == 'SyntaxError') {
                 content = data.content;
             }
-            
-            display(data.session.name + ' ' +
-                    (data.direction == 'in' ? 'S' : 'C') + ': ' +
-                    content);
+
+            display(data.session.name, data.direction, content);
         });
 
     _('input').focus();
@@ -24,47 +31,77 @@ function finish() {
     channel.release();
 }
 
+
+// GUI UTILITIES (GENERIC)
 // ----------------------------------------------------------------------
-// GUI UTILITIES
+
+function scrollingOnlyIfAtBottom(window, action) {
+    var shouldScroll = ((window.scrollMaxY - window.pageYOffset) < 24);
+    action();
+    if(shouldScroll)
+        window.scrollTo(0, window.scrollMaxY);
+}
 
 function _(id) {
     return document.getElementById(id);
 }
 
-function cloneBlueprint(name) {
-    return document
-        .getElementById('blueprints')
-        .getElementsByAttribute('role', name)[0]
-        .cloneNode(true);
+function getDescendantByAttribute(element, attrName, attrValue) {
+    for each(var child in element.childNodes) {
+        if(child.nodeType == Node.ELEMENT_NODE) {
+            if(child.getAttribute(attrName) == attrValue)
+                return child;
+            else {
+                var descendant = getDescendantByAttribute(child, attrName, attrValue);
+                if(descendant)
+                    return descendant;                
+            }
+        }
+    }
+    return null;
 }
 
-// ----------------------------------------------------------------------
+
 // GUI ACTIONS
+// ----------------------------------------------------------------------
 
 function clearLog() {
-    while(_('log').firstChild)
-        _('log').removeChild(_('log').firstChild);
+    var logEntries = _('log').contentDocument.getElementById('entries');
+    while(entries.firstChild)
+        entries.removeChild(entries.firstChild);
 }
 
-function display(message) {
-    var logLine = cloneBlueprint('log-line');
-    logLine.getElementsByAttribute('role', 'content')[0].textContent = message;
-    
-    _('log').appendChild(logLine);
-    _('log').ensureElementIsVisible(logLine);
+function display(account, direction, content) {
+    var logDoc = _('log').contentDocument;
+    var logEntry = logDoc.getElementById('entry').cloneNode(true);
+
+    getDescendantByAttribute(logEntry, 'class', 'account')
+        .textContent = account;
+    getDescendantByAttribute(logEntry, 'class', 'direction')
+        .textContent = (direction == 'in' ? 'S' : 'C');
+    getDescendantByAttribute(logEntry, 'class', 'content')
+        .textContent = content;
+    logEntry.style.display = null;
+
+    scrollingOnlyIfAtBottom(
+        logDoc.defaultView, function() {
+            logDoc.getElementById('entries')
+                .appendChild(logEntry);
+        });
 }
 
 function insert(item) {
     var xml;
     switch(item) {
     case 'message':
-        xml = <message></message>;
+        xml = <message/>;
         break;
     case 'iq':
-        xml = <iq></iq>;
+        xml = <iq/>;
         break;
     case 'iq-disco':
-        xml = <iq type="get" to="">
+        xml =
+            <iq type="get" to="">
             <query xmlns="http://jabber.org/protocol/disco#info"/>
             </iq>;
         break;
@@ -74,6 +111,7 @@ function insert(item) {
     }
     _('input').value += xml.toXMLString();
 }
+
 
 // ----------------------------------------------------------------------
 // GUI REACTIONS
@@ -120,6 +158,7 @@ function pressedKeyInInputArea(event) {
     }
 }
 
+
 // ----------------------------------------------------------------------
 // NETWORK ACTIONS
 
@@ -128,6 +167,7 @@ function sendStanza(account, xml) {
     inputHistoryCursor = 0;
     inputHistory.push(xml.toXMLString());
 }
+
 
 // ----------------------------------------------------------------------
 // HOOKS

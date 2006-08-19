@@ -14,9 +14,7 @@
   <script type="application/x-javascript" src="../xmpp.js"/>
   <script type="application/x-javascript" src="console.js"/>
 
-  <richlistbox id="log" flex="5"
-               class="box-inset"
-               style="font-family: mono; font-size: x-small; white-space: -moz-pre-wrap;"/>
+  <iframe src="log.xhtml" id="log" flex="5" class="box-inset"/>
 
   <toolbox>
     <menubar>
@@ -56,9 +54,5 @@
     </menulist>      
   </hbox>
 
-  <box hidden="true" id="blueprints">
-    <richlistitem style="width: 100%;" role="log-line">
-      <description flex="1" role="content"/>
-    </richlistitem>
-  </box>
+  <box hidden="true" id="blueprints"/>
 </window>
