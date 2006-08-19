@@ -1,8 +1,13 @@
-/* TODO: examine mozilla css and grab the proper way to display
-disabled entries, although the use of disabled entries themselves here
-is questionable */
-
-menuitem.xmpp-offline
+menuitem[availability="unavailable"]
 {
   color: graytext ! important;
+  list-style-image: url("chrome://xmpp4moz/skin/status-small.png"); 
+  -moz-image-region: rect(0px 16px 16px 0px);
+  }
+
+menuitem[availability="available"]
+{
+  color: graytext ! important;
+  list-style-image: url("chrome://xmpp4moz/skin/status-small.png"); 
+  -moz-image-region: rect(16px 16px 32px 0px);
   }

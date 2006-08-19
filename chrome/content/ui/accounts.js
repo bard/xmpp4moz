@@ -15,8 +15,10 @@ function xmppRefreshAccounts(menuPopup) {
         var menuItem = document.createElement('menuitem');
         menuItem.setAttribute('label', account.jid);
         menuItem.setAttribute('value', account.jid);
-        if(!XMPP.isUp(account.jid))
-            menuItem.setAttribute('class', 'xmpp-offline');
+        menuItem.setAttribute('class', 'menuitem-iconic');
+        menuItem.setAttribute(
+            'availability', XMPP.isUp(account.jid) ? 'available' : 'unavailable');
+
         menuPopup.insertBefore(menuItem, menuPopup.firstChild);
     }
 }
