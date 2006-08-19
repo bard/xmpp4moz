@@ -119,6 +119,20 @@ xmppChannel.on(
             });
     });
 
+// Changing availability attribute on toolbar button when at least one
+// account is online
+
+xmppChannel.on(
+    { event: 'presence', direction: 'out' },
+    function(presence) {
+        var indicator = document.getElementById('xmpp-button');
+        if(presence.stanza.@type == undefined)
+            indicator.setAttribute('availability', 'available');
+        else if(presence.stanza.@type == 'unavailable')
+            if(XMPP.accounts.every(XMPP.isDown))
+                indicator.setAttribute('availability', 'unavailable');
+    });
+
 
 // GUI ACTIONS
 // ----------------------------------------------------------------------

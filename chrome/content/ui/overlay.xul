@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
-<?xml-stylesheet href="chrome://xmpp4moz/skin/xmpp4moz.css" type="text/css"?>
+<?xml-stylesheet href="chrome://xmpp4moz/skin/overlay.css" type="text/css"?>
 <?xml-stylesheet href="chrome://xmpp4moz/skin/toolbar-button.css" type="text/css"?>
 <?xul-overlay href="chrome://xmpp4moz/content/ui/accounts.xul"?>
 
@@ -108,7 +108,8 @@ Author: Massimiliano Mirra, <bard [at] hyperstruct [dot] net>
                    class="toolbarbutton-1 chromeclass-toolbar-additional"
                    type="menu-button"
                    label="Jabber"
-                   oncommand="if(event.target == this) xmppToggleLivebar();">
+                   oncommand="if(event.target == this) xmppToggleLivebar();"
+                   availability="unavailable">
       <menupopup id="xmpp-menu-accounts-secondary">
         <menuseparator/>
         <menuitem class="menuitem-iconic" command="xmpp-command-toggle-livebar"/>

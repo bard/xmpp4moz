@@ -70,6 +70,10 @@ function isUp(account) {
         typeof(account) == 'object' ? account.jid : account);
 }
 
+function isDown(account) {
+    return !isUp(account);
+}
+
 function send(account, stanza, handler) {
     var _this = this;
     if(this.isUp(account))
