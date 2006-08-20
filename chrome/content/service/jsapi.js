@@ -340,7 +340,6 @@ function getAccountByKey(index) {
     for each(var account in this.accounts) {
         if(account.index == index)
             return account;
-        
-        return null;
-    }
+    }   
+    return null;    
 }
