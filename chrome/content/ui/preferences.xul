@@ -30,7 +30,8 @@
               <rows>
                 <row align="center">
                   <label value="Address:" control="xmpp-address" accesskey="A"/>
-                  <textbox id="xmpp-address" onchange="xmppFieldChanged(this);"/>
+                  <textbox id="xmpp-address"
+                           onchange="xmppFieldChanged(this);" oninput="xmppModifiedAddress(this.value);"/>
                 </row>
 
                 <row align="center">

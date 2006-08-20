@@ -116,6 +116,16 @@ function xmppFieldChanged(field) {
     } catch(e) {
         pref.setIntPref(prefName, field.value);
     }
+
+    // XXX hackish
+    if(field.id == 'xmpp-address') 
+        xmppFieldChanged(document.getElementById('xmpp-connection-host'));
+}
+
+function xmppModifiedAddress(address) {
+    var server = address.split('@')[1] || '';
+    document.getElementById('xmpp-connection-host').value =
+        (server == 'gmail.com' ? 'talk.google.com' : server);
 }
 
 function xmppAccountSelected() {
