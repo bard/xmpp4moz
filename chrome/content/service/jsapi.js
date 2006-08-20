@@ -297,10 +297,10 @@ this.__defineGetter__(
         for each(var accountInfo in
                  pref.getChildList('account.', {})) {
             var infoParts    = accountInfo.split('.');
-            var accountIndex = infoParts[1];
+            var accountKey = infoParts[1];
             var propertyName = infoParts[2];
-            if(!accountTable[accountIndex])
-                accountTable[accountIndex] = {};
+            if(!accountTable[accountKey])
+                accountTable[accountKey] = {};
 
             var prefReaders = ['getCharPref', 'getIntPref', 'getBoolPref'];
             var propertyValue;
@@ -310,13 +310,13 @@ this.__defineGetter__(
                     break;
                 } catch(e) {}
 
-            accountTable[accountIndex][propertyName] = propertyValue;
+            accountTable[accountKey][propertyName] = propertyValue;
         }
         
         var accountList = [];
-        for(var accountIndex in accountTable) {
-            var account = accountTable[accountIndex];
-            account.index = accountIndex;
+        for(var accountKey in accountTable) {
+            var account = accountTable[accountKey];
+            account.key = accountKey;
             account.__defineGetter__(
                 'jid', function() {
                     return this.address + '/' + this.resource;
@@ -335,10 +335,9 @@ function getAccountByJid(jid) {
     return null;
 }
 
-function getAccountByKey(index) {
-    // XXX inefficient
+function getAccountByKey(key) {
     for each(var account in this.accounts) {
-        if(account.index == index)
+        if(account.key == key)
             return account;
     }   
     return null;    

@@ -13,7 +13,7 @@ function xmppRefreshAccountList() {
         accountList.removeItemAt(i);
 
     for each(var account in XMPP.accounts) 
-        accountList.appendItem(account.jid, account.index);
+        accountList.appendItem(account.jid, account.key);
 }
 
 function xmppShowAccount(accountKey) {
@@ -35,7 +35,7 @@ function xmppShowAccount(accountKey) {
     for each(var accountField in
              ['address', 'password', 'resource',
               'connectionHost', 'connectionPort', 'connectionSecurity']) {
-        var prefName = 'xmpp.account.' + account.index + '.' + accountField;
+        var prefName = 'xmpp.account.' + account.key + '.' + accountField;
         var elementId = 'xmpp-' + uncamelize(accountField);
             
         var prefValue;
