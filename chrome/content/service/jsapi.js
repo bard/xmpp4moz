@@ -158,10 +158,13 @@ function createChannel(baseFilter) {
         // not relying on non-local state
 
         _handle1: function(object, watches, matcher) {
-            for each(var watch in watches) {
-                if(matcher(object, watch.pattern))
-                    watch.handler(object);
-            }
+            for each(var watch in watches)
+                try {
+                    if(matcher(object, watch.pattern))
+                        watch.handler(object);
+                } catch(e) {
+                    Components.utils.reportError(e);
+                }
         },
 
         // not relying on non-local state
