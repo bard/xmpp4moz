@@ -124,11 +124,11 @@ function addObserver(observer) {
 }
 
 function notifyObservers(subject, topic, data) {
-    for each(var observer in observers)
+    for each(var observer in observers) 
         try {
             observer.observe(subject, topic, data);
         } catch(e) {
-            dump('Observer reported exception: ' + e + '\n');
+            Components.utils.reportError(e);
         }
 }
 
