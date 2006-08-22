@@ -1,5 +1,3 @@
-var mixin = module.require('package', 'lib/mixin');
-var event = module.require('package', 'lib/event_handling');
 var XMLP = module.require('package', 'lib/xmlsax').XMLP;
 
 var _document = Components
@@ -9,12 +7,11 @@ var _document = Components
 function constructor() {
     this._scanner = new XMLP();
     this._current = null;
-    this._eventListeners = {};
     this._characterData = '';
+}
 
-    var eventManager = new event.Manager();
-    mixin.forward(this, 'on', eventManager);
-    mixin.forward(this, '_handle', eventManager, 'postHandle');
+function setObserver(observer) {
+    this._observer = observer;
 }
     
 function parse(string) {
@@ -40,7 +37,7 @@ function parse(string) {
             var name = this._scanner.getName();
             switch(name) {
             case 'stream:stream':
-                this._handle('start', this._scanner.getAttributeValueByName('id'));
+                this._observer.onStart(this._scanner.getAttributeValueByName('id'));
                 break;
             default:
                 var e = _document.createElement(name);
@@ -64,11 +61,11 @@ function parse(string) {
 
             switch(name) {
             case 'stream:stream':
-                this._handle('stop');
+                this._observer.onStop();
                 break;
             default:
                 if(this._current.parentNode == null)
-                    this._handle('stanza', this._current);
+                    this._observer.onStanza(this._current);
 
                 this._current = this._current.parentNode;
             }                    
@@ -93,3 +90,4 @@ function _fullCharacterDataReceived() {
 function _isWhiteSpace(string) {
     return /^\s*$/.test(string);
 }
+

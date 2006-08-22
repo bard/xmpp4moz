@@ -56,18 +56,16 @@ function constructor(name) {
     this._observers = [];
 
     var session = this;
-    this._parser.on(
-        'start', function() {
-            session._stream('in', 'open');
-        });
-    this._parser.on(
-        'stop', function() {
-            session._stream('in', 'close');
-        });
-    this._parser.on(
-        'stanza', function(domStanza) {
-            session._stanza('in', domStanza);
-        });
+    this._parser.setObserver({
+        onStart: function(id) {
+                session._stream('in', 'open');
+            },
+        onStop: function() {
+                session._stream('in', 'close');
+            },
+        onStanza: function(domElement) {
+                session._stanza('in', domElement);
+            }});
 
     this.__defineGetter__(
         'name', function() {
