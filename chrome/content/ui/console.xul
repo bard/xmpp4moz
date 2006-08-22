@@ -18,21 +18,18 @@
 
   <toolbox>
     <menubar>
-      <menu label="Message" accesskey="M">
-        <menupopup>
-          <menuitem label="Simple" accesskey="S" oncommand="insert('message');"/>
-        </menupopup>
+      <menu label="Message" accesskey="M"
+            oncommand="requestedTemplateInsertion('message', event);">
+        <menupopup id="templates-message"/>
       </menu>
 
-      <menu label="Iq" accesskey="I">
-        <menupopup>
-          <menuitem label="Simple" accesskey="S" oncommand="insert('iq');"/>          
-          <menuitem label="Disco" accesskey="D" oncommand="insert('iq-disco');"/>
-        </menupopup>
+      <menu label="Iq" accesskey="I"
+            oncommand="requestedTemplateInsertion('iq', event);">
+        <menupopup id="templates-iq"/>
       </menu>
 
       <menu label="Presence" accesskey="P">
-        <menupopup>
+        <menupopup id="templates-presence">
           <menuitem label="Simple" accesskey="S" oncommand="insert('presence');"/>          
         </menupopup>
       </menu>

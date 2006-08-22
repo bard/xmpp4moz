@@ -1,3 +1,30 @@
+// GLOBAL DEFINITIONS
+// ----------------------------------------------------------------------
+
+const stanzaTemplates = {
+    message: {
+        'Plain':     <message type="normal" to=""/>,
+
+        'Groupchat': <message type="groupchat" to=""/>
+    },
+
+    iq: {
+        'Plain': <iq/>,
+
+        'Disco': 
+        <iq type="get" to="">
+        <query xmlns="http://jabber.org/protocol/disco#info"/>
+        </iq>,
+
+        'vCard': <iq to="" type="get"><vCard xmlns="vcard-temp"/></iq>
+    },
+
+    presence: {
+        'Plain': <presence/>
+    }
+};
+
+
 // GLOBAL STATE
 // ----------------------------------------------------------------------
 
@@ -25,6 +52,19 @@ function init(event) {
         });
 
     _('input').focus();
+
+    for(var templateType in stanzaTemplates) 
+        for(var templateName in stanzaTemplates[templateType]) {
+            var menuItem = document.createElement('menuitem');
+            menuItem.setAttribute('label', templateName);
+            _('templates-' + templateType).appendChild(menuItem);
+        }    
+}
+
+function requestedTemplateInsertion(templateType, event) {
+    var templateName = event.target.getAttribute('label');
+    _('input').value += 
+        stanzaTemplates[templateType][templateName].toXMLString();
 }
 
 function finish() {
@@ -67,8 +107,8 @@ function getDescendantByAttribute(element, attrName, attrValue) {
 
 function clearLog() {
     var logEntries = _('log').contentDocument.getElementById('entries');
-    while(entries.firstChild)
-        entries.removeChild(entries.firstChild);
+    while(logEntries.firstChild)
+        logEntries.removeChild(entries.firstChild);
 }
 
 function display(account, direction, content) {
@@ -88,28 +128,6 @@ function display(account, direction, content) {
             logDoc.getElementById('entries')
                 .appendChild(logEntry);
         });
-}
-
-function insert(item) {
-    var xml;
-    switch(item) {
-    case 'message':
-        xml = <message/>;
-        break;
-    case 'iq':
-        xml = <iq/>;
-        break;
-    case 'iq-disco':
-        xml =
-            <iq type="get" to="">
-            <query xmlns="http://jabber.org/protocol/disco#info"/>
-            </iq>;
-        break;
-    case 'presence':
-        xml = <presence/>;
-        break;
-    }
-    _('input').value += xml.toXMLString();
 }
 
 
