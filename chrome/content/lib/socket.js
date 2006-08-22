@@ -54,7 +54,8 @@ function connect() {
         return;
             
     if(this._opts.ssl)
-        this._transport = this._transportService.createTransport(['ssl'], 1, this._host, this._port, null);
+        this._transport = this._transportService.createTransport(
+            ['ssl'], 1, this._host, this._port, null);
     else
         this._transport = this._transportService.createTransport(null, 0, this._host, this._port, null);
 

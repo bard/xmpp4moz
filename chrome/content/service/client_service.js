@@ -74,25 +74,22 @@ function open(jid, server, port, ssl) {
         });
 
     var client = this;
-    session.on(
-        {event: 'data', direction: 'out'}, function(data) {
-            transport.write(data.content);
-        });
-    session.on(
-        {stanza: function(s) { return s; }}, function(object) {
-            client.notifyObservers(
-                null, 'stanza-' + object.direction + '-' + object.session.name, object.stanza);
-        });
-    session.on(
-        {event: 'data'}, function(data) {
-            client.notifyObservers(
-                null, 'data-' + data.direction + '-' + data.session.name, data.content);
-        });
-    session.on(
-        {event: 'stream'}, function(stream) {
-            client.notifyObservers(
-                null, 'stream-' + stream.direction + '-' + stream.session.name, stream.state);
-        });
+
+    session.addObserver({
+        observe: function(subject, topic, data) {
+                var parts = topic.split('-');
+                type = parts[0];
+                direction = parts[1];
+
+                if(type == 'data' && direction == 'out')
+                    transport.write(data);
+
+                client.notifyObservers(
+                    null,
+                    topic + '-' + session.name,
+                    data);
+            }});
+
 
     transport.connect();
     session.open(jid.match(/@([^\/]+)/)[1]);

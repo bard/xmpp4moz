@@ -35,8 +35,6 @@
  */
 
 var Parser      = module.require('class', 'parser');
-var mixin       = module.require('package', 'lib/mixin');
-var event       = module.require('package', 'lib/event_handling');
 var converter   = Components
     .classes["@mozilla.org/intl/scriptableunicodeconverter"]
     .getService(Components.interfaces.nsIScriptableUnicodeConverter);
@@ -55,10 +53,7 @@ function constructor(name) {
     this._parser = new Parser();
     this._pending = {};
     this._name = name;
-
-    var eventManager = new event.Manager();
-    mixin.forward(this, 'on', eventManager);
-    mixin.forward(this, '_handle', eventManager, 'postHandle');
+    this._observers = [];
 
     var session = this;
     this._parser.on(
@@ -136,11 +131,22 @@ function receive(data) {
 }
 receive.doc = 'Receive text or XML from the other side.';
     
+function addObserver(observer) {
+    this._observers.push(observer);    
+}
+
+function removeObserver(observer) {
+    var index = this._observers.indexOf(observer);
+    if(index != -1) 
+        this._observers.splice(index, 1);    
+}
+
+
 // ----------------------------------------------------------------------
 // INTERNALS
 
 function _stream(direction, state) {
-    this._handle({event: 'stream', direction: direction, state: state, session: this});
+    this.notifyObservers(null, 'stream-' + direction, state);
 }
 
 function _data(direction, data) {
@@ -151,7 +157,7 @@ function _data(direction, data) {
     if(direction == 'in')
         this._parser.parse(data);
 
-    this._handle({direction: direction, event: 'data', content: data, session: this});
+    this.notifyObservers(null, 'data-' + direction, data);
 }
 
 function _stanza(direction, stanza, handler) {
@@ -179,9 +185,15 @@ function _stanza(direction, stanza, handler) {
         break;
     }
 
-    this._handle({
-        event: domStanza.nodeName,
-        stanza: serializer.serializeToString(domStanza),
-        direction: direction,
-        session: this});
+    this.notifyObservers(null, 'stanza-' + direction, serializer.serializeToString(domStanza));
 }
+
+function notifyObservers(subject, topic, data) {
+    for each(var observer in this._observers) 
+        try {
+            observer.observe(subject, topic, data);
+        } catch(e) {
+            Components.utils.reportError(e);
+        }    
+}
+
