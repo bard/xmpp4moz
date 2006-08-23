@@ -50,7 +50,8 @@ function isUp(jid) {
 function open(jid, server, port, ssl) {
     server = server || jid.match(/@([^\/]+)/)[1];
     port = port || 5223;
-    ssl = ssl || true;
+    if(ssl == undefined)
+        ssl || true;
     
     var transport = new Transport(server, port, { ssl: ssl });
     var session = Components
