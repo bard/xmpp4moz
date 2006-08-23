@@ -104,7 +104,7 @@ function getDescendantByAttribute(element, attrName, attrValue) {
 function clearLog() {
     var logEntries = _('log').contentDocument.getElementById('entries');
     while(logEntries.firstChild)
-        logEntries.removeChild(entries.firstChild);
+        logEntries.removeChild(logEntries.firstChild);
 }
 
 function display(account, direction, content) {
