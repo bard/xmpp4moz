@@ -63,12 +63,6 @@ function init(event) {
         }    
 }
 
-function requestedTemplateInsertion(templateType, event) {
-    var templateName = event.target.getAttribute('label');
-    _('input').value += 
-        stanzaTemplates[templateType][templateName].toXMLString();
-}
-
 function finish() {
     channel.release();
 }
@@ -136,45 +130,67 @@ function display(account, direction, content) {
 // ----------------------------------------------------------------------
 // GUI REACTIONS
 
+function requestedTemplateInsertion(templateType, event) {
+    var templateName = event.target.getAttribute('label');
+    _('input').value += 
+        stanzaTemplates[templateType][templateName].toXMLString();
+}
+
+function gotoHistoryPrevious() {
+    if(inputHistoryCursor == 0)
+        inputHistoryCursor = inputHistory.length-1;
+    else
+        inputHistoryCursor--;
+        
+    _('input').value = inputHistory[inputHistoryCursor];
+}
+
+function gotoHistoryNext() {
+    if(inputHistoryCursor == inputHistory.length-1)
+        inputHistoryCursor = 0;
+    else
+        inputHistoryCursor++;
+        
+    _('input').value = inputHistory[inputHistoryCursor];    
+}
+
 function pressedKeyInInputArea(event) {
     var textBox = event.currentTarget;
 
+    if(!event.ctrlKey)
+        return;
+    
     switch(event.keyCode) {
     case KeyEvent.DOM_VK_UP:
         event.preventDefault();
-        if(inputHistoryCursor == 0)
-            inputHistoryCursor = inputHistory.length-1;
-        else
-            inputHistoryCursor--;
-        
-        textBox.value = inputHistory[inputHistoryCursor];
+        gotoHistoryPrevious();
         break;
     case KeyEvent.DOM_VK_DOWN:
         event.preventDefault();
-        if(inputHistoryCursor == inputHistory.length-1)
-            inputHistoryCursor = 0;
-        else
-            inputHistoryCursor++;
-        
-        textBox.value = inputHistory[inputHistoryCursor];
+        gotoHistoryNext();
         break;
     case KeyEvent.DOM_VK_RETURN:
-        if(event.ctrlKey)
-            textBox.value += '\n';
-        else {
-            event.preventDefault();
+        event.preventDefault();
                 
-            if(textBox.value.match(/^\s*$/))
-                return;
+        if(textBox.value.match(/^\s*$/))
+            return;
 
-            try {
-                sendStanza(_('accounts').value, new XML(textBox.value));
-                textBox.value = '';
-            } catch(e) {
-                alert(e);
-            }
+        try {
+            sendStanza(_('accounts').value, new XML(textBox.value));
+            textBox.value = '';
+        } catch(e) {
+            alert(e);
         }
         break;
+    }
+}
+
+function requestedSend() {
+    try {
+        sendStanza(_('accounts').value, new XML(_('input').value));
+        _('input').value = '';
+    } catch(e) {
+        alert(e)
     }
 }
 

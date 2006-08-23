@@ -11,6 +11,21 @@
         orient="vertical"
         width="800" height="600">
 
+  <commandset>
+    <command id="send" label="Send" accesskey="S" oncommand="requestedSend();"/>
+    <command id="history-prev" label="Goto Previous"
+             accesskey="P" oncommand="gotoHistoryPrevious();"/>
+    <command id="history-next" label="Goto Next"
+             accesskey="N" oncommand="gotoHistoryNext();"/>
+  </commandset>
+
+  <keyset>
+    <key id="key-history-prev" command="history-prev"
+         modifiers="control" keycode="VK_UP" keytext="Up"/>
+    <key id="key-history-next" command="history-next"
+         modifiers="control" keycode="VK_DOWN" keytext="Down" />
+  </keyset>
+
   <script type="application/x-javascript" src="../xmpp.js"/>
   <script type="application/x-javascript" src="console.js"/>
 
@@ -38,17 +53,30 @@
           <menuitem label="Clear" accesskey="C" oncommand="clearLog();"/>
         </menupopup>
       </menu>
+
+      <menu label="History" accesskey="H">
+        <menupopup>
+          <menuitem command="history-prev" key="key-history-prev"/>
+          <menuitem command="history-next" key="key-history-next"/>
+        </menupopup>
+      </menu>
     </menubar>
   </toolbox>
 
   <textbox id="input" rows="5" multiline="true" onkeypress="pressedKeyInInputArea(event);"/>
 
-  <hbox align="center">
-    <label value="Account:" accesskey="A" control="accounts"/>
-    <menulist id="accounts" flex="1" label="" sizetopopup="none">
-      <menupopup id="xmpp-menu-accounts"/>
-    </menulist>      
-  </hbox>
+  <toolbox>
+    <toolbar>
+      <toolbarbutton command="send"/>
+      <toolbarspring/>
+      <toolbaritem align="center">
+        <label value="Sending as:" accesskey="a" control="accounts"/>
+        <menulist id="accounts" flex="1" label="" sizetopopup="none">
+          <menupopup id="xmpp-menu-accounts"/>
+        </menulist>        
+      </toolbaritem>
+    </toolbar>
+  </toolbox>
 
   <box hidden="true" id="blueprints"/>
 </window>
