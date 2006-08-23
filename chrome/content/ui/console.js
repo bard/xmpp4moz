@@ -16,7 +16,9 @@ const stanzaTemplates = {
         <query xmlns="http://jabber.org/protocol/disco#info"/>
         </iq>,
 
-        'vCard': <iq to="" type="get"><vCard xmlns="vcard-temp"/></iq>
+        'vCard': <iq to="" type="get"><vCard xmlns="vcard-temp"/></iq>,
+
+        'Roster': <iq type="get"><query xmlns="jabber:iq:roster"/></iq>
     },
 
     presence: {

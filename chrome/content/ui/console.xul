@@ -28,10 +28,9 @@
         <menupopup id="templates-iq"/>
       </menu>
 
-      <menu label="Presence" accesskey="P">
-        <menupopup id="templates-presence">
-          <menuitem label="Simple" accesskey="S" oncommand="insert('presence');"/>          
-        </menupopup>
+      <menu label="Presence" accesskey="P"
+            oncommand="requestedTemplateInsertion('presence', event);">
+        <menupopup id="templates-presence"/>
       </menu>
 
       <menu label="View" accesskey="V">
