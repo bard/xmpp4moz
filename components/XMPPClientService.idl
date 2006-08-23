@@ -8,7 +8,7 @@ interface nsIXMPPClientService: nsISupports
 {
     void reload();
 
-    void open(in string accountJid);
+    void open(in string accountJid, in string host, in string port, in boolean ssl);
 
     void close(in string accountJid);
 
