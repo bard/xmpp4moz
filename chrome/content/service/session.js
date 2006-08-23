@@ -93,9 +93,9 @@ function close() {
     if(!this._isOpen)
         throw new Error('Session already closed.');
 
-    this._isOpen = false;
     this._stream('out', 'close');
     this.send('</stream:stream>');
+    this._isOpen = false;
 }
 close.doc = 'Send the stream epilogue.';
 
@@ -107,13 +107,21 @@ function isOpen() {
 // ----------------------------------------------------------------------
 // INPUT
 
-function send(data, handler) {
+function send(data, observer) {
+    var session = this;
+    if(observer)
+        var handler = function(reply) {
+            observer.observe(null, 'reply-in-' + session.name,
+                             reply.stanza.toXMLString())
+        }
+
     if(typeof(data) == 'xml' ||
        data instanceof Components.interfaces.nsIDOMElement) 
-        this._stanza('out', data, handler);    
+        this._stanza('out', data, handler);
     else 
         this._data('out', data);
 }
+
 send.doc = 'Send text or XML to the other side.  If XML, it is stamped with an \
 incrementing counter, and an optional reply handler is associated.  The  \
 data is not actually sent since the session has no notion of transports \

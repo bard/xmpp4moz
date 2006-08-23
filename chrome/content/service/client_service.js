@@ -105,15 +105,7 @@ function close(jid) {
 }
 
 function send(sessionName, stanza, observer) {
-    var handler;
-    if(observer) 
-        handler = function(reply) {
-            // XXX apparently does not like string as first arg, not nsISupports?
-            observer.observe(null, 'reply-in-' + sessionName,
-                             reply.stanza.toXMLString());
-        };
-
-    sessions.get(sessionName).send(new XML(stanza), handler);
+    sessions.get(sessionName).send(new XML(stanza), observer);
 }
 
 function addObserver(observer) {
