@@ -20,19 +20,18 @@
 
 
 /**
- * The session object sits between the network and the user, mediating
- * exchange of XMPP stanzas between the two and doing some bookkeeping
- * in the meanwhile, like stamping each outgoing stanza with an ID,
- * and remembering what handler to run when a reply to a specific
- * stanza is received.
+ * The session component sits between the network and the XMPP
+ * service, mediating exchange of XMPP stanzas and doing some
+ * bookkeeping in the meanwhile, such as stamping outgoing stanzas
+ * with unique IDs and remembering what handler to run when a reply to
+ * a specific stanza is received.
  *
  * Input from the network is expected to be fed to the receive()
- * method and user should listen for it via the {event: 'data',
- * direction: 'in'} event.  Input from the user is expected to be fed
- * to the send() method and network should listen for it via the {event:
- * 'data', direction: 'out'} event.
+ * method.  It resurfaces in session and can be listened through an
+ * observer, watching for the 'data-out' topic.
  *
  */
+
 
 // GLOBAL DEFINITIONS
 // ----------------------------------------------------------------------
@@ -89,8 +88,13 @@ function setName(string) {
 }
 
 
-// PUBLIC INTERFACE
+// PUBLIC INTERFACE - SESSION MANAGEMENT AND DATA EXCHANGE
 // ----------------------------------------------------------------------
+
+/**
+ * Send the stream prologue.
+ *
+ */
 
 function open(server) {
     if(this._isOpen)
@@ -103,7 +107,11 @@ function open(server) {
     this._stream('out', 'open');
     this._isOpen = true;
 }
-open.doc = 'Send the stream prologue.';
+
+/**
+ * Send the stream epilogue.
+ *
+ */
 
 function close() {
     if(!this._isOpen)
@@ -114,11 +122,18 @@ function close() {
     this._stream('out', 'close');
     this.send('</stream:stream>');
 }
-close.doc = 'Send the stream epilogue.';
 
 function isOpen() {
     return this._isOpen;
 }
+
+/**
+ * Send data to the other side.  Conversion to XML DOM will be
+ * attempted internally; if successful, stanza will be stamped with
+ * unique id.  If observer is provided and the data was valid XML,
+ * observer will be called upon reception of reply.
+ *
+ */
 
 function send(data, observer) {
     if(observer) {
@@ -138,16 +153,14 @@ function send(data, observer) {
 
 }
 
-send.doc = 'Send text or XML to the other side.  If XML, it is stamped with an \
-incrementing counter, and an optional reply handler is associated.  The  \
-data is not actually sent since the session has no notion of transports \
-internally, but resurfaces as plain text in the {event: "data", direction: "out"} \
-event so that it can be passed to a transport there.';
+/**
+ * Receive text or XML from the other side.
+ *
+ */
 
 function receive(data) { 
     this._data('in', data);
 }
-receive.doc = 'Receive text or XML from the other side.';
     
 function addObserver(observer) {
     this._observers.push(observer);    
@@ -186,8 +199,6 @@ function _stanza(direction, domStanza, handler) {
             this._pending[id](serializer.serializeToString(domStanza));
             delete this._pending[id];
         }
-        // if(stanza.*::query.length() > 0) {
-        //     var nameSpace = stanza.*::query.namespace().toString();
         break;
     case 'out':
         domStanza.setAttribute('id', this._idCounter++);
