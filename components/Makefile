@@ -1,6 +1,6 @@
 IDLC=/usr/lib/firefox/xpidl
 INC=/usr/share/idl/mozilla/
-XPTS=XMPPClientService.xpt
+XPTS=XMPPClientService.xpt XMPPClientSession.xpt
 
 all: $(XPTS)
 

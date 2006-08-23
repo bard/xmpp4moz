@@ -34,25 +34,36 @@
  *
  */
 
-var Parser      = module.require('class', 'parser');
-var converter   = Components
+// GLOBAL DEFINITIONS
+// ----------------------------------------------------------------------
+
+const loader = Components
+    .classes['@mozilla.org/moz/jssubscript-loader;1']
+    .getService(Components.interfaces.mozIJSSubScriptLoader);
+const converter = Components
     .classes["@mozilla.org/intl/scriptableunicodeconverter"]
     .getService(Components.interfaces.nsIScriptableUnicodeConverter);
-var serializer  = Components
+const serializer = Components
     .classes['@mozilla.org/xmlextras/xmlserializer;1']
     .getService(Components.interfaces.nsIDOMSerializer);
-var parser      = Components
+const domParser = Components
     .classes['@mozilla.org/xmlextras/domparser;1']
     .getService(Components.interfaces.nsIDOMParser);
 
 converter.charset = 'UTF-8';
+loader.loadSubScript('chrome://xmpp4moz/content/lib/module_manager.js');
+const module = new ModuleManager(['chrome://xmpp4moz/content']);
+const Parser = module.require('class', 'service/parser');
 
-function constructor(name) {
+
+// INITIALIZATION
+// ----------------------------------------------------------------------
+
+function init() {
     this._isOpen = false;
     this._idCounter = 1000;
     this._parser = new Parser();
     this._pending = {};
-    this._name = name;
     this._observers = [];
 
     var session = this;
@@ -64,6 +75,7 @@ function constructor(name) {
                 session._stream('in', 'close');
             },
         onStanza: function(domElement) {
+                dump(domElement + '\n')
                 session._stanza('in', domElement);
             }});
 
@@ -73,8 +85,12 @@ function constructor(name) {
         });
 }
 
+function setName(string) {
+    this._name = string;
+}
+
+// PUBLIC INTERFACE
 // ----------------------------------------------------------------------
-// CONTEXT
 
 function open(server) {
     if(this._isOpen)
@@ -92,20 +108,17 @@ open.doc = 'Send the stream prologue.';
 function close() {
     if(!this._isOpen)
         throw new Error('Session already closed.');
+    // Important: putting the following line at the bottom causes loop.
+    this._isOpen = false;
 
     this._stream('out', 'close');
     this.send('</stream:stream>');
-    this._isOpen = false;
 }
 close.doc = 'Send the stream epilogue.';
 
 function isOpen() {
     return this._isOpen;
 }
-
-
-// ----------------------------------------------------------------------
-// INPUT
 
 function send(data, observer) {
     var session = this;
@@ -115,11 +128,16 @@ function send(data, observer) {
                              reply.stanza.toXMLString())
         }
 
-    if(typeof(data) == 'xml' ||
-       data instanceof Components.interfaces.nsIDOMElement) 
-        this._stanza('out', data, handler);
-    else 
+    var domStanza = domParser
+        .parseFromString(data, 'text/xml')
+        .documentElement;
+
+    if(domStanza.tagName == 'parsererror' ||
+       domStanza.namespaceURI == 'http://www.mozilla.org/newlayout/xml/parsererror.xml')
         this._data('out', data);
+    else
+        this._stanza('out', domStanza, handler);
+
 }
 
 send.doc = 'Send text or XML to the other side.  If XML, it is stamped with an \
@@ -128,12 +146,8 @@ data is not actually sent since the session has no notion of transports \
 internally, but resurfaces as plain text in the {event: "data", direction: "out"} \
 event so that it can be passed to a transport there.';
 
-function receive(data) {
-    if(typeof(data) == 'xml' ||
-       data instanceof Components.interfaces.nsIDOMElement)
-        this._stanza('in', data);
-    else
-        this._data('in', data);
+function receive(data) { 
+    this._data('in', data);
 }
 receive.doc = 'Receive text or XML from the other side.';
     
@@ -148,8 +162,8 @@ function removeObserver(observer) {
 }
 
 
-// ----------------------------------------------------------------------
 // INTERNALS
+// ----------------------------------------------------------------------
 
 function _stream(direction, state) {
     this.notifyObservers(null, 'stream-' + direction, state);
@@ -166,12 +180,7 @@ function _data(direction, data) {
     this.notifyObservers(null, 'data-' + direction, data);
 }
 
-function _stanza(direction, stanza, handler) {
-    var domStanza = 
-        typeof(stanza) == 'xml' ?
-        parser.parseFromString(stanza.toXMLString(), 'text/xml').documentElement :
-        stanza;
-
+function _stanza(direction, domStanza, handler) {
     switch(direction) {
     case 'in':
         var id = domStanza.getAttribute('id');

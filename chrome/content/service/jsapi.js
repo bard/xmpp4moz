@@ -294,6 +294,7 @@ function _up(jid, opts) {
         continuation(jid);
     else if(jid && password) {
         service.open(jid, connectionHost, connectionPort, ssl);
+        
         var XMPP = this;
         var m = jid.match(/^([^@]+)@([^\/]+)\/(.+)$/);
         var username = m[1];
@@ -322,7 +323,7 @@ function _send(jid, stanza, handler) {
     if(handler)
         replyObserver = {
             observe: function(subject, topic, replyStanza) {
-                handler(new XML(replyStanza));                
+                handler(new XML(replyStanza));
             }
         };
     

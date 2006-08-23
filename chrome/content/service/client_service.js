@@ -8,7 +8,6 @@ Components
 
 const module = new ModuleManager(['chrome://xmpp4moz/content']);
 const Transport = module.require('class', 'lib/socket');
-const Session = module.require('class', 'session');
 
 
 // GLOBAL STATE
@@ -54,7 +53,10 @@ function open(jid, server, port, ssl) {
     ssl = ssl || true;
     
     var transport = new Transport(server, port, { ssl: ssl });
-    var session = new Session(jid);
+    var session = Components
+        .classes['@hyperstruct.net/xmpp4moz/xmppsession;1']
+        .createInstance(Components.interfaces.nsIXMPPClientSession);
+    session.setName(jid);
 
     transport.on(
         'data', function(data) {
@@ -88,8 +90,7 @@ function open(jid, server, port, ssl) {
                     null,
                     topic + '-' + session.name,
                     data);
-            }});
-
+            }}, null, false);
 
     transport.connect();
     session.open(jid.match(/@([^\/]+)/)[1]);
@@ -105,7 +106,7 @@ function close(jid) {
 }
 
 function send(sessionName, stanza, observer) {
-    sessions.get(sessionName).send(new XML(stanza), observer);
+    sessions.get(sessionName).send(stanza, observer);
 }
 
 function addObserver(observer) {
