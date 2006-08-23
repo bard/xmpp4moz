@@ -25,6 +25,6 @@ interface nsIXMPPClientSession: nsISupports
     void notifyObservers(in nsISupports aSubject, in string aTopic, in wstring someData);
 
     void setName(in string name);
-    
+
     attribute string name;
 };  

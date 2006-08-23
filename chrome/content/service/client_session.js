@@ -88,6 +88,7 @@ function setName(string) {
     this._name = string;
 }
 
+
 // PUBLIC INTERFACE
 // ----------------------------------------------------------------------
 
@@ -120,16 +121,14 @@ function isOpen() {
 }
 
 function send(data, observer) {
-    var session = this;
-    if(observer)
+    if(observer) {
+        var session = this;
         var handler = function(reply) {
-            observer.observe(null, 'reply-in-' + session.name,
-                             reply.stanza.toXMLString())
+            observer.observe(session, 'reply-in', reply);
         }
+    }
 
-    var domStanza = domParser
-        .parseFromString(data, 'text/xml')
-        .documentElement;
+    var domStanza = domParser.parseFromString(data, 'text/xml').documentElement;
 
     if(domStanza.tagName == 'parsererror' ||
        domStanza.namespaceURI == 'http://www.mozilla.org/newlayout/xml/parsererror.xml')
@@ -165,7 +164,7 @@ function removeObserver(observer) {
 // ----------------------------------------------------------------------
 
 function _stream(direction, state) {
-    this.notifyObservers(null, 'stream-' + direction, state);
+    this.notifyObservers(this, 'stream-' + direction, state);
 }
 
 function _data(direction, data) {
@@ -176,7 +175,7 @@ function _data(direction, data) {
     if(direction == 'in')
         this._parser.parse(data);
 
-    this.notifyObservers(null, 'data-' + direction, data);
+    this.notifyObservers(this, 'data-' + direction, data);
 }
 
 function _stanza(direction, domStanza, handler) {
@@ -184,8 +183,7 @@ function _stanza(direction, domStanza, handler) {
     case 'in':
         var id = domStanza.getAttribute('id');
         if(this._pending[id]) {
-            this._pending[id]({session: this,
-                        stanza: new XML(serializer.serializeToString(domStanza))}); // MISSING EVENT NAME
+            this._pending[id](serializer.serializeToString(domStanza));
             delete this._pending[id];
         }
         // if(stanza.*::query.length() > 0) {
@@ -199,7 +197,7 @@ function _stanza(direction, domStanza, handler) {
         break;
     }
 
-    this.notifyObservers(null, 'stanza-' + direction, serializer.serializeToString(domStanza));
+    this.notifyObservers(this, 'stanza-' + direction, serializer.serializeToString(domStanza));
 }
 
 function notifyObservers(subject, topic, data) {

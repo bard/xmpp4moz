@@ -141,12 +141,13 @@ function createChannel(baseFilter) {
         },
 
         observe: function(subject, topic, data) {
-            var match = topic.match(/^(stream|data|stanza)-(in|out)-(.+?)$/);
+            subject.QueryInterface(Components.interfaces.nsIXMPPClientSession);
+            var match = topic.match(/^(stream|data|stanza)-(in|out)$/);
             
             var pattern = {
                 event: match[1],
                 direction: match[2],
-                session: {name: match[3]}
+                session: subject
             }
 
             switch(pattern.event) {

@@ -80,16 +80,10 @@ function open(jid, server, port, ssl) {
     session.addObserver({
         observe: function(subject, topic, data) {
                 var parts = topic.split('-');
-                type = parts[0];
-                direction = parts[1];
-
-                if(type == 'data' && direction == 'out')
+                if(parts[0] == 'data' && parts[1] == 'out')
                     transport.write(data);
 
-                client.notifyObservers(
-                    null,
-                    topic + '-' + session.name,
-                    data);
+                client.notifyObservers(subject, topic, data);
             }}, null, false);
 
     transport.connect();
