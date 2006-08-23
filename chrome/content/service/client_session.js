@@ -138,8 +138,8 @@ function isOpen() {
 function send(data, observer) {
     if(observer) {
         var session = this;
-        var handler = function(reply) {
-            observer.observe(session, 'reply-in', reply);
+        var handler = function(domReply) {
+            observer.observe(domReply, 'reply-in', this.name);
         }
     }
 
@@ -177,7 +177,7 @@ function removeObserver(observer) {
 // ----------------------------------------------------------------------
 
 function _stream(direction, state) {
-    this.notifyObservers(this, 'stream-' + direction, state);
+    this.notifyObservers(state, 'stream-' + direction, this.name);
 }
 
 function _data(direction, data) {
@@ -188,7 +188,7 @@ function _data(direction, data) {
     if(direction == 'in')
         this._parser.parse(data);
 
-    this.notifyObservers(this, 'data-' + direction, data);
+    this.notifyObservers(data, 'data-' + direction, this.name);
 }
 
 function _stanza(direction, domStanza, handler) {
@@ -196,7 +196,7 @@ function _stanza(direction, domStanza, handler) {
     case 'in':
         var id = domStanza.getAttribute('id');
         if(this._pending[id]) {
-            this._pending[id](serializer.serializeToString(domStanza));
+            this._pending[id](domStanza);
             delete this._pending[id];
         }
         break;
@@ -208,10 +208,17 @@ function _stanza(direction, domStanza, handler) {
         break;
     }
 
-    this.notifyObservers(this, 'stanza-' + direction, serializer.serializeToString(domStanza));
+    this.notifyObservers(domStanza, 'stanza-' + direction, this.name);
 }
 
 function notifyObservers(subject, topic, data) {
+    if(typeof(subject) == 'string') {
+        var xpcString = Cc["@mozilla.org/supports-string;1"]
+            .createInstance(Ci.nsISupportsString);
+        xpcString.data = subject;
+        subject = xpcString;
+    }
+    
     for each(var observer in this._observers) 
         try {
             observer.observe(subject, topic, data);

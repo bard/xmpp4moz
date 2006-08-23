@@ -37,6 +37,9 @@ const pref = Components
     .getService(Components.interfaces.nsIPrefService)
     .getBranch('xmpp.');
 
+const serializer = Components
+    .classes['@mozilla.org/xmlextras/xmlserializer;1']
+    .getService(Components.interfaces.nsIDOMSerializer);
 
 // DEVELOPER INTERFACE
 // ----------------------------------------------------------------------
@@ -323,8 +326,8 @@ function _send(jid, stanza, handler) {
     var replyObserver;
     if(handler)
         replyObserver = {
-            observe: function(subject, topic, replyStanza) {
-                handler(new XML(replyStanza));
+            observe: function(replyStanza, topic, sessionName) {
+                handler(new XML(serializer.serializeToString(replyStanza)));
             }
         };
     

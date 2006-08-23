@@ -25,7 +25,7 @@ var observers = [];
 var sessions = {
     _list: [],
 
-    opened: function(session) {
+    opening: function(session) {
         this._list.push(session)
     },
 
@@ -88,14 +88,29 @@ function open(jid, server, port, ssl) {
         observe: function(subject, topic, data) {
                 var parts = topic.split('-');
                 if(parts[0] == 'data' && parts[1] == 'out')
-                    transport.write(data);
+                    transport.write(subject
+                                    .QueryInterface(Ci.nsISupportsString)
+                                    .toString())
 
-                client.notifyObservers(subject, topic, data);
+
+                if(parts[0] == 'stanza') {
+                    subject.QueryInterface(Ci.nsIDOMElement);
+                    client.notifyObservers(
+                        sessions.get(data),
+                        topic,
+                        serializer.serializeToString(subject));
+                } else {
+                    subject.QueryInterface(Ci.nsISupportsString);
+                    client.notifyObservers(
+                        sessions.get(data),
+                        topic,
+                        subject.data);
+                } 
             }}, null, false);
 
     transport.connect();
+    sessions.opening(session);
     session.open(jid.match(/@([^\/]+)/)[1]);
-    sessions.opened(session);
     return session;
 }
 
@@ -119,7 +134,7 @@ function notifyObservers(subject, topic, data) {
         try {
             observer.observe(subject, topic, data);
         } catch(e) {
-            Components.utils.reportError(e);
+            Cu.reportError(e);
         }
 }
 
