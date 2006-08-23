@@ -1,12 +1,19 @@
 // GLOBAL DEFINITIONS
 // ----------------------------------------------------------------------
 
-Components
-.classes['@mozilla.org/moz/jssubscript-loader;1']
-.getService(Components.interfaces.mozIJSSubScriptLoader)
-    .loadSubScript('chrome://xmpp4moz/content/lib/module_manager.js');
+const Cc = Components.classes;
+const Ci = Components.interfaces;
+const Cu = Components.utils;
 
+const loader = Cc['@mozilla.org/moz/jssubscript-loader;1']
+    .getService(Ci.mozIJSSubScriptLoader);
+
+const serializer = Cc['@mozilla.org/xmlextras/xmlserializer;1']
+    .getService(Ci.nsIDOMSerializer);
+
+loader.loadSubScript('chrome://xmpp4moz/content/lib/module_manager.js');
 const module = new ModuleManager(['chrome://xmpp4moz/content']);
+
 const Transport = module.require('class', 'lib/socket');
 
 
@@ -54,9 +61,8 @@ function open(jid, server, port, ssl) {
         ssl || true;
     
     var transport = new Transport(server, port, { ssl: ssl });
-    var session = Components
-        .classes['@hyperstruct.net/xmpp4moz/xmppsession;1']
-        .createInstance(Components.interfaces.nsIXMPPClientSession);
+    var session = Cc['@hyperstruct.net/xmpp4moz/xmppsession;1']
+        .createInstance(Ci.nsIXMPPClientSession);
     session.setName(jid);
 
     transport.on(

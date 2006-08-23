@@ -36,18 +36,18 @@
 // GLOBAL DEFINITIONS
 // ----------------------------------------------------------------------
 
-const loader = Components
-    .classes['@mozilla.org/moz/jssubscript-loader;1']
-    .getService(Components.interfaces.mozIJSSubScriptLoader);
-const converter = Components
-    .classes["@mozilla.org/intl/scriptableunicodeconverter"]
-    .getService(Components.interfaces.nsIScriptableUnicodeConverter);
-const serializer = Components
-    .classes['@mozilla.org/xmlextras/xmlserializer;1']
-    .getService(Components.interfaces.nsIDOMSerializer);
-const domParser = Components
-    .classes['@mozilla.org/xmlextras/domparser;1']
-    .getService(Components.interfaces.nsIDOMParser);
+const Cc = Components.classes;
+const Ci = Components.interfaces;
+const Cu = Components.utils;
+
+const loader = Cc['@mozilla.org/moz/jssubscript-loader;1']
+    .getService(Ci.mozIJSSubScriptLoader);
+const converter = Cc["@mozilla.org/intl/scriptableunicodeconverter"]
+    .getService(Ci.nsIScriptableUnicodeConverter);
+const serializer = Cc['@mozilla.org/xmlextras/xmlserializer;1']
+    .getService(Ci.nsIDOMSerializer);
+const domParser = Cc['@mozilla.org/xmlextras/domparser;1']
+    .getService(Ci.nsIDOMParser);
 
 converter.charset = 'UTF-8';
 loader.loadSubScript('chrome://xmpp4moz/content/lib/module_manager.js');
@@ -216,7 +216,7 @@ function notifyObservers(subject, topic, data) {
         try {
             observer.observe(subject, topic, data);
         } catch(e) {
-            Components.utils.reportError(e);
+            Cu.reportError(e);
         }    
 }
 
