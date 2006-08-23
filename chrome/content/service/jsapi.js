@@ -41,6 +41,20 @@ const pref = Components
 // DEVELOPER INTERFACE
 // ----------------------------------------------------------------------
 
+function JID(string) {
+    var m = string.match(/^(.+?)@(.+?)(?:\/|$)(.*$)/);
+    var jid = {
+        username: m[1],
+        hostname: m[2],
+        resource: m[3],
+        nick:     m[3],
+        address:  m[1] + '@' + m[2],
+        full:     m[3] ? string : null
+    }
+
+    return jid;    
+}
+
 function up(account, opts) {
     opts = opts || {};
 
@@ -214,6 +228,31 @@ function createChannel(baseFilter) {
     return channel;
 }
 
+function register(jid, password, opts) {
+    service.open(
+        jid,
+        opts.host || JID(jid).hostname,
+        opts.port || 5223,
+        opts.ssl == undefined ? true : opts.ssl);
+    
+    this.send(
+        jid,
+        <iq to={JID(jid).hostname} type="set">
+        <query xmlns="jabber:iq:register">
+        <username>{JID(jid).username}</username>
+        <password>{password}</password>
+        </query>
+        </iq>,
+        function(reply) {
+            if(reply.@type == 'result') {
+                opts.success();
+            } else {
+                opts.failure();
+            }
+            service.close(jid);
+        });
+}
+
 
 // INTERNALS
 // ----------------------------------------------------------------------
@@ -243,7 +282,6 @@ function _up(jid, opts) {
 
     if(!((jid && password) ||
          (jid && this.isUp(jid)))) {
-
         var userInput = this._promptAccount(jid, requester);
 
         if(userInput.confirm) {
