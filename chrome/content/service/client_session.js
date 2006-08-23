@@ -75,7 +75,6 @@ function init() {
                 session._stream('in', 'close');
             },
         onStanza: function(domElement) {
-                dump(domElement + '\n')
                 session._stanza('in', domElement);
             }});
 

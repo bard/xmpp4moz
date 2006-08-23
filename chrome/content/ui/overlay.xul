@@ -40,8 +40,8 @@ Author: Massimiliano Mirra, <bard [at] hyperstruct [dot] net>
              oncommand="xmppToggleLivebar();"
              accesskey="L"/>
     <command id="xmpp-command-open-console"
-             label="XMPP Console (window)"
-             accesskey="C"
+             label="XMPP Console"
+             accesskey="o"
              oncommand="window.open(
                         'chrome://xmpp4moz/content/ui/console.xul',
                         'xmpp-console', 'chrome,alwaysRaised');"/>
@@ -63,13 +63,9 @@ Author: Massimiliano Mirra, <bard [at] hyperstruct [dot] net>
     <menu label="Jabber" accesskey="J" position="1" insertafter="helpMenu">
       <menupopup id="xmpp-menu-accounts">
         <menuseparator/>
-        <menu label="Applications" accesskey="A">
-          <menupopup id="xmpp-tools-menu-apps">
-            <menuitem class="menuitem-iconic" command="xmpp-command-open-console"/>
-          </menupopup>
-        </menu>
         <menuitem class="menuitem-iconic" command="xmpp-command-toggle-livebar"/>
         <menuitem class="menuitem-iconic" command="xmpp-command-open-preferences"/>
+        <menuitem class="menuitem-iconic" command="xmpp-command-open-console"/>
       </menupopup>
     </menu>
   </menubar>
@@ -112,9 +108,7 @@ Author: Massimiliano Mirra, <bard [at] hyperstruct [dot] net>
                    availability="unavailable">
       <menupopup id="xmpp-menu-accounts-secondary">
         <menuseparator/>
-        <menuitem class="menuitem-iconic" command="xmpp-command-toggle-livebar"/>
         <menuitem class="menuitem-iconic" command="xmpp-command-open-preferences"/>
-        <menuitem class="menuitem-iconic" command="xmpp-command-open-console"/>
       </menupopup>
     </toolbarbutton>
   </toolbarpalette>
