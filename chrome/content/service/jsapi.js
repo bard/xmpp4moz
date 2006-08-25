@@ -41,8 +41,34 @@ const serializer = Components
     .classes['@mozilla.org/xmlextras/xmlserializer;1']
     .getService(Components.interfaces.nsIDOMSerializer);
 
+
 // DEVELOPER INTERFACE
 // ----------------------------------------------------------------------
+
+var cache = {
+    _enumToArray: function(enumeration) {
+        var objects = [];
+        while(enumeration.hasMoreElements()) {
+            var object = enumeration
+                .getNext()
+                .QueryInterface(Components.interfaces.nsIDictionary);
+
+            objects.push({
+                session: object.getValue('session')
+                .QueryInterface(Components.interfaces.nsIXMPPClientSession),
+                stanza: object.getValue('stanza')});
+        }
+        return objects;
+    },
+
+    get roster() {
+        return this._enumToArray(service.rosterCache());
+    },
+
+    get presence() {
+        return this._enumToArray(service.presenceCache());
+    }
+};
 
 function JID(string) {
     var m = string.match(/^(.+?)@(.+?)(?:\/|$)(.*$)/);

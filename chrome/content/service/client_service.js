@@ -7,7 +7,6 @@ const Cu = Components.utils;
 
 const loader = Cc['@mozilla.org/moz/jssubscript-loader;1']
     .getService(Ci.mozIJSSubScriptLoader);
-
 const serializer = Cc['@mozilla.org/xmlextras/xmlserializer;1']
     .getService(Ci.nsIDOMSerializer);
 
@@ -15,12 +14,13 @@ loader.loadSubScript('chrome://xmpp4moz/content/lib/module_manager.js');
 const module = new ModuleManager(['chrome://xmpp4moz/content']);
 
 const Transport = module.require('class', 'lib/socket');
+const Cache = module.require('package', 'lib/cache').Cache;
 
 
 // GLOBAL STATE
 // ----------------------------------------------------------------------
 
-var observers = [];
+var observers = [], cache;
 
 var sessions = {
     _list: [],
@@ -83,29 +83,25 @@ function open(jid, server, port, ssl) {
         });
 
     var client = this;
-
     session.addObserver({
         observe: function(subject, topic, data) {
-                var parts = topic.split('-');
-                if(parts[0] == 'data' && parts[1] == 'out')
-                    transport.write(subject
-                                    .QueryInterface(Ci.nsISupportsString)
-                                    .toString())
+                if(topic == 'data-out')                     
+                    transport.write(
+                        subject.QueryInterface(Ci.nsISupportsString).toString());
+
+                if(topic == 'stanza-in') 
+                    if(subject.nodeName == 'presence')
+                        cache.presence.receive(
+                            {session: sessions.get(data), stanza: subject});
+                    else if(subject.nodeName == 'iq' &&
+                            subject.getElementsByTagName('query')[0] &&
+                            subject.getElementsByTagName('query')[0]
+                            .getAttribute('xmlns') == 'jabber:iq:roster')
+                        cache.roster.receive(
+                            {session: sessions.get(data), stanza: subject});
 
 
-                if(parts[0] == 'stanza') {
-                    subject.QueryInterface(Ci.nsIDOMElement);
-                    client.notifyObservers(
-                        sessions.get(data),
-                        topic,
-                        serializer.serializeToString(subject));
-                } else {
-                    subject.QueryInterface(Ci.nsISupportsString);
-                    client.notifyObservers(
-                        sessions.get(data),
-                        topic,
-                        subject.data);
-                } 
+                client.notifyObservers(subject, topic, data);
             }}, null, false);
 
     transport.connect();
@@ -145,3 +141,78 @@ function removeObserver(observer) {
         observers.splice(index, 1);
 }
 
+function presenceCache() {
+    return cacheProxy('presence');
+}
+
+function rosterCache() {
+    return cacheProxy('roster');
+}
+
+
+// INTERNALS
+// ----------------------------------------------------------------------
+
+function cacheProxy(cacheName) {
+    var enumerator = cache[cacheName].getEnumeration();
+    
+    var proxy = {
+        getNext: function() {
+            var cachedObject = enumerator.getNext();
+            var dict = Cc['@mozilla.org/dictionary;1'].createInstance(Ci.nsIDictionary);
+            for(var name in cachedObject) 
+                dict.setValue(name, cachedObject[name]);
+
+            return dict;
+        },
+
+        hasMoreElements: function() {
+            return enumerator.hasMoreElements();
+        }
+    }
+    return proxy;    
+}
+
+cache = {
+    presence: new Cache(
+        function(newObject, cachedObject) {
+            if(newObject.session.name == cachedObject.session.name &&
+               newObject.stanza.getAttribute('from') == cachedObject.stanza.getAttribute('from')) {
+                if(newObject.stanza.getAttribute('type') == 'unavailable') 
+                    return null;
+                else
+                    return newObject;
+            }
+        },
+        function(newObject) {
+            return (!newObject.stanza.hasAttribute('type') ||
+                    newObject.stanza.getAttribute('type') == 'unavailable');
+        }),
+
+    // XXX does not handle roster remove case and probably a few others
+    roster: new Cache(
+        function(newObject, cachedObject) {
+            if(newObject.session.name != cachedObject.session.name)
+                return;
+
+            var newQuery = newObject.stanza.getElementsByTagNameNS('jabber:iq:roster', 'query')[0];
+            var cachedQuery = newObject.stanza.getElementsByTagNameNS('jabber:iq:roster', 'query')[0];
+
+            for(var i=0, l=newQuery.childNodes.length; i<l; i++) {
+                var cachedRosterItem = cachedQuery.childNodes[i];
+                var found = false;
+                for(var j=0, k=cachedQuery.childNodes.length; j<k; j++) {
+                    var newRosterItem = newQuery.childNodes[j];
+                    if(newRosterItem.getAttribute('jid') == cachedRosterItem.getAttribute('jid')) {
+                        found = true;
+                        break;
+                    }
+                }
+                if(found)
+                    cachedQuery.replaceChild(newRosterItem, cachedRosterItem);
+                else
+                    cachedQuery.appendChild(newRosterItem);
+            }
+            return cachedObject;
+        })    
+};
