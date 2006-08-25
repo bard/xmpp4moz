@@ -56,7 +56,7 @@ var cache = {
             objects.push({
                 session: object.getValue('session')
                 .QueryInterface(Components.interfaces.nsIXMPPClientSession),
-                stanza: object.getValue('stanza')});
+                stanza: new XML(serializer.serializeToString(object.getValue('stanza')))});
         }
         return objects;
     },
