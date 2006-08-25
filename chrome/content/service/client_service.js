@@ -89,16 +89,32 @@ function open(jid, server, port, ssl) {
                     transport.write(
                         subject.QueryInterface(Ci.nsISupportsString).toString());
 
-                if(topic == 'stanza-in') 
-                    if(subject.nodeName == 'presence')
+                if(topic == 'stanza-in')
+                    switch(subject.nodeName) {
+                    case 'presence':
                         cache.presence.receive(
                             {session: sessions.get(data), stanza: subject});
-                    else if(subject.nodeName == 'iq' &&
-                            subject.getElementsByTagName('query')[0] &&
-                            subject.getElementsByTagName('query')[0]
-                            .getAttribute('xmlns') == 'jabber:iq:roster')
-                        cache.roster.receive(
-                            {session: sessions.get(data), stanza: subject});
+                        break;
+                    case 'iq':
+                        var query = subject.getElementsByTagName('query')[0];
+                        if(query)
+                            switch(query.getAttribute('xmlns')) {
+                            case 'jabber:iq:roster':
+                                cache.roster.receive(
+                                    {session: sessions.get(data), stanza: subject});
+                                break;
+                            case 'http://jabber.org/protocol/disco#info':
+                                var stanza =
+                                    <iq type="result" to={subject.getAttribute('from')}>
+                                    <query xmlns="http://jabber.org/protocol/disco#info">
+                                         <identity category="client" type="pc" name="xmpp4moz"/>
+                                         </query>
+                                         </iq>;
+                                session.send(stanza.toXMLString(), null);
+                                break;
+                            }
+                        break;
+                    }
 
                 if(topic == 'stream-out' &&
                    'close' == subject.QueryInterface(Components.interfaces.nsISupportsString).toString()) {
