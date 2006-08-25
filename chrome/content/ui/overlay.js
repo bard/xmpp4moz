@@ -125,12 +125,19 @@ xmppChannel.on(
 xmppChannel.on(
     { event: 'presence', direction: 'out' },
     function(presence) {
-        var indicator = document.getElementById('xmpp-button');
         if(presence.stanza.@type == undefined)
-            indicator.setAttribute('availability', 'available');
-        else if(presence.stanza.@type == 'unavailable')
+            document
+                .getElementById('xmpp-button')
+                .setAttribute('availability', 'available');
+    });
+
+xmppChannel.on(
+    { event: 'stream', direction: 'out' },
+    function(stream) {
+        if(stream.state == 'close')
             if(XMPP.accounts.every(XMPP.isDown))
-                indicator.setAttribute('availability', 'unavailable');
+                document.getElementById('xmpp-button')
+                    .setAttribute('availability', 'unavailable')
     });
 
 
