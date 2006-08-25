@@ -207,6 +207,9 @@ cache = {
                 return;
 
             var newQuery = newObject.stanza.getElementsByTagNameNS('jabber:iq:roster', 'query')[0];
+            if(!newQuery)
+                return cachedQuery;
+            
             var cachedQuery = newObject.stanza.getElementsByTagNameNS('jabber:iq:roster', 'query')[0];
 
             for(var i=0, l=newQuery.childNodes.length; i<l; i++) {
