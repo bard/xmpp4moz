@@ -100,6 +100,17 @@ function open(jid, server, port, ssl) {
                         cache.roster.receive(
                             {session: sessions.get(data), stanza: subject});
 
+                if(topic == 'stream-out' &&
+                   'close' == subject.QueryInterface(Components.interfaces.nsISupportsString).toString()) {
+                    var presences = cache.presence.getEnumeration();
+                    while(presences.hasMoreElements()) {
+                        var presence = presences.getNext();
+                        var syntheticPresence = presence.stanza.cloneNode(true);
+                        syntheticPresence.removeAttribute('id');
+                        syntheticPresence.setAttribute('type', 'unavailable');
+                        session.receive(serializer.serializeToString(syntheticPresence));
+                    }
+                }
 
                 client.notifyObservers(subject, topic, data);
             }}, null, false);
