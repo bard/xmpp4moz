@@ -1,7 +1,7 @@
 #xmpp-button[availability="unavailable"]
 { 
   list-style-image: url("chrome://xmpp4moz/skin/status.png"); 
-  -moz-image-region: rect(0px 24px 24px 0px);
+  -moz-image-region: rect(72px 24px 96px 0px);
   }
 
 #xmpp-button[availability="available"]
@@ -13,7 +13,7 @@
 toolbar[iconsize="small"] #xmpp-button[availability="unavailable"]
 {
   list-style-image: url("chrome://xmpp4moz/skin/status-small.png");
-  -moz-image-region: rect(0px 16px 16px 0px);
+  -moz-image-region: rect(48px 16px 64px 0px);
   }
 
 toolbar[iconsize="small"] #xmpp-button[availability="available"]
