@@ -170,24 +170,26 @@ function createChannel(baseFilter) {
         },
 
         observe: function(subject, topic, data) {
-            subject.QueryInterface(Components.interfaces.nsIXMPPClientSession);
             var match = topic.match(/^(stream|data|stanza)-(in|out)$/);
             
             var pattern = {
                 event: match[1],
                 direction: match[2],
-                session: subject
+                session: { name: data.toString() } // XXX hack - should get real session rather that something that looks like it
             }
 
             switch(pattern.event) {
                 case 'stream':
-                pattern.state = data;
+                subject.QueryInterface(Components.interfaces.nsISupportsString).toString();
+                pattern.state = subject.toString();
                 break;
                 case 'data':
-                pattern.content = data;
+                subject.QueryInterface(Components.interfaces.nsISupportsString).toString();
+                pattern.content = subject.toString();
                 break;
                 case 'stanza':
-                var stanza = new XML(data);
+                subject.QueryInterface(Components.interfaces.nsIDOMElement);
+                var stanza = new XML(serializer.serializeToString(subject));
                 pattern.event = stanza.name();
                 pattern.stanza = stanza;
                 break;
