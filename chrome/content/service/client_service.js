@@ -89,6 +89,20 @@ function open(jid, server, port, ssl) {
                     transport.write(
                         subject.QueryInterface(Ci.nsISupportsString).toString());
 
+                if(topic == 'stream-out' &&
+                   'close' == subject.QueryInterface(Components.interfaces.nsISupportsString).toString()) {
+                    var presences = cache.presence.getEnumeration();
+                    while(presences.hasMoreElements()) {
+                        var presence = presences.getNext();
+                        var syntheticPresence = presence.stanza.cloneNode(true);
+                        syntheticPresence.removeAttribute('id');
+                        syntheticPresence.setAttribute('type', 'unavailable');
+                        session.receive(serializer.serializeToString(syntheticPresence));
+                    }
+                }
+
+                client.notifyObservers(subject, topic, data);
+
                 if(topic == 'stanza-in')
                     switch(subject.nodeName) {
                     case 'presence':
@@ -115,20 +129,6 @@ function open(jid, server, port, ssl) {
                             }
                         break;
                     }
-
-                if(topic == 'stream-out' &&
-                   'close' == subject.QueryInterface(Components.interfaces.nsISupportsString).toString()) {
-                    var presences = cache.presence.getEnumeration();
-                    while(presences.hasMoreElements()) {
-                        var presence = presences.getNext();
-                        var syntheticPresence = presence.stanza.cloneNode(true);
-                        syntheticPresence.removeAttribute('id');
-                        syntheticPresence.setAttribute('type', 'unavailable');
-                        session.receive(serializer.serializeToString(syntheticPresence));
-                    }
-                }
-
-                client.notifyObservers(subject, topic, data);
             }}, null, false);
 
     transport.connect();
