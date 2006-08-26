@@ -10,7 +10,7 @@
     
     <prefpane id="xmpp-pane" label="Jabber"
               onpaneload="xmppRefreshAccountList();"
-              image="chrome://xmpp4moz/skin/bulb.png"
+              image="chrome://xmpp4moz/skin/status/available-big.png"
               orient="vertical">
 
       <groupbox flex="1">

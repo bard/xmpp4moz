@@ -2,13 +2,13 @@
 #xmpp-menu-accounts-secondary > menuitem[availability="unavailable"]
 {
   color: graytext ! important;
-  list-style-image: url("chrome://xmpp4moz/skin/status-small.png"); 
+  list-style-image: url("chrome://xmpp4moz/skin/status/all-small.png"); 
   -moz-image-region: rect(48px 16px 64px 0px);
   }
 
 #xmpp-menu-accounts > menuitem[availability="available"],
 #xmpp-menu-accounts-secondary > menuitem[availability="available"]
 {
-  list-style-image: url("chrome://xmpp4moz/skin/status-small.png"); 
+  list-style-image: url("chrome://xmpp4moz/skin/status/all-small.png"); 
   -moz-image-region: rect(16px 16px 32px 0px);
   }
