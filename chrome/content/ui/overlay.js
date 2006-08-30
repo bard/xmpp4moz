@@ -213,25 +213,6 @@ function xmppRefreshContent() {
     toolbox.hidden = !xmppLocation;
 }
 
-function xmppToggleLivebar() {
-    var sidebar = document.getElementById('livebar');
-    var splitter = document.getElementById('livebar-splitter');
-
-    if(sidebar.collapsed) {
-        sidebar.collapsed = false;
-        splitter.hidden = false;
-    } else {
-        sidebar.collapsed = true;
-        splitter.hidden = true;
-    }
-}
-
-function xmppShowLivebar() {
-    document.getElementById('livebar').collapsed = false;
-    document.getElementById('livebar-splitter').hidden = false;
-}
-
-
 function xmppAddToolbarButton() {
     var toolbox = document.getElementById('navigator-toolbox');
     var toolbar = toolbox.getElementsByAttribute('id', 'nav-bar')[0];

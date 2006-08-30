@@ -35,12 +35,8 @@ Author: Massimiliano Mirra, <bard [at] hyperstruct [dot] net>
   <!-- COMMANDS -->
 
   <commandset id="mainCommandSet">
-    <command id="xmpp-command-toggle-livebar"
-             label="Livebar"
-             oncommand="xmppToggleLivebar();"
-             accesskey="L"/>
     <command id="xmpp-command-open-console"
-             label="XMPP Console"
+             label="Console"
              accesskey="o"
              oncommand="window.open(
                         'chrome://xmpp4moz/content/ui/console.xul',
@@ -53,9 +49,7 @@ Author: Massimiliano Mirra, <bard [at] hyperstruct [dot] net>
 
   <!-- KEYS -->
 
-  <keyset id="mainKeyset">
-    <key keycode="VK_F12" command="xmpp-command-toggle-livebar"/>
-  </keyset>
+  <keyset id="mainKeyset"/>
 
   <!-- MENUS -->
 
@@ -63,37 +57,15 @@ Author: Massimiliano Mirra, <bard [at] hyperstruct [dot] net>
     <menu label="Jabber" accesskey="J" position="1" insertafter="helpMenu">
       <menupopup id="xmpp-menu-accounts">
         <menuseparator/>
-        <menuitem class="menuitem-iconic" command="xmpp-command-toggle-livebar"/>
         <menuitem class="menuitem-iconic" command="xmpp-command-open-preferences"/>
         <menuitem class="menuitem-iconic" command="xmpp-command-open-console"/>
       </menupopup>
     </menu>
   </menubar>
 
-  <hbox id="browser">
+  <!-- BROWSER -->
 
-    <!-- LIVEBAR -->
-
-    <vbox id="livebar"
-          insertbefore="appcontent"
-          class="chromeclass-extracontent"
-          collapsed="true"
-          persist="width"
-          width="500">
-      <iframe src="about:blank"
-              class="box-inset"
-              flex="1"/>
-    </vbox>
-
-    <splitter id="livebar-splitter"
-              insertbefore="appcontent"
-              state="open"
-              collapse="before"
-              resizebefore="closest"
-              resizeafter="closest"
-              class="chromeclass-extracontent"
-              hidden="true"/>
-  </hbox>
+  <hbox id="browser"/>
 
   <!-- TOOLBAR -->
  
