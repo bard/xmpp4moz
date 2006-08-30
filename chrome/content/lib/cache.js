@@ -29,7 +29,7 @@ Cache.prototype = {
     },
 
     getEnumeration: function() {
-        var i=0, cachedObjects = this._store;
+        var i=0, cachedObjects = this._store.slice(0);
         
         var enumerator = {
             getNext: function() {

@@ -104,6 +104,13 @@ function createRosterCache() {
         });
 }
 
+function countEnum(enumeration) {
+    var count = 0;
+    while(enumeration.getNext())
+        count++;
+    return count;
+}
+
 spec.stateThat = {
     'Session cache': function() {
         var cache = createPresenceCache();
@@ -181,12 +188,7 @@ spec.stateThat = {
             session: session,
             stanza: asDom('<presence from="foo@localhost/Firefox"><show>dnd</show></presence>')});
 
-        var cachedObjects = cache.getEnumeration();
-        var itemCount = 0;
-        while(cachedObjects.getNext())
-            itemCount++;
-        
-        assert.equals(1, itemCount);
+        assert.equals(1, countEnum(cache.getEnumeration()));
 
         assert.equals(
             '<presence from="foo@localhost/Firefox">' + 
@@ -207,10 +209,47 @@ spec.stateThat = {
             session: session,
             stanza: asDom('<presence from="foo@localhost/Firefox" type="unavailable"/>')});
 
-        assert.equals(null, cache.getEnumeration().getNext());
+        assert.isNull(cache.getEnumeration().getNext());
     },
 
-    'Roster items': function() {
+    'Enumeration of cached object is not influenced by removals in the cache': function() {
+        var cache = createPresenceCache();
+        var session = createSession('bard@localhost/Firefox');
+
+        cache.receive({
+            session: session,
+            stanza: asDom('<presence from="foo@localhost/Firefox" ' +
+                          'to="bard@localhost/Firefox"/>')
+            });
+
+        cache.receive({
+            session: session,
+            stanza: asDom('<presence from="ben@localhost/Firefox" ' +
+                          'to="bard@localhost/Firefox"/>')
+            });
+
+        var cachedObjects = cache.getEnumeration();
+        
+        cache.receive({
+            session: session,
+            stanza: asDom('<presence from="foo@localhost/Firefox" type="unavailable" ' +
+                          'to="bard@localhost/Firefox"/>')
+            });
+
+        assert.equals('foo@localhost/Firefox',
+                      cachedObjects.getNext().stanza.getAttribute('from'));
+
+        cache.receive({
+            session: session,
+            stanza: asDom('<presence from="ben@localhost/Firefox" type="unavailable" '+
+                          'to="bard@localhost/Firefox"/>')
+            });
+
+        assert.equals('ben@localhost/Firefox',
+                      cachedObjects.getNext().stanza.getAttribute('from'));
+    },
+
+    'Roster stanzas get merged with previous ones of same session': function() {
         var cache = createRosterCache();
         var session = createSession('bard@localhost/Firefox');
 
