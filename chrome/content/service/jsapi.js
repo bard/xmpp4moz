@@ -276,7 +276,7 @@ function register(jid, password, opts) {
         </query>
         </iq>,
         function(reply) {
-            if(reply.@type == 'result') {
+            if(reply.stanza.@type == 'result') {
                 opts.success();
             } else {
                 opts.failure();
@@ -340,7 +340,7 @@ function _up(jid, opts) {
             <resource>{resource}</resource>
             </query></iq>,
             function(reply) {
-                if(reply.@type == 'result') {
+                if(reply.stanza.@type == 'result') {
                     XMPP.send(jid, <iq type="get"><query xmlns="jabber:iq:roster"/></iq>);
                     XMPP.send(jid, <presence/>);
                     if(continuation)
@@ -355,7 +355,10 @@ function _send(jid, stanza, handler) {
     if(handler)
         replyObserver = {
             observe: function(replyStanza, topic, sessionName) {
-                handler(new XML(serializer.serializeToString(replyStanza)));
+                handler({
+                    session: { name: sessionName }, // XXX hack
+                    stanza: new XML(serializer.serializeToString(replyStanza))
+                    });
             }
         };
     
