@@ -188,10 +188,10 @@ function _data(direction, data) {
                      'ConvertToUnicode' :
                      'ConvertFromUnicode'](data);
 
+    this.notifyObservers(data, 'data-' + direction, this.name);
+
     if(direction == 'in')
         this._parser.parse(data);
-
-    this.notifyObservers(data, 'data-' + direction, this.name);
 }
 
 function _stanza(direction, domStanza, handler) {
