@@ -58,8 +58,9 @@ function open(jid, server, port, ssl) {
     server = server || jid.match(/@([^\/]+)/)[1];
     port = port || 5223;
     if(ssl == undefined)
-        ssl || true;
-    
+        ssl = true;
+
+
     var transport = new Transport(server, port, { ssl: ssl });
     var session = Cc['@hyperstruct.net/xmpp4moz/xmppsession;1']
         .createInstance(Ci.nsIXMPPClientSession);
