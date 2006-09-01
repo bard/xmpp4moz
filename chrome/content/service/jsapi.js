@@ -325,28 +325,33 @@ function _up(jid, opts) {
     if(this.isUp(jid) && continuation)
         continuation(jid);
     else if(jid && password) {
-        service.open(jid, connectionHost, connectionPort, ssl);
-        
         var XMPP = this;
-        var m = jid.match(/^([^@]+)@([^\/]+)\/(.+)$/);
-        var username = m[1];
-        var server   = m[2];
-        var resource = m[3];
-        this.send(
-            jid,
-            <iq to={server} type="set"><query xmlns="jabber:iq:auth">
-            <username>{username}</username>
-            <password>{password}</password>
-            <resource>{resource}</resource>
-            </query></iq>,
-            function(reply) {
-                if(reply.stanza.@type == 'result') {
-                    XMPP.send(jid, <iq type="get"><query xmlns="jabber:iq:roster"/></iq>);
-                    XMPP.send(jid, <presence/>);
-                    if(continuation)
-                        continuation();
-                }
-            });
+
+        var streamReplyObserver = {
+            observe: function(subject, topic, data) {
+                XMPP.send(
+                    jid,
+                    <iq to={JID(jid).hostname} type="set">
+                    <query xmlns="jabber:iq:auth">
+                    <username>{JID(jid).username}</username>
+                    <password>{password}</password>
+                    <resource>{JID(jid).resource}</resource>
+                    </query></iq>,
+                    function(reply) {
+                        if(reply.stanza.@type == 'result') {
+                            XMPP.send(jid,
+                                      <iq type="get">
+                                      <query xmlns="jabber:iq:roster"/>
+                                      </iq>);
+                            XMPP.send(jid, <presence/>);
+                            if(continuation)
+                                continuation();
+                        }
+                    });                
+            }
+        };
+
+        service.open(jid, connectionHost, connectionPort, ssl, streamReplyObserver);
     }
 }
 

@@ -25,8 +25,22 @@ var observers = [], cache;
 var sessions = {
     _list: [],
 
-    opening: function(session) {
-        this._list.push(session)
+    created: function(session) {
+        var existingSession;
+        
+        for(var i=0, l=this._list.length; i<l; i++) 
+            if(this._list[i].name == session.name) {
+                existingSession = this._list[i];
+                break;
+            }
+
+        if(existingSession) {
+            if(existingSession.isOpen())
+                existingSession.close();
+            
+            this._list[i] = session;
+        } else
+            this._list.push(session);
     },
 
     closed: function(thing) {
@@ -54,7 +68,7 @@ function isUp(jid) {
     return (session && session.isOpen());
 }
 
-function open(jid, server, port, ssl) {
+function open(jid, server, port, ssl, streamObserver) {
     server = server || jid.match(/@([^\/]+)/)[1];
     port = port || 5223;
     if(ssl == undefined)
@@ -66,80 +80,95 @@ function open(jid, server, port, ssl) {
         .createInstance(Ci.nsIXMPPClientSession);
     session.setName(jid);
 
+
+    sessions.created(session);
+    
+
+    transport.on('data',  function(data) { session.receive(data); });
     transport.on(
-        'data', function(data) {
-            session.receive(data);
+        'start', function() {
+            log('Xmpp E: Transport for ' + session.name + ' opening');
         });
-
     transport.on(
-        'start',
-        function() {});
-
-    transport.on(
-        'stop', function() {
-            try {
+        'stop',  function() {
+            log('Xmpp E: Transport for ' + session.name + ' closing');
+            if(session.isOpen()) 
                 session.close();
-            }
-            catch(e) {}
         });
+
 
     var client = this;
-    session.addObserver({
+    var sessionObserver = {
         observe: function(subject, topic, data) {
-                if(topic == 'data-out')                     
-                    transport.write(
-                        subject.QueryInterface(Ci.nsISupportsString).toString());
+            log('Xmpp E: ' + topic);
 
-                if(topic == 'stream-out' &&
-                   'close' == subject.QueryInterface(Components.interfaces.nsISupportsString).toString()) {
-                    var presences = cache.presence.getEnumeration();
-                    while(presences.hasMoreElements()) {
-                        var presence = presences.getNext();
-                        var syntheticPresence = presence.stanza.cloneNode(true);
-                        syntheticPresence.removeAttribute('id');
-                        syntheticPresence.setAttribute('type', 'unavailable');
-                        session.receive(serializer.serializeToString(syntheticPresence));
-                    }
+            if(topic == 'data-in' || topic == 'data-out')
+                log('Xmpp ' + (topic == 'data-in' ? 'S' : 'C') + ': ' + asString(subject));
+
+            if(topic == 'data-out' && transport.isConnected())
+                transport.write(asString(subject));
+
+            if(topic == 'stream-in' && asString(subject) == 'open' && streamObserver)
+                streamObserver.observe(subject, topic, data);
+            
+            if(topic == 'stream-in' && asString(subject) == 'close') {
+                if(session.isOpen()) 
+                    session.close();
+                transport.disconnect();
+            }
+
+            if(topic == 'stream-out' && asString(subject) == 'close') {
+                transport.disconnect();
+                sessions.closed(session);
+            }
+
+            if(topic == 'stream-out' && asString(subject) == 'close') {
+                var presences = cache.presence.getEnumeration();
+                while(presences.hasMoreElements()) {
+                    var presence = presences.getNext();
+                    var syntheticPresence = presence.stanza.cloneNode(true);
+                    syntheticPresence.removeAttribute('id');
+                    syntheticPresence.setAttribute('type', 'unavailable');
+                    session.receive(serializer.serializeToString(syntheticPresence));
                 }
+            }
 
-                if(topic == 'stanza-in' && subject.nodeName == 'presence')
-                    cache.presence.receive(
-                        {session: sessions.get(data), stanza: subject});
+            if(topic == 'stanza-in' && subject.nodeName == 'presence')
+                cache.presence.receive({session: sessions.get(data), stanza: subject});
 
-                if(topic == 'stanza-in' && subject.nodeName == 'iq') {
-                    var query = subject.getElementsByTagName('query')[0];
-                    if(query && query.getAttribute('xmlns') == 'jabber:iq:roster') 
-                        cache.roster.receive(
-                            {session: sessions.get(data), stanza: subject});
+            if(topic == 'stanza-in' && subject.nodeName == 'iq') {
+                var query = subject.getElementsByTagName('query')[0];
+                if(query && query.getAttribute('xmlns') == 'jabber:iq:roster') 
+                    cache.roster.receive({session: sessions.get(data), stanza: subject});
+            }
+
+            client.notifyObservers(subject, topic, data);
+
+            if(topic == 'stanza-in') {
+                var query = subject.getElementsByTagName('query')[0];
+                if(query && query.getAttribute('xmlns') == 'http://jabber.org/protocol/disco#info') {
+                    var stanza =
+                        <iq type="result" to={subject.getAttribute('from')}>
+                        <query xmlns="http://jabber.org/protocol/disco#info">
+                             <identity category="client" type="pc" name="xmpp4moz"/>
+                             </query>
+                             </iq>;
+                    session.send(stanza.toXMLString(), null);
                 }
+            }
+        }
+    }
 
-                client.notifyObservers(subject, topic, data);
+    session.addObserver(sessionObserver, null, false);
 
-                if(topic == 'stanza-in') {
-                    var query = subject.getElementsByTagName('query')[0];
-                    if(query && query.getAttribute('xmlns') == 'http://jabber.org/protocol/disco#info') {
-                        var stanza =
-                            <iq type="result" to={subject.getAttribute('from')}>
-                            <query xmlns="http://jabber.org/protocol/disco#info">
-                                 <identity category="client" type="pc" name="xmpp4moz"/>
-                                 </query>
-                                 </iq>;
-                        session.send(stanza.toXMLString(), null);
-                    }
-                }
-            }}, null, false);
 
     transport.connect();
-    sessions.opening(session);
-    session.open(jid.match(/@([^\/]+)/)[1]);
+    session.open(JID(jid).hostname);
     return session;
 }
 
 function close(jid) {
     sessions.get(jid).close();
-    // TODO: actually session should be removed on close event, not on
-    // signOff request
-    sessions.closed(jid);
 }
 
 function send(sessionName, stanza, observer) {
@@ -244,3 +273,43 @@ cache = {
             return cachedObject;
         })    
 };
+
+
+// UTILITIES
+// ----------------------------------------------------------------------
+
+function JID(string) {
+    var m = string.match(/^(.+?)@(.+?)(?:\/|$)(.*$)/);
+    var jid = {
+        username: m[1],
+        hostname: m[2],
+        resource: m[3],
+        nick:     m[3],
+        address:  m[1] + '@' + m[2],
+        full:     m[3] ? string : null
+    }
+
+    return jid;    
+}
+
+function asString(xpcomString) {
+    return xpcomString.QueryInterface(Ci.nsISupportsString).toString();
+}
+
+function getStackTrace() {
+    var frame = Components.stack.caller;
+    var str = "<top>";
+
+    while (frame) {
+        str += '\n' + frame;
+        frame = frame.caller;
+    }
+
+    return str;
+}
+
+function log(msg) {
+    Cc[ "@mozilla.org/consoleservice;1" ]
+        .getService(Ci.nsIConsoleService)
+        .logStringMessage(msg);
+}
