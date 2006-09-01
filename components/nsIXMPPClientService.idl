@@ -1,6 +1,7 @@
 #include "nsISupports.idl"
 #include "nsIObserver.idl"
 #include "nsISimpleEnumerator.idl"
+#include "nsIXMPPClientSession.idl"
 
 interface nsIObserver;
 interface nsISimpleEnumerator;
@@ -10,9 +11,9 @@ interface nsIXMPPClientService: nsISupports
 {
     void reload();
 
-    void open(in string accountJid,
-              in string host, in string port, in boolean ssl,
-              in nsIObserver streamObserver);
+    nsIXMPPClientSession open(in string accountJid,
+                              in string host, in string port, in boolean ssl,
+                              in nsIObserver streamObserver);
 
     void close(in string accountJid);
 

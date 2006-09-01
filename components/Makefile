@@ -1,10 +1,10 @@
 IDLC=/usr/lib/firefox/xpidl
-INC=/usr/share/idl/xulrunner
-XPTS=XMPPClientService.xpt XMPPClientSession.xpt
+INC=-I. -I/usr/share/idl/xulrunner
+XPTS=nsIXMPPClientService.xpt nsIXMPPClientSession.xpt
 
 all: $(XPTS)
 
 %.xpt: %.idl
-	$(IDLC) -m typelib -w -v -I $(INC) -e $(@) $(<)
+	$(IDLC) -m typelib -w -v $(INC) -e $(@) $(<)
 
 .PHONY: all
