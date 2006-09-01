@@ -104,8 +104,8 @@ function open(server) {
               '<stream:stream xmlns="jabber:client" ' +
               'xmlns:stream="http://etherx.jabber.org/streams" ' +
               'to="' + server + '">');
+
     this._stream('out', 'open');
-    this._isOpen = true;
 }
 
 /**
@@ -116,8 +116,6 @@ function open(server) {
 function close() {
     if(!this._isOpen)
         throw new Error('Session already closed.');
-    // Important: putting the following line at the bottom causes loop.
-    this._isOpen = false;
 
     this._stream('out', 'close');
     this.send('</stream:stream>');
@@ -177,6 +175,11 @@ function removeObserver(observer) {
 // ----------------------------------------------------------------------
 
 function _stream(direction, state) {
+    if(state == 'open')
+        this._isOpen = true;
+    else if(state == 'close')
+        this._isOpen = false;
+
     this.notifyObservers(state, 'stream-' + direction, this.name);
 }
 
