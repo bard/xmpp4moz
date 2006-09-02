@@ -124,7 +124,7 @@ function send(account, stanza, handler) {
     else
         // TODO will multiple send cause multiple signon dialogs?
         this.up(account, {continuation: function(jid) {
-                        _this._send(account.jid || account, stanza, handler);
+                        _this._send(jid, stanza, handler);
                     }});
 }
 
@@ -305,10 +305,11 @@ function _promptAccount(jid, requester) {
 
 function _up(jid, opts) {
     opts = opts || {};
-    var connectionHost = opts.host || this.getAccountByJid(jid).connectionHost;
-    var connectionPort = opts.port || this.getAccountByJid(jid).connectionPort;
-    var ssl = opts.ssl || (this.getAccountByJid(jid).connectionSecurity == 1);
-    var password = opts.password || this.getAccountByJid(jid).password;
+
+    var password = opts.password;
+    var connectionHost = opts.host;
+    var connectionPort = opts.port;
+    var ssl = opts.ssl;
     var continuation = opts.continuation;
     var requester = opts.requester;
 
@@ -321,6 +322,12 @@ function _up(jid, opts) {
             jid = userInput.jid;
         }
     }
+
+    connectionHost = connectionHost || this.getAccountByJid(jid).connectionHost;
+    connectionPort = connectionPort || this.getAccountByJid(jid).connectionPort;
+    if(ssl == undefined)
+        ssl = (this.getAccountByJid(jid).connectionSecurity == 1);
+    password = password || this.getAccountByJid(jid).password;
 
     if(this.isUp(jid) && continuation)
         continuation(jid);
@@ -345,7 +352,7 @@ function _up(jid, opts) {
                                       </iq>);
                             XMPP.send(jid, <presence/>);
                             if(continuation)
-                                continuation();
+                                continuation(jid);
                         }
                     });                
             }
