@@ -57,7 +57,6 @@ function selectedAccount(jid) {
     } else {        
         _('password-area').hidden = false;
         _('already-connected').hidden = true;
-        _('password').focus();
     }
 }
 
