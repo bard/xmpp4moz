@@ -1,6 +1,8 @@
 // GLOBAL DEFINITIONS
 // ----------------------------------------------------------------------
 
+const ns_roster = new Namespace('jabber:iq:roster');
+
 const stanzaTemplates = {
     message: {
         'Plain':     <message type="normal" to=""/>,
@@ -53,14 +55,25 @@ function init(event) {
             display(data.session.name, data.direction, content);
         });
 
-    _('input').focus();
+    channel.on(
+        {event: 'presence'}, function(presence) {
+            refreshPresenceCache();
+        });
 
-    for(var templateType in stanzaTemplates) 
-        for(var templateName in stanzaTemplates[templateType]) {
-            var menuItem = document.createElement('menuitem');
-            menuItem.setAttribute('label', templateName);
-            _('templates-' + templateType).appendChild(menuItem);
-        }    
+    channel.on(
+        {event: 'iq', direction: 'in', stanza: function(s) {
+                return s.ns_roster::query.length() > 0;
+            }},
+        function(iq) {
+            refreshRosterCache();
+        });
+
+    refreshPresenceCache();
+    refreshRosterCache();
+
+    fillTemplateMenu();
+
+    _('input').focus();
 }
 
 function finish() {
@@ -100,6 +113,33 @@ function getDescendantByAttribute(element, attrName, attrValue) {
 
 // GUI ACTIONS
 // ----------------------------------------------------------------------
+
+function refreshPresenceCache() {
+    _('cache-presence').value = '';
+
+    XMPP.cache.presence.forEach(
+        function(presence) {
+            _('cache-presence').value += presence.stanza.toXMLString() + '\n';
+        });
+}
+
+function refreshRosterCache() {
+    _('cache-roster').value = '';
+
+    XMPP.cache.roster.forEach(
+        function(iq) {
+            _('cache-roster').value += iq.stanza.toXMLString() + '\n';
+        });
+}
+
+function fillTemplateMenu() {
+    for(var templateType in stanzaTemplates) 
+        for(var templateName in stanzaTemplates[templateType]) {
+            var menuItem = document.createElement('menuitem');
+            menuItem.setAttribute('label', templateName);
+            _('templates-' + templateType).appendChild(menuItem);
+        }    
+}
 
 function clearLog() {
     var logEntries = _('log').contentDocument.getElementById('entries');

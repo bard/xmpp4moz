@@ -24,12 +24,40 @@
          modifiers="control" keycode="VK_UP" keytext="Up"/>
     <key id="key-history-next" command="history-next"
          modifiers="control" keycode="VK_DOWN" keytext="Down" />
+    <key id="key-show-log" key="1" modifiers="alt"
+         oncommand="_('panel').selectedIndex = 0;"/>
+    <key id="key-show-cache" key="2" modifiers="alt"
+         oncommand="_('panel').selectedIndex = 1;"/>
   </keyset>
 
   <script type="application/x-javascript" src="../xmpp.js"/>
   <script type="application/x-javascript" src="console.js"/>
 
-  <iframe src="log.xhtml" id="log" flex="5" class="box-inset"/>
+  <tabbox id="panel" flex="1">
+    <tabs>
+      <tab label="Log"/>
+      <tab label="Cache"/>
+    </tabs>
+
+    <tabpanels flex="1">
+      <tabpanel>
+        <iframe src="log.xhtml" id="log" flex="5" class="box-inset"/>
+      </tabpanel>
+
+      <tabpanel>
+        <vbox flex="1">
+          <label class="header" value="Presence"/>
+          <textbox id="cache-presence" flex="1"
+                   multiline="true" readonly="true" style="font-family: monospace;"/>
+        </vbox>
+        <vbox flex="1">
+          <label class="header" value="Roster"/>
+          <textbox id="cache-roster" flex="1"
+                   multiline="true" readonly="true" style="font-family: monospace;"/>
+        </vbox>
+      </tabpanel>
+    </tabpanels>
+  </tabbox>
 
   <toolbox>
     <menubar>
