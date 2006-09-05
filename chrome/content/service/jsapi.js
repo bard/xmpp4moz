@@ -306,15 +306,27 @@ function _promptAccount(jid, requester) {
 function _up(jid, opts) {
     opts = opts || {};
 
-    var password = opts.password;
-    var connectionHost = opts.host;
-    var connectionPort = opts.port;
-    var ssl = opts.ssl;
+    var password, connectionHost, connectionPort, ssl, continuation, requester;
+    if(jid) {
+        var account = this.getAccountByJid(jid);
+        password = opts.password || account.password;
+        connectionHost = opts.host || account.connectionHost;
+        connectionPort = opts.port || account.connectionPort;
+        if(opts.ssl == undefined)
+            ssl = (account.connectionSecurity == 1);
+        else
+            ssl = opts.ssl;
+    } else {
+        password = opts.password;
+        connectionHost = opts.host;
+        connectionPort = opts.port;
+        ssl = opts.ssl;
+    }
+    
     var continuation = opts.continuation;
     var requester = opts.requester;
 
-    if(!((jid && password) ||
-         (jid && this.isUp(jid)))) {
+    if(!((jid && password) || (jid && this.isUp(jid)))) {
         var userInput = this._promptAccount(jid, requester);
 
         if(userInput.confirm) {
@@ -322,12 +334,6 @@ function _up(jid, opts) {
             jid = userInput.jid;
         }
     }
-
-    connectionHost = connectionHost || this.getAccountByJid(jid).connectionHost;
-    connectionPort = connectionPort || this.getAccountByJid(jid).connectionPort;
-    if(ssl == undefined)
-        ssl = (this.getAccountByJid(jid).connectionSecurity == 1);
-    password = password || this.getAccountByJid(jid).password;
 
     if(this.isUp(jid) && continuation)
         continuation(jid);
