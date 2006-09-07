@@ -194,8 +194,7 @@ function xmppEnableContent(account, address, type) {
                 return s.name == account;
             },
         stanza: function(s) {
-                return (s.@type == type &&
-                        JID(s.@from).address == address &&
+                return (JID(s.@from).address == address &&
                         s.appNS::x.length() > 0);
             }},
         function(message) { receivedNetworkInput(message); });
