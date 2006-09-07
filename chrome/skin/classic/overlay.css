@@ -1,24 +1,26 @@
-* [command="xmpp-command-toggle-livebar"]
+[command="xmpp-command-toggle-livebar"]
 {
   list-style-image: url("toggle.png");
   }
 
-* [command="xmpp-command-connect"]
+[command="xmpp-command-connect"]
 {
   list-style-image: url("connect.png");
   }
 
-* [command="xmpp-command-disconnect"]
+[command="xmpp-command-disconnect"]
 {
   list-style-image: url("disconnect.png");
   }
 
-* [command="xmpp-command-open-tracer"]
+[command="xmpp-command-open-tracer"]
 {
   list-style-image: url("debug.png");
   }
 
-* [command="xmpp-command-open-preferences"]
+[command="xmpp-command-open-preferences"]
 {
   list-style-image: url("preferences.png");
   }
+
+
