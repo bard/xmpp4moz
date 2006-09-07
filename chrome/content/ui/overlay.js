@@ -148,8 +148,11 @@ function xmppEnableContent(account, address, type) {
     var uri = stripUriFragment(content.document.location.href);
     var appNS = new Namespace(uri);
     
-    // BOOKKEEPING
+    if(xmppEnabledLocations.has(uri))
+        return;
 
+    // BOOKKEEPING
+    
     xmppEnabledLocations.add(uri, account, address, type);
     
     content.addEventListener(
