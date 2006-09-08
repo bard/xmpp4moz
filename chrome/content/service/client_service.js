@@ -117,11 +117,6 @@ function open(jid, server, port, ssl, streamObserver) {
                 transport.disconnect();
             }
 
-            if(topic == 'stream-out' && asString(subject) == 'close') {
-                transport.disconnect();
-                sessions.closed(session);
-            }
-
             if(topic == 'stanza-out' && subject.nodeName == 'presence' &&
                subject.getAttribute('type') == 'unavailable') {
                 var presences = cache.presence.getEnumeration();
@@ -145,6 +140,8 @@ function open(jid, server, port, ssl, streamObserver) {
                     syntheticPresence.setAttribute('type', 'unavailable');
                     session.receive(serializer.serializeToString(syntheticPresence));
                 }
+                transport.disconnect();
+                sessions.closed(session);
             }
 
             if(topic == 'stanza-in' && subject.nodeName == 'presence')
