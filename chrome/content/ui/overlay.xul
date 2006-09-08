@@ -100,24 +100,18 @@ Author: Massimiliano Mirra, <bard [at] hyperstruct [dot] net>
     <toolbox id="xmpp-toolbox" hidden="true">
       <toolbar fullscreentoolbar="true">
         <toolbaritem align="center">
-          <label value="Your Account:" class="small-margin"/>
-          <textbox readonly="true" role="account" class="small-margin"/>
-        </toolbaritem>
-
-        <toolbaritem align="center">
-          <label value="Contact Address:" class="small-margin"/>
-          <textbox readonly="true" role="address" class="small-margin"/>
-        </toolbaritem>
-
-        <toolbaritem align="center">
-          <label value="Message Type:" class="small-margin"/>
-          <textbox readonly="true" role="type" class="small-margin"/>
+          <label value="Connected to " style="margin: 0;"/>
+          <label role="address" style="margin: 0; font-weight: bold;"/>
         </toolbaritem>
 
         <toolbarspring/>
 
-        <toolbaritem align="center">
-          <label class="header" value="Jabber"/>
+        <toolbaritem align="center" flex="1">
+          <label value="(Account: " style="margin: 0;"/>
+          <label role="account" style="margin: 0;"/>
+          <label value=", Type: " style="margin: 0;"/>
+          <label role="type" style="margin: 0;"/>
+          <label value=")" style="margin: 0;"/>
         </toolbaritem>
       </toolbar>
     </toolbox>
