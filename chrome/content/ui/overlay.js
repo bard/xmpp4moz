@@ -280,6 +280,25 @@ window.addEventListener(
         gBrowser.addProgressListener(xmppLocationChangeListener);
     }, false);
 
+function xmppChangeStatus(type) {
+    for each(var account in XMPP.accounts)
+        if(XMPP.isUp(account)) 
+            switch(type) {
+            case 'online':
+                XMPP.send(account, <presence/>);
+                break;
+            case 'away':
+                XMPP.send(account, <presence><show>away</show></presence>);
+                break;
+            case 'dnd':
+                XMPP.send(account, <presence><show>dnd</show></presence>);
+                break;
+            case 'offline':
+                XMPP.down(account.jid);
+                break;
+            }
+}
+
 
 // HOOKS
 // ----------------------------------------------------------------------

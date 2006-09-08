@@ -80,6 +80,18 @@ Author: Massimiliano Mirra, <bard [at] hyperstruct [dot] net>
                    availability="unavailable">
       <menupopup id="xmpp-menu-accounts-secondary">
         <menuseparator/>
+        <menu label="Status">
+          <menupopup>
+            <menuitem class="menuitem-iconic" role="online" label="Online"
+                      oncommand="xmppChangeStatus('online'); event.stopPropagation();"/>
+            <menuitem class="menuitem-iconic" role="away" label="Away"
+                      oncommand="xmppChangeStatus('away'); event.stopPropagation();"/>
+            <menuitem class="menuitem-iconic" role="dnd" label="Do Not Disturb"
+                      oncommand="xmppChangeStatus('dnd'); event.stopPropagation();"/>
+            <menuitem class="menuitem-iconic" role="offline" label="Offline"
+                      oncommand="xmppChangeStatus('offline'); event.stopPropagation();"/>
+          </menupopup>
+        </menu>
         <menuitem class="menuitem-iconic" command="xmpp-command-open-preferences"/>
       </menupopup>
     </toolbarbutton>
