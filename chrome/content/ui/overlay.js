@@ -56,21 +56,6 @@ function stripUriFragment(uri) {
             uri);
 }
 
-// XXX remove from global namespace or rename
-function JID(string) {
-    var m = string.match(/^(.+?)@(.+?)(?:\/|$)(.*$)/);
-    var jid = {
-        username: m[1],
-        hostname: m[2],
-        resource: m[3],
-        nick: m[3],
-        address: m[1] + '@' + m[2],
-        full: m[3] ? string : null
-    }
-
-    return jid;
-}
-
 
 // NETWORK REACTIONS
 // ----------------------------------------------------------------------
@@ -277,7 +262,7 @@ var xmppLocationChangeListener = {
 
 window.addEventListener(
     'load', function(event) {
-        gBrowser.addProgressListener(xmppLocationChangeListener);
+        getBrowser().addProgressListener(xmppLocationChangeListener);
     }, false);
 
 function xmppChangeStatus(type) {

@@ -28,18 +28,19 @@
 // GLOBAL DEFINITIONS
 // ----------------------------------------------------------------------
 
-const service = Components
-    .classes['@hyperstruct.net/xmpp4moz/xmppservice;1']
-    .getService(Components.interfaces.nsIXMPPClientService);
+const Cc = Components.classes;
+const Ci = Components.interfaces;
+const Cu = Components.utils;
+
+const service = Cc['@hyperstruct.net/xmpp4moz/xmppservice;1']
+    .getService(Ci.nsIXMPPClientService);
     
-const pref = Components
-    .classes['@mozilla.org/preferences-service;1']
-    .getService(Components.interfaces.nsIPrefService)
+const pref = Cc['@mozilla.org/preferences-service;1']
+    .getService(Ci.nsIPrefService)
     .getBranch('xmpp.');
 
-const serializer = Components
-    .classes['@mozilla.org/xmlextras/xmlserializer;1']
-    .getService(Components.interfaces.nsIDOMSerializer);
+const serializer = Cc['@mozilla.org/xmlextras/xmlserializer;1']
+    .getService(Ci.nsIDOMSerializer);
 
 
 // DEVELOPER INTERFACE
@@ -51,7 +52,7 @@ var cache = {
         while(enumeration.hasMoreElements()) {
             var object = enumeration
                 .getNext()
-                .QueryInterface(Components.interfaces.nsIDictionary);
+                .QueryInterface(Ci.nsIDictionary);
 
             objects.push({
                 session: object.getValue('session')
@@ -72,6 +73,7 @@ var cache = {
 
 function JID(string) {
     var m = string.match(/^(.+?)@(.+?)(?:\/|$)(.*$)/);
+
     var jid = {
         username: m[1],
         hostname: m[2],
@@ -180,15 +182,15 @@ function createChannel(baseFilter) {
 
             switch(pattern.event) {
                 case 'stream':
-                subject.QueryInterface(Components.interfaces.nsISupportsString).toString();
+                subject.QueryInterface(Ci.nsISupportsString).toString();
                 pattern.state = subject.toString();
                 break;
                 case 'data':
-                subject.QueryInterface(Components.interfaces.nsISupportsString).toString();
+                subject.QueryInterface(Ci.nsISupportsString).toString();
                 pattern.content = subject.toString();
                 break;
                 case 'stanza':
-                subject.QueryInterface(Components.interfaces.nsIDOMElement);
+                subject.QueryInterface(Ci.nsIDOMElement);
                 var stanza = new XML(serializer.serializeToString(subject));
                 pattern.event = stanza.name();
                 pattern.stanza = stanza;
@@ -209,7 +211,7 @@ function createChannel(baseFilter) {
                     if(matcher(object, watch.pattern))
                         watch.handler(object);
                 } catch(e) {
-                    Components.utils.reportError(e);
+                    Cu.reportError(e);
                 }
         },
 
