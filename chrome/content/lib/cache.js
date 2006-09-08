@@ -28,18 +28,7 @@ Cache.prototype = {
             this._store.push(newObject);
     },
 
-    getEnumeration: function() {
-        var i=0, cachedObjects = this._store.slice(0);
-        
-        var enumerator = {
-            getNext: function() {
-                return cachedObjects[i++];
-            },
-
-            hasMoreElements: function() {
-                return i < cachedObjects.length;
-            }
-        }
-        return enumerator;
+    copy: function() {
+        return this._store.slice(0);
     }
 };

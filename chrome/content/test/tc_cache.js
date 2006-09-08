@@ -124,19 +124,19 @@ spec.stateThat = {
             session: session,
             stanza: asDom('<presence from="bar@localhost/Firefox"><show>away</show></presence>')});
 
-        var cachedObjects = cache.getEnumeration();
+        var cachedObjects = cache.copy();
 
-        assert.isTrue(cachedObjects.hasMoreElements());
+        assert.isTrue(cachedObjects.length > 0);
 
         assert.equals(
             '<presence from="foo@localhost/Firefox"/>',
-            asString(cachedObjects.getNext().stanza));
+            asString(cachedObjects[0].stanza));
         
         assert.equals(
             '<presence from="bar@localhost/Firefox">' +
             '<show>away</show>' +
             '</presence>',
-            asString(cachedObjects.getNext().stanza));
+            asString(cachedObjects[1].stanza));
     },
         
     'Store presence elements and make them available as an array': function() {
@@ -152,17 +152,17 @@ spec.stateThat = {
             stanza: asDom('<presence from="bar@localhost/Firefox">' +
                           '<show>away</show></presence>')});
 
-        var cachedObjects = cache.getEnumeration();
+        var cachedObjects = cache.copy();
         
         assert.equals(
             '<presence from="foo@localhost/Firefox"/>',
-            asString(cachedObjects.getNext().stanza));
+            asString(cachedObjects[0].stanza));
 
         assert.equals(
             '<presence from="bar@localhost/Firefox">' +
             '<show>away</show>' +
             '</presence>',
-            asString(cachedObjects.getNext().stanza));
+            asString(cachedObjects[1].stanza));
     },
 
     'Do not store stanzas with availability different than available or unavailable': function() {
@@ -173,7 +173,7 @@ spec.stateThat = {
             session: session,
             stanza: asDom('<presence from="foo@localhost/Firefox" type="subscribe"/>')});
 
-        assert.equals(null, cache.getEnumeration().getNext());
+        assert.isNull(cache.copy()[0]);
     },
 
     'Presence elements supersede previous ones with same sender': function() {
@@ -188,13 +188,13 @@ spec.stateThat = {
             session: session,
             stanza: asDom('<presence from="foo@localhost/Firefox"><show>dnd</show></presence>')});
 
-        assert.equals(1, countEnum(cache.getEnumeration()));
+        assert.equals(1, cache.copy().length);
 
         assert.equals(
             '<presence from="foo@localhost/Firefox">' + 
             '<show>dnd</show>' +
             '</presence>',
-            asString(cache.getEnumeration().getNext().stanza));
+            asString(cache.copy()[0].stanza));
     },
 
     'Presence elements expressing unavailability cancel previous ones with same sender': function() {
@@ -209,7 +209,7 @@ spec.stateThat = {
             session: session,
             stanza: asDom('<presence from="foo@localhost/Firefox" type="unavailable"/>')});
 
-        assert.isNull(cache.getEnumeration().getNext());
+        assert.isNull(cache.copy()[0]);
     },
 
     'Enumeration of cached object is not influenced by removals in the cache': function() {
@@ -228,7 +228,7 @@ spec.stateThat = {
                           'to="bard@localhost/Firefox"/>')
             });
 
-        var cachedObjects = cache.getEnumeration();
+        var cachedObjects = cache.copy();
         
         cache.receive({
             session: session,
@@ -237,7 +237,7 @@ spec.stateThat = {
             });
 
         assert.equals('foo@localhost/Firefox',
-                      cachedObjects.getNext().stanza.getAttribute('from'));
+                      cachedObjects[0].stanza.getAttribute('from'));
 
         cache.receive({
             session: session,
@@ -246,7 +246,7 @@ spec.stateThat = {
             });
 
         assert.equals('ben@localhost/Firefox',
-                      cachedObjects.getNext().stanza.getAttribute('from'));
+                      cachedObjects[1].stanza.getAttribute('from'));
     },
 
     'Roster stanzas get merged with previous ones of same session': function() {
@@ -274,6 +274,6 @@ spec.stateThat = {
             '<item subscription="both" jid="foo@localhost"/>' +
             '<item subscription="none" jid="bar@localhost"/>' +
             '</query></iq>',
-            asString(cache.getEnumeration().getNext().stanza));
+            asString(cache.copy()[0].stanza));
     }
 };

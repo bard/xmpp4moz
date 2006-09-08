@@ -207,35 +207,43 @@ function removeObserver(observer) {
 }
 
 function presenceCache() {
-    return cacheProxy('presence');
+    return arrayOfObjectsToEnumerator(cache.presence.copy());
 }
 
 function rosterCache() {
-    return cacheProxy('roster');
+    return arrayOfObjectsToEnumerator(cache.roster.copy());
 }
 
 
 // INTERNALS
 // ----------------------------------------------------------------------
 
-function cacheProxy(cacheName) {
-    var enumerator = cache[cacheName].getEnumeration();
-    
-    var proxy = {
+function arrayOfObjectsToEnumerator(array) {
+    var i=0;
+
+    var enumerator = {
         getNext: function() {
-            var cachedObject = enumerator.getNext();
-            var dict = Cc['@mozilla.org/dictionary;1'].createInstance(Ci.nsIDictionary);
-            for(var name in cachedObject) 
-                dict.setValue(name, cachedObject[name]);
+            var object = array[i++];
+            var dict = Cc['@mozilla.org/dictionary;1'].createInstance(Ci.nsIDictionary);            
+            for(var name in object) {
+                if(typeof(object[name]) == 'string') {
+                    var xpcString = Cc["@mozilla.org/supports-string;1"]
+                        .createInstance(Ci.nsISupportsString);
+                    xpcString.data = object[name];
+                    dict.setValue(name, xpcString);
+                } else {
+                    dict.setValue(name, object[name]);
+                }
+            }
 
             return dict;
         },
 
         hasMoreElements: function() {
-            return enumerator.hasMoreElements();
+            return i < array.length;
         }
     }
-    return proxy;    
+    return enumerator;
 }
 
 cache = {
