@@ -50,14 +50,21 @@ var cache = {
     _enumToArray: function(enumeration) {
         var objects = [];
         while(enumeration.hasMoreElements()) {
-            var object = enumeration
+            var cachedObject = enumeration
                 .getNext()
                 .QueryInterface(Ci.nsIDictionary);
 
-            objects.push({
-                session: object.getValue('session').QueryInterface(Ci.nsIXMPPClientSession),
-                direction: object.getValue('direction').QueryInterface(Ci.nsISupportsString).toString(),
-                stanza: new XML(serializer.serializeToString(object.getValue('stanza')))});
+            var object = {
+                session: cachedObject.getValue('session').QueryInterface(Ci.nsIXMPPClientSession),
+                stanza: new XML(serializer.serializeToString(cachedObject.getValue('stanza')))
+            };
+
+            if(cachedObject.hasKey('direction'))
+                object.direction = cachedObject
+                    .getValue('direction')
+                    .QueryInterface(Ci.nsISupportsString).toString();
+
+            objects.push(object);
         }
         return objects;
     },
