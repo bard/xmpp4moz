@@ -106,7 +106,11 @@ function up(account, opts) {
         this._up(account, opts);
 }
 
-function down(jid) {
+function down(account) {
+    var jid = 
+        (typeof(account) == 'object' && account.jid) ?
+        account.jid : account;
+
     service.close(jid);
 }
 

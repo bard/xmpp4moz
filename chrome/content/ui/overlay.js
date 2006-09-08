@@ -279,7 +279,7 @@ function xmppChangeStatus(type) {
                 XMPP.send(account, <presence><show>dnd</show></presence>);
                 break;
             case 'offline':
-                XMPP.down(account.jid);
+                XMPP.down(account);
                 break;
             }
 }
