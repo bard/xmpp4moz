@@ -165,7 +165,7 @@ function xmppEnableContent(account, address, type) {
 
     // CONTENT
 
-    function receivedContentInput(text) {
+    function gotDataFromPage(text) {
         var message = <message to={address} type={type}/>;
         message.text = new XML(text);             
         XMPP.send(account, message)        
@@ -173,34 +173,44 @@ function xmppEnableContent(account, address, type) {
     
     content.document.getElementById('output').addEventListener(
         'DOMNodeInserted', function(event) {
-            receivedContentInput(event.target.textContent);
+            gotDataFromPage(event.target.textContent);
         }, false);
 
     // NETWORK
 
     var channel = XMPP.createChannel();
 
-    function receivedNetworkInput(message) {
-        if(message.stanza.appNS::x.length() > 0) {
-            var payload = message.stanza.appNS::x.*[0].toXMLString();
-            content.document.getElementById('input').textContent = payload;
-        }
+    function gotDataFromXMPP(message) {
+        var payload = message.stanza.appNS::x.*[0].toXMLString();
+        content.document.getElementById('input').textContent = payload;
     }
 
     channel.on({
-        event: 'message',
-        direction: 'in',
-        session: function(s) {
+            direction: 'in',
+            event: 'message',
+            session: function(s) {
                 return s.name == account;
             },
-        stanza: function(s) {
-                return (JID(s.@from).address == address &&
-                        s.appNS::x.length() > 0);
-            }},
-        function(message) { receivedNetworkInput(message); });
-}
+            stanza: function(s) {
+                return (s.appNS::x.length() > 0 &&
+                        XMPP.JID(s.@from).address == address);
+            }
+        }, function(message) { gotDataFromXMPP(message); });
 
-// XXX remove parameter, it will always work on current browser
+    if(type != 'groupchat')
+        channel.on({
+            direction: 'out',
+            event: 'message',
+            session: function(s) {
+                    return s.name == account;
+                },
+            stanza: function(s) {
+                    return (s.appNS::x.length() > 0 &&
+                            XMPP.JID(s.@to).address == address);
+                }
+            }, function(message) { gotDataFromXMPP(message); });
+
+}
 
 function xmppRefreshContent() {
     var xmppLocation = xmppEnabledLocations.get(content.location.href);
