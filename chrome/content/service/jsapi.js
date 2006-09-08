@@ -55,8 +55,8 @@ var cache = {
                 .QueryInterface(Ci.nsIDictionary);
 
             objects.push({
-                session: object.getValue('session')
-                .QueryInterface(Components.interfaces.nsIXMPPClientSession),
+                session: object.getValue('session').QueryInterface(Ci.nsIXMPPClientSession),
+                direction: object.getValue('direction').QueryInterface(Ci.nsISupportsString).toString(),
                 stanza: new XML(serializer.serializeToString(object.getValue('stanza')))});
         }
         return objects;

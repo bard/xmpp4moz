@@ -132,20 +132,27 @@ function open(jid, server, port, ssl, streamObserver) {
             }
 
             if(topic == 'stream-out' && asString(subject) == 'close') {
-                var presences = cache.presence.getEnumeration();
-                while(presences.hasMoreElements()) {
-                    var presence = presences.getNext();
-                    var syntheticPresence = presence.stanza.cloneNode(true);
-                    syntheticPresence.removeAttribute('id');
-                    syntheticPresence.setAttribute('type', 'unavailable');
-                    session.receive(serializer.serializeToString(syntheticPresence));
+                for each(var presence in cache.presence.copy()) {
+                    if(presence.direction == 'in') {
+                        var syntheticPresence = presence.stanza.cloneNode(true);
+                        syntheticPresence.removeAttribute('id');
+                        syntheticPresence.setAttribute('type', 'unavailable');
+                        session.receive(serializer.serializeToString(syntheticPresence));
+                    }
                 }
                 transport.disconnect();
                 sessions.closed(session);
             }
 
             if(topic == 'stanza-in' && subject.nodeName == 'presence')
-                cache.presence.receive({session: sessions.get(data), stanza: subject});
+                cache.presence.receive({session: sessions.get(data),
+                                       direction: 'in',
+                                       stanza: subject});
+
+            if(topic == 'stanza-out' && subject.nodeName == 'presence') 
+                cache.presence.receive({session: sessions.get(data), 
+                                       direction: 'out',
+                                       stanza: subject});
 
             if(topic == 'stanza-in' && subject.nodeName == 'iq') {
                 var query = subject.getElementsByTagName('query')[0];
