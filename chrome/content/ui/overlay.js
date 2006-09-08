@@ -166,8 +166,9 @@ function xmppEnableContent(account, address, type) {
     // CONTENT
 
     function gotDataFromPage(text) {
-        var message = <message to={address} type={type}/>;
-        message.text = new XML(text);             
+        var message = new XML(text);
+        message.@to = address;
+        message.@type = type;
         XMPP.send(account, message)        
     }
     
@@ -181,8 +182,7 @@ function xmppEnableContent(account, address, type) {
     var channel = XMPP.createChannel();
 
     function gotDataFromXMPP(message) {
-        var payload = message.stanza.appNS::x.*[0].toXMLString();
-        content.document.getElementById('input').textContent = payload;
+        content.document.getElementById('input').textContent = message.stanza.toXMLString();
     }
 
     channel.on({
