@@ -104,25 +104,34 @@ xmppChannel.on(
             });
     });
 
-// Changing availability attribute on toolbar button when at least one
-// account is online
+// Changing availability and show attributes on toolbar button based
+// on a summary of presences of connected accounts.
 
 xmppChannel.on(
-    { event: 'presence', direction: 'out' },
+    { event: 'presence', direction: 'out', stanza: function(s) {
+            return s.@type == undefined;
+        }},
     function(presence) {
-        if(presence.stanza.@type == undefined)
-            document
-                .getElementById('xmpp-button')
-                .setAttribute('availability', 'available');
+        var summary = XMPP.presenceSummary(
+            XMPP.cache.presence.filter(
+                function(presence) {
+                    return (presence.direction == 'out' &&
+                            presence.stanza.@type == undefined)
+                        }));
+
+        var button = document.getElementById('xmpp-button');
+        button.setAttribute('availability', summary[0]);
+        button.setAttribute('show', summary[1])
     });
 
 xmppChannel.on(
-    { event: 'stream', direction: 'out' },
+    { event: 'stream', direction: 'out', state: 'close' },
     function(stream) {
-        if(stream.state == 'close')
-            if(XMPP.accounts.every(XMPP.isDown))
-                document.getElementById('xmpp-button')
-                    .setAttribute('availability', 'unavailable')
+        if(XMPP.accounts.every(XMPP.isDown)) {
+            var button = document.getElementById('xmpp-button');
+            button.setAttribute('availability', 'unavailable');
+            button.setAttribute('show', '');
+        }
     });
 
 
@@ -269,7 +278,7 @@ function xmppChangeStatus(type) {
     for each(var account in XMPP.accounts)
         if(XMPP.isUp(account)) 
             switch(type) {
-            case 'online':
+            case 'available':
                 XMPP.send(account, <presence/>);
                 break;
             case 'away':
@@ -278,7 +287,7 @@ function xmppChangeStatus(type) {
             case 'dnd':
                 XMPP.send(account, <presence><show>dnd</show></presence>);
                 break;
-            case 'offline':
+            case 'unavailable':
                 XMPP.down(account);
                 break;
             }

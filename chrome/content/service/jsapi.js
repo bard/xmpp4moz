@@ -299,6 +299,31 @@ function register(jid, password, opts) {
 }
 
 
+// UTILITIES
+// ----------------------------------------------------------------------
+
+function presenceSummary(presences) {
+    if(presences.some(
+           function(p) {
+               return ((p.stanza.show == undefined || p.stanza.show == 'chat') &&
+                       p.stanza.@type == undefined);
+           })) 
+        return ['available', ''];
+    else if(presences.some(
+                function(p) {
+                    return (p.stanza.show == 'away' ||
+                            p.stanza.show == 'xa');
+                })) 
+        return ['available', 'away'];
+    else if(presences.some(
+                function(p) {
+                    return (p.stanza.show == 'dnd');
+                })) 
+        return ['available', 'dnd'];
+    else 
+        return ['unavailable', ''];
+}
+
 // INTERNALS
 // ----------------------------------------------------------------------
 
