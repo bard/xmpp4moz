@@ -357,3 +357,11 @@ function log(msg) {
         .getService(Ci.nsIConsoleService)
         .logStringMessage(msg);
 }
+
+function isMUCPresence(domStanza) {
+    if(domStanza.nodeName == 'presence' &&
+       domStanza.hasAttribute('to')) {
+        var x = domStanza.getElementsByTagName('x')[0];
+        return (x && x.getAttribute('xmlns') == 'http://jabber.org/protocol/muc');
+    }
+}
