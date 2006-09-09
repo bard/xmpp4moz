@@ -73,8 +73,12 @@ var cache = {
         return this._enumToArray(service.rosterCache());
     },
 
-    get presence() {
-        return this._enumToArray(service.presenceCache());
+    get presenceIn() {
+        return this._enumToArray(service.presenceInCache());
+    },
+
+    get presenceOut() {
+        return this._enumToArray(service.presenceOutCache());
     }
 };
 

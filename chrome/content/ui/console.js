@@ -117,7 +117,7 @@ function getDescendantByAttribute(element, attrName, attrValue) {
 function refreshPresenceCache() {
     _('cache-presence').value = '';
 
-    XMPP.cache.presence.forEach(
+    XMPP.cache.presenceIn.forEach(
         function(presence) {
             _('cache-presence').value += presence.stanza.toXMLString() + '\n';
         });

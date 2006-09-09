@@ -113,11 +113,10 @@ xmppChannel.on(
         }},
     function(presence) {
         var summary = XMPP.presenceSummary(
-            XMPP.cache.presence.filter(
+            XMPP.cache.presenceOut.filter(
                 function(presence) {
-                    return (presence.direction == 'out' &&
-                            presence.stanza.@type == undefined)
-                        }));
+                    return presence.stanza.@type == undefined;
+                }));
 
         var button = document.getElementById('xmpp-button');
         button.setAttribute('availability', summary[0]);

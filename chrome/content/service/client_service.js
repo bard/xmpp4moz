@@ -118,27 +118,23 @@ function open(jid, server, port, ssl, streamObserver) {
             }
 
             if(topic == 'stream-out' && asString(subject) == 'close') {
-                for each(var presence in cache.presence.copy()) {
-                    if(presence.direction == 'in') {
-                        var syntheticPresence = presence.stanza.cloneNode(true);
-                        syntheticPresence.removeAttribute('id');
-                        syntheticPresence.setAttribute('type', 'unavailable');
-                        session.receive(serializer.serializeToString(syntheticPresence));
-                    }
+                for each(var presence in cache.presenceIn.copy()) {
+                    var syntheticPresence = presence.stanza.cloneNode(true);
+                    syntheticPresence.removeAttribute('id');
+                    syntheticPresence.setAttribute('type', 'unavailable');
+                    session.receive(serializer.serializeToString(syntheticPresence));
                 }
                 transport.disconnect();
                 sessions.closed(session);
             }
 
             if(topic == 'stanza-in' && subject.nodeName == 'presence')
-                cache.presence.receive({session: sessions.get(data),
-                                       direction: 'in',
-                                       stanza: subject});
+                cache.presenceIn.receive({session: sessions.get(data),
+                                         stanza: subject});
 
             if(topic == 'stanza-out' && subject.nodeName == 'presence') 
-                cache.presence.receive({session: sessions.get(data), 
-                                       direction: 'out',
-                                       stanza: subject});
+                cache.presenceOut.receive({session: sessions.get(data), 
+                                          stanza: subject});
 
             if(topic == 'stanza-in' && subject.nodeName == 'iq') {
                 var query = subject.getElementsByTagName('query')[0];
@@ -199,8 +195,12 @@ function removeObserver(observer) {
         observers.splice(index, 1);
 }
 
-function presenceCache() {
-    return arrayOfObjectsToEnumerator(cache.presence.copy());
+function presenceInCache() {
+    return arrayOfObjectsToEnumerator(cache.presenceIn.copy());
+}
+
+function presenceOutCache() {
+    return arrayOfObjectsToEnumerator(cache.presenceOut.copy());
 }
 
 function rosterCache() {
@@ -240,7 +240,7 @@ function arrayOfObjectsToEnumerator(array) {
 }
 
 cache = {
-    presence: new Cache(
+    presenceIn: new Cache(
         function(newObject, cachedObject) {
             if(newObject.session.name == cachedObject.session.name &&
                newObject.stanza.getAttribute('from') == cachedObject.stanza.getAttribute('from')) {
@@ -255,6 +255,20 @@ cache = {
                     newObject.stanza.getAttribute('type') == 'unavailable');
         }),
 
+    presenceOut: new Cache(
+        function(newObject, cachedObject) {
+            if(newObject.session.name == cachedObject.session.name) {
+                if(newObject.stanza.getAttribute('type') == 'unavailable') 
+                    return null;
+                else
+                    return newObject;
+            }
+        },
+        function(newObject) {
+            return (!newObject.stanza.hasAttribute('type') ||
+                    newObject.stanza.getAttribute('type') == 'unavailable');
+        }),
+    
     // XXX does not handle roster remove case and probably a few others
     roster: new Cache(
         function(newObject, cachedObject) {

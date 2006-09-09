@@ -19,9 +19,8 @@ function xmppRefreshAccounts(menuPopup) {
         menuItem.setAttribute(
             'availability', XMPP.isUp(account.jid) ? 'available' : 'unavailable');
 
-        for each(var presence in XMPP.cache.presence) 
-            if(presence.direction == 'out' &&
-               presence.session.name == account.jid && 
+        for each(var presence in XMPP.cache.presenceOut) 
+            if(presence.session.name == account.jid && 
                presence.stanza.show != undefined) {
                 menuItem.setAttribute('show', presence.stanza.show);
                 break;

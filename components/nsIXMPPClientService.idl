@@ -29,5 +29,7 @@ interface nsIXMPPClientService: nsISupports
 
     nsISimpleEnumerator rosterCache();
 
-    nsISimpleEnumerator presenceCache();
+    nsISimpleEnumerator presenceInCache();
+
+    nsISimpleEnumerator presenceOutCache();
 };  
