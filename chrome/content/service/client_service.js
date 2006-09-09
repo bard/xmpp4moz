@@ -162,7 +162,8 @@ function open(jid, server, port, ssl, streamObserver) {
 
             client.notifyObservers(subject, topic, data);
 
-            if(topic == 'stanza-in') {
+            if(topic == 'stanza-in' && subject.nodeName == 'iq' &&
+               subject.getAttribute('type') == 'get') {
                 var query = subject.getElementsByTagName('query')[0];
                 if(query && query.getAttribute('xmlns') == 'http://jabber.org/protocol/disco#info') {
                     var stanza =
