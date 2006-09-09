@@ -324,15 +324,20 @@ cache = {
 // ----------------------------------------------------------------------
 
 function JID(string) {
-    var m = string.match(/^(.+?)@(.+?)(?:\/|$)(.*$)/);
-    var jid = {
-        username: m[1],
-        hostname: m[2],
-        resource: m[3],
-        nick:     m[3],
-        address:  m[1] + '@' + m[2],
-        full:     m[3] ? string : null
-    }
+    var m = string.match(/^(.+@)?(.+?)(?:\/|$)(.*$)/);
+
+    var jid = {};
+
+    if(m[1])
+        jid.username = m[1].slice(0, -1);
+
+    jid.hostname = m[2];
+    jid.resource = m[3];
+    jid.nick     = m[3];
+    jid.full     = m[3] ? string : null;
+    jid.address  = jid.username ?
+        jid.username + '@' + jid.hostname :
+        jid.hostname;
 
     return jid;    
 }
