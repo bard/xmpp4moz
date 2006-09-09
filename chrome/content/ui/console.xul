@@ -46,8 +46,12 @@
 
       <tabpanel>
         <vbox flex="1">
-          <label class="header" value="Presence"/>
-          <textbox id="cache-presence" flex="1"
+          <label class="header" value="Presence In"/>
+          <textbox id="cache-presence-in" flex="9"
+                   multiline="true" readonly="true" style="font-family: monospace;"/>
+
+          <label class="header" value="Presence Out"/>
+          <textbox id="cache-presence-out" flex="1"
                    multiline="true" readonly="true" style="font-family: monospace;"/>
         </vbox>
         <vbox flex="1">

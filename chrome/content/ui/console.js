@@ -56,8 +56,13 @@ function init(event) {
         });
 
     channel.on(
-        {event: 'presence'}, function(presence) {
-            refreshPresenceCache();
+        {event: 'presence', direction: 'in'}, function(presence) {
+            refreshPresenceInCache();
+        });
+
+    channel.on(
+        {event: 'presence', direction: 'out'}, function(presence) {
+            refreshPresenceOutCache();
         });
 
     channel.on(
@@ -68,7 +73,8 @@ function init(event) {
             refreshRosterCache();
         });
 
-    refreshPresenceCache();
+    refreshPresenceInCache();
+    refreshPresenceOutCache();
     refreshRosterCache();
 
     fillTemplateMenu();
@@ -114,12 +120,21 @@ function getDescendantByAttribute(element, attrName, attrValue) {
 // GUI ACTIONS
 // ----------------------------------------------------------------------
 
-function refreshPresenceCache() {
-    _('cache-presence').value = '';
+function refreshPresenceInCache() {
+    _('cache-presence-in').value = '';
 
     XMPP.cache.presenceIn.forEach(
         function(presence) {
-            _('cache-presence').value += presence.stanza.toXMLString() + '\n';
+            _('cache-presence-in').value += presence.stanza.toXMLString() + '\n';
+        });
+}
+
+function refreshPresenceOutCache() {
+    _('cache-presence-out').value = '';
+
+    XMPP.cache.presenceOut.forEach(
+        function(presence) {
+            _('cache-presence-out').value += presence.stanza.toXMLString() + '\n';
         });
 }
 
