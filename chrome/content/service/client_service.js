@@ -117,20 +117,6 @@ function open(jid, server, port, ssl, streamObserver) {
                 transport.disconnect();
             }
 
-            if(topic == 'stanza-out' && subject.nodeName == 'presence' &&
-               subject.getAttribute('type') == 'unavailable') {
-                var presences = cache.presence.getEnumeration();
-                while(presences.hasMoreElements()) {
-                    var presence = presences.getNext();
-                    if(JID(subject.getAttribute('to')).address ==
-                       JID(presence.stanza.getAttribute('from')).address) {
-                        var syntheticPresence = presence.stanza.cloneNode(true);
-                        syntheticPresence.setAttribute('type', 'unavailable');
-                        session.receive(serializer.serializeToString(syntheticPresence));
-                    }
-                }
-            }
-
             if(topic == 'stream-out' && asString(subject) == 'close') {
                 for each(var presence in cache.presence.copy()) {
                     if(presence.direction == 'in') {
