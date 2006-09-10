@@ -271,22 +271,35 @@ window.addEventListener(
     }, false);
 
 function xmppChangeStatus(type) {
-    for each(var account in XMPP.accounts)
-        if(XMPP.isUp(account)) 
-            switch(type) {
-            case 'available':
-                XMPP.send(account, <presence/>);
-                break;
-            case 'away':
-                XMPP.send(account, <presence><show>away</show></presence>);
-                break;
-            case 'dnd':
-                XMPP.send(account, <presence><show>dnd</show></presence>);
-                break;
-            case 'unavailable':
+    for each(var account in XMPP.accounts) {
+        if(XMPP.isUp(account)) {
+            if(type == 'unavailable')
                 XMPP.down(account);
-                break;
+            else {
+                var stanza;
+                for each(var presence in XMPP.cache.presenceOut) 
+                    if(presence.session.name == account.jid) {
+                        stanza = presence.stanza.copy();
+                        break;
+                    }
+
+                stanza = stanza || <presence/>;
+
+                switch(type) {
+                case 'available':
+                    delete stanza.show;
+                    break;
+                case 'away':
+                    stanza.show = <show>away</show>;
+                    break;
+                case 'dnd':
+                    stanza.show = <show>dnd</show>;
+                    break;
+                }
+                XMPP.send(account, stanza);
             }
+        }
+    }
 }
 
 
