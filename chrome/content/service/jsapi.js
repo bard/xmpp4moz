@@ -332,21 +332,16 @@ function register(jid, password, opts) {
 // ----------------------------------------------------------------------
 
 function presenceSummary(account, address) {
-    var presenceCache, presenceFilter;
-    if(address) {
-        presenceCache = XMPP.cache.presenceIn;
-        presenceFilter = function(presence) {
-            return (presence.session.name == account &&
-                    XMPP.JID(presence.stanza.@from).address == address);
-        };
-    } else {
-        presenceCache = XMPP.cache.presenceOut;
-        presenceFilter = function(presence) {
-            return presence.session.name == account;
-        }
-    }
-    
-    var presences = presenceCache.filter(presenceFilter);
+    var presences;
+    if(account && address) 
+        presences = XMPP.cache.presenceIn.filter(
+            function(presence) {
+                return (presence.session.name == account &&
+                        XMPP.JID(presence.stanza.@from).address == address);
+            });
+    else 
+        presences = XMPP.cache.presenceOut;
+
 
     if(presences.some(
            function(p) {
