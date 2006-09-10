@@ -99,7 +99,7 @@ function nickFor(account, address) {
         name = item.@name.toString();
     }
 
-    return name || XMPP.JID(address).username;
+    return name || XMPP.JID(address).username || address;
 }
 
 function JID(string) {
