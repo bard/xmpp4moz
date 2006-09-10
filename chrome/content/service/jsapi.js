@@ -82,6 +82,26 @@ var cache = {
     }
 };
 
+function nickFor(account, address) {
+    const ns_roster = new Namespace('jabber:iq:roster');
+
+    var roster;
+    for each(var r in XMPP.cache.roster) 
+        if(r.session.name == account) {
+            roster = r;
+            break;
+        }
+
+    var name;
+    if(roster) {
+        var item = roster.stanza..ns_roster::item
+            .(@jid == address);
+        name = item.@name.toString();
+    }
+
+    return name || XMPP.JID(address).username;
+}
+
 function JID(string) {
     var m = string.match(/^(.+@)?(.+?)(?:\/|$)(.*$)/);
 
