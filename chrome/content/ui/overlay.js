@@ -114,8 +114,8 @@ xmppChannel.on(
     function(presence) {
         var summary = XMPP.presenceSummary();
         var button = document.getElementById('xmpp-button');
-        button.setAttribute('availability', summary[0]);
-        button.setAttribute('show', summary[1])
+        button.setAttribute('availability', summary.stanza.@type.toString() || 'available');
+        button.setAttribute('show', summary.stanza.show.toString());
     });
 
 xmppChannel.on(

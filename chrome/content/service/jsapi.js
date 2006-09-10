@@ -342,26 +342,27 @@ function presenceSummary(account, address) {
     else 
         presences = XMPP.cache.presenceOut;
 
+    function find(array, criteria) {
+        for each(var item in array)
+            if(criteria(item))
+                return item;
+    }
 
-    if(presences.some(
-           function(p) {
-               return ((p.stanza.show == undefined || p.stanza.show == 'chat') &&
-                       p.stanza.@type == undefined);
-           })) 
-        return ['available', ''];
-    else if(presences.some(
-                function(p) {
-                    return (p.stanza.show == 'away' ||
-                            p.stanza.show == 'xa');
-                })) 
-        return ['available', 'away'];
-    else if(presences.some(
-                function(p) {
-                    return (p.stanza.show == 'dnd');
-                })) 
-        return ['available', 'dnd'];
-    else 
-        return ['unavailable', ''];
+    var summary;
+    for each(var show in [undefined, 'chat', 'away', 'xa', 'dnd']) {
+        summary = find(presences, function(presence) {
+                           return presence.stanza.show == show;
+                       });
+        if(summary)
+            break;
+    }
+
+    if(summary.show == 'chat')
+        delete summary.show;
+    else if(summary.show == 'xa')
+        summary.show = 'away';
+
+    return summary;
 }
 
 
