@@ -126,6 +126,7 @@ function down(account) {
         (typeof(account) == 'object' && account.jid) ?
         account.jid : account;
 
+    this.send(jid, <presence type="unavailable"/>);
     service.close(jid);
 }
 
