@@ -331,7 +331,23 @@ function register(jid, password, opts) {
 // UTILITIES
 // ----------------------------------------------------------------------
 
-function presenceSummary(presences) {
+function presenceSummary(account, address) {
+    var presenceCache, presenceFilter;
+    if(address) {
+        presenceCache = XMPP.cache.presenceIn;
+        presenceFilter = function(presence) {
+            return (presence.session.name == account &&
+                    XMPP.JID(presence.stanza.@from).address == address);
+        };
+    } else {
+        presenceCache = XMPP.cache.presenceOut;
+        presenceFilter = function(presence) {
+            return presence.session.name == account;
+        }
+    }
+    
+    var presences = presenceCache.filter(presenceFilter);
+
     if(presences.some(
            function(p) {
                return ((p.stanza.show == undefined || p.stanza.show == 'chat') &&
@@ -352,6 +368,7 @@ function presenceSummary(presences) {
     else 
         return ['unavailable', ''];
 }
+
 
 // INTERNALS
 // ----------------------------------------------------------------------

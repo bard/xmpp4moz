@@ -112,12 +112,7 @@ xmppChannel.on(
             return s.@type == undefined;
         }},
     function(presence) {
-        var summary = XMPP.presenceSummary(
-            XMPP.cache.presenceOut.filter(
-                function(presence) {
-                    return presence.stanza.@type == undefined;
-                }));
-
+        var summary = XMPP.presenceSummary(presence.session.name);
         var button = document.getElementById('xmpp-button');
         button.setAttribute('availability', summary[0]);
         button.setAttribute('show', summary[1])
