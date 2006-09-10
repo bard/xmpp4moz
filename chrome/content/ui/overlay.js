@@ -155,8 +155,10 @@ function xmppEnableContent(account, address, type) {
 
     function gotDataFromPage(text) {
         var message = new XML(text);
-        message.@to = address;
-        message.@type = type;
+        message.@to = /^\/.+$/.test(message.@to.toString()) ?
+            address + message.@to : address;
+        if(message.@type == undefined)
+            message.@type = type;
         XMPP.send(account, message)        
     }
     
