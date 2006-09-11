@@ -21,9 +21,12 @@ var xmppEnabledLocations = {
 
     remove: function(uri) {
         uri = stripUriFragment(uri);
-        
-        this._locations[uri] = undefined;
-        delete this._locations[uri];
+
+        if(this._locations[uri]) {
+            this._locations[uri] = undefined;
+            delete this._locations[uri];
+            return uri;
+        }
     },
 
     get: function(uri) {
@@ -132,6 +135,11 @@ xmppChannel.on(
 // GUI ACTIONS
 // ----------------------------------------------------------------------
 
+function xmppDisableContent(uri) {
+    if(xmppEnabledLocations.remove(uri || getBrowser().currentURI.spec))
+        xmppRefreshContent();
+}
+
 function xmppEnableContent(account, address, type) {
     var uri = stripUriFragment(content.document.location.href);
     var appNS = new Namespace(uri);
@@ -207,10 +215,10 @@ function xmppRefreshContent() {
     var toolbox = document.getElementById('xmpp-toolbox');
 
     if(xmppLocation) 
-        for each(var role in ['account', 'address', 'type']) {
+        for each(var role in ['account', 'address']) 
             toolbox.getElementsByAttribute('role', role)[0]
                 .value = xmppLocation[role];
-        }
+
 
     toolbox.hidden = !xmppLocation;
 }

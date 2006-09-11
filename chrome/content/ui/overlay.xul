@@ -116,19 +116,19 @@ Author: Massimiliano Mirra, <bard [at] hyperstruct [dot] net>
     <toolbox id="xmpp-toolbox" hidden="true">
       <toolbar fullscreentoolbar="true">
         <toolbaritem align="center">
-          <label value="Connected to " style="margin: 0;"/>
-          <label role="address" style="margin: 0; font-weight: bold;"/>
+          <label value="Connected to " style="margin-right: 0;"/>
+          <label role="address" style="margin-left: 0; font-weight: bold;"/>
+        </toolbaritem>
+
+        <toolbaritem align="center" flex="1">
+          <label value="(via " style="margin-right: 0;"/>
+          <label role="account" style="margin-right: 0; margin-left: 0;"/>
+          <label value=")" style="margin-left: 0;"/>
         </toolbaritem>
 
         <toolbarspring/>
 
-        <toolbaritem align="center" flex="1">
-          <label value="(Account: " style="margin: 0;"/>
-          <label role="account" style="margin: 0;"/>
-          <label value=", Type: " style="margin: 0;"/>
-          <label role="type" style="margin: 0;"/>
-          <label value=")" style="margin: 0;"/>
-        </toolbaritem>
+        <toolbarbutton label="Detach" oncommand="xmppDisableContent();"/>
       </toolbar>
     </toolbox>
   </vbox>
