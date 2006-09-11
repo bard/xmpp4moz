@@ -357,12 +357,14 @@ function presenceSummary(account, address) {
             break;
     }
 
-    if(summary.show == 'chat')
-        delete summary.show;
-    else if(summary.show == 'xa')
-        summary.show = 'away';
-
-    return summary;
+    if(summary) {
+        if(summary.stanza.show == 'chat')
+            delete summary.stanza.show;
+        else if(summary.stanza.show == 'xa')
+            summary.stanza.show = 'away';
+        return summary;
+    } else 
+        return { stanza: <presence type="unavailable"/> };
 }
 
 
