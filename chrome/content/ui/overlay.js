@@ -179,21 +179,33 @@ function xmppEnableContent(account, address, type) {
 
     var channel = XMPP.createChannel();
 
-    function gotDataFromXMPP(message) {
-        content.document.getElementById('input').textContent = message.stanza.toXMLString();
+    function gotDataFromXMPP(data) {
+        content.document.getElementById('input').textContent =
+            data.stanza.toXMLString();
     }
 
     channel.on({
-            direction: 'in',
-            event: 'message',
-            session: function(s) {
+        direction: 'in',
+        event: 'message',
+        session: function(s) {
                 return s.name == account;
             },
-            stanza: function(s) {
+        stanza: function(s) {
                 return (s.appNS::x.length() > 0 &&
                         XMPP.JID(s.@from).address == address);
             }
         }, function(message) { gotDataFromXMPP(message); });
+    
+    channel.on({
+        event: 'presence',
+        direction: 'in',
+        session: function(s) {
+                return s.name == account;
+            },
+        stanza: function(s) {
+                return XMPP.JID(s.@from).address == address;
+            }
+        }, function(presence) { gotDataFromXMPP(presence); });
 
     if(type != 'groupchat')
         channel.on({
@@ -208,6 +220,10 @@ function xmppEnableContent(account, address, type) {
                 }
             }, function(message) { gotDataFromXMPP(message); });
 
+    for each(var presence in XMPP.cache.presenceIn)
+        if(presence.session.name == account &&
+           XMPP.JID(presence.stanza.@from).address == address)
+            gotDataFromXMPP(presence);
 }
 
 function xmppRefreshContent() {
