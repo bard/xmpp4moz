@@ -135,7 +135,6 @@ function xmppDisableContent(document) {
 }
 
 function xmppEnableContent(account, address, type) {
-    var appNS = new Namespace(uri);
     var appDoc = content.document;
     
     if(xmppEnabledDocuments.has(appDoc))
@@ -185,8 +184,7 @@ function xmppEnableContent(account, address, type) {
                 return s.name == account;
             },
         stanza: function(s) {
-                return (s.appNS::x.length() > 0 &&
-                        XMPP.JID(s.@from).address == address);
+                return (XMPP.JID(s.@from).address == address);
             }
         }, function(message) { gotDataFromXMPP(message); });
     
@@ -209,8 +207,7 @@ function xmppEnableContent(account, address, type) {
                     return s.name == account;
                 },
             stanza: function(s) {
-                    return (s.appNS::x.length() > 0 &&
-                            XMPP.JID(s.@to).address == address);
+                    return XMPP.JID(s.@to).address == address;
                 }
             }, function(message) { gotDataFromXMPP(message); });
 
