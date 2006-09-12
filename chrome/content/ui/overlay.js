@@ -143,6 +143,7 @@ function xmppDisableContent(uri) {
 function xmppEnableContent(account, address, type) {
     var uri = stripUriFragment(content.document.location.href);
     var appNS = new Namespace(uri);
+    var appWindow = content;
     
     if(xmppEnabledLocations.has(uri))
         return;
@@ -170,7 +171,7 @@ function xmppEnableContent(account, address, type) {
         XMPP.send(account, message)        
     }
     
-    content.document.getElementById('output').addEventListener(
+    appWindow.document.getElementById('output').addEventListener(
         'DOMNodeInserted', function(event) {
             gotDataFromPage(event.target.textContent);
         }, false);
@@ -180,7 +181,7 @@ function xmppEnableContent(account, address, type) {
     var channel = XMPP.createChannel();
 
     function gotDataFromXMPP(data) {
-        content.document.getElementById('input').textContent =
+        appWindow.document.getElementById('input').textContent =
             data.stanza.toXMLString();
     }
 
