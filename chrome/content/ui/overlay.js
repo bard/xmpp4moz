@@ -3,48 +3,42 @@
 
 var xmppChannel = XMPP.createChannel();
 
-var xmppEnabledLocations = {
-    add: function(uri, account, address, type) {
-        uri = stripUriFragment(uri);
+var xmppEnabledDocuments = {
+    _links: [],
+
+    add: function(document, account, address, type) {
+        if(this.has(document))
+            return false;
         
-        var location = {
+        var link = {
             account: account,
             address: address,
             type: type,
             channel: undefined,
-            active: false
+            document: document
         }
-        
-        this._locations[uri] = location;
-        return location;
+
+        this._links.push(link);
+        return true;
     },
 
-    remove: function(uri) {
-        uri = stripUriFragment(uri);
-
-        if(this._locations[uri]) {
-            this._locations[uri] = undefined;
-            delete this._locations[uri];
-            return uri;
-        }
+    remove: function(document) {
+        for(var i=0, l=this._links.length; i<l; i++) 
+            if(this._links[i].document == document) {
+                this._links.splice(i, 1);
+                return;
+            }
     },
 
-    get: function(uri) {
-        uri = stripUriFragment(uri);
-        
-        return this._locations[uri];
+    get: function(document) {
+        for(var i=0, l=this._links.length; i<l; i++) 
+            if(this._links[i].document == document)
+                return this._links[i];
     },
 
-    has: function(uri) {
-        uri = stripUriFragment(uri);
-
-        if(this._locations[uri])
-            return true;
-    },
-
-    // INTERNALS
-
-    _locations: {}
+    has: function(document) {
+        return this.get(document) != undefined;
+    }
 };
 
 
@@ -135,27 +129,26 @@ xmppChannel.on(
 // GUI ACTIONS
 // ----------------------------------------------------------------------
 
-function xmppDisableContent(uri) {
-    if(xmppEnabledLocations.remove(uri || getBrowser().currentURI.spec))
+function xmppDisableContent(document) {
+    if(xmppEnabledDocuments.remove(document || content.document))
         xmppRefreshContent();
 }
 
 function xmppEnableContent(account, address, type) {
-    var uri = stripUriFragment(content.document.location.href);
     var appNS = new Namespace(uri);
-    var appWindow = content;
+    var appDoc = content.document;
     
-    if(xmppEnabledLocations.has(uri))
+    if(xmppEnabledDocuments.has(appDoc))
         return;
 
     // BOOKKEEPING
     
-    xmppEnabledLocations.add(uri, account, address, type);
-    
-    content.addEventListener(
+    xmppEnabledDocuments.add(appDoc, account, address, type);
+
+    appDoc.addEventListener(
         'unload', function() {
             channel.release();
-            xmppEnabledLocations.remove(uri);
+            xmppEnabledDocuments.remove(appDoc);
         }, false);
 
     xmppRefreshContent();
@@ -170,8 +163,8 @@ function xmppEnableContent(account, address, type) {
             message.@type = type;
         XMPP.send(account, message)        
     }
-    
-    appWindow.document.getElementById('output').addEventListener(
+
+    appDoc.getElementById('output').addEventListener(
         'DOMNodeInserted', function(event) {
             gotDataFromPage(event.target.textContent);
         }, false);
@@ -181,7 +174,7 @@ function xmppEnableContent(account, address, type) {
     var channel = XMPP.createChannel();
 
     function gotDataFromXMPP(data) {
-        appWindow.document.getElementById('input').textContent =
+        appDoc.getElementById('input').textContent =
             data.stanza.toXMLString();
     }
 
@@ -228,16 +221,16 @@ function xmppEnableContent(account, address, type) {
 }
 
 function xmppRefreshContent() {
-    var xmppLocation = xmppEnabledLocations.get(content.location.href);
+    var link = xmppEnabledDocuments.get(content.document);
     var toolbox = document.getElementById('xmpp-toolbox');
 
-    if(xmppLocation) 
+    if(link) {
         for each(var role in ['account', 'address']) 
             toolbox.getElementsByAttribute('role', role)[0]
-                .value = xmppLocation[role];
-
-
-    toolbox.hidden = !xmppLocation;
+                .value = link[role];
+        toolbox.hidden = false;
+    } else
+        toolbox.hidden = true;
 }
 
 function xmppAddToolbarButton() {
