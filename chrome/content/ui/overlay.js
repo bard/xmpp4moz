@@ -129,13 +129,13 @@ xmppChannel.on(
 // GUI ACTIONS
 // ----------------------------------------------------------------------
 
-function xmppDisableContent(document) {
+function xmppDisableDocument(document) {
     if(xmppEnabledDocuments.remove(document || content.document))
-        xmppRefreshContent();
+        xmppRefreshBrowser();
 }
 
-function xmppEnableContent(account, address, type) {
-    var appDoc = content.document;
+function xmppEnableDocument(document, account, address, type) {
+    var appDoc = document || content.document;
     
     if(xmppEnabledDocuments.has(appDoc))
         return;
@@ -150,7 +150,7 @@ function xmppEnableContent(account, address, type) {
             xmppEnabledDocuments.remove(appDoc);
         }, false);
 
-    xmppRefreshContent();
+    xmppRefreshBrowser();
 
     // CONTENT
 
@@ -217,7 +217,7 @@ function xmppEnableContent(account, address, type) {
             gotDataFromXMPP(presence);
 }
 
-function xmppRefreshContent() {
+function xmppRefreshBrowser() {
     var link = xmppEnabledDocuments.get(content.document);
     var toolbox = document.getElementById('xmpp-toolbox');
 
@@ -271,7 +271,7 @@ var xmppLocationChangeListener = {
         throw Components.results.NS_NOINTERFACE;
     },
     onLocationChange: function(aProgress, aRequest, aURI) {
-        xmppRefreshContent();
+        xmppRefreshBrowser();
     },
     onStateChange: function(aProgress, aRequest, aStateFlags, aStatus) {},
     onProgressChange: function() {},
