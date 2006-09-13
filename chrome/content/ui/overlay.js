@@ -220,11 +220,13 @@ function xmppEnableDocument(document, account, address, type) {
 function xmppRefreshBrowser() {
     var link = xmppEnabledDocuments.get(content.document);
     var toolbox = document.getElementById('xmpp-toolbox');
+    var toolbar = document.getElementById('xmpp-toolbox-toolbar');
+    var tooltip = document.getElementById('xmpp-toolbox-tooltip');
 
     if(link) {
-        for each(var role in ['account', 'address']) 
-            toolbox.getElementsByAttribute('role', role)[0]
-                .value = link[role];
+        toolbar.getElementsByAttribute('role', 'address')[0].value = link.address;
+        tooltip.getElementsByAttribute('role', 'address')[0].value = link.address;
+        tooltip.getElementsByAttribute('role', 'account')[0].value = link.account;
         toolbox.hidden = false;
     } else
         toolbox.hidden = true;

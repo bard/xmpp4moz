@@ -46,3 +46,11 @@
   list-style-image: url("chrome://xmpp4moz/skin/status/all-small.png");
   -moz-image-region: rect(16px 16px 32px 0px);
   }
+
+
+#xmpp-toolbox-tooltip [role="account"],
+#xmpp-toolbox-tooltip [role="address"],
+#xmpp-toolbox-toolbar [role="address"]
+{
+  font-weight: bold;
+  }
