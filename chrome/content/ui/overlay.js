@@ -3,56 +3,6 @@
 
 var xmppChannel = XMPP.createChannel();
 
-var xmppEnabledDocuments = {
-    _links: [],
-
-    add: function(document, account, address, type) {
-        if(this.has(document))
-            return false;
-        
-        var link = {
-            account: account,
-            address: address,
-            type: type,
-            channel: undefined,
-            document: document
-        }
-
-        this._links.push(link);
-        return true;
-    },
-
-    remove: function(document) {
-        for(var i=0, l=this._links.length; i<l; i++) 
-            if(this._links[i].document == document) {
-                this._links.splice(i, 1);
-                return;
-            }
-    },
-
-    get: function(document) {
-        for(var i=0, l=this._links.length; i<l; i++) 
-            if(this._links[i].document == document)
-                return this._links[i];
-    },
-
-    has: function(document) {
-        return this.get(document) != undefined;
-    }
-};
-
-
-// UTILITIES
-// ----------------------------------------------------------------------
-
-// XXX remove from global namespace or rename
-function stripUriFragment(uri) {
-    var hashPos = uri.lastIndexOf('#');
-    return (hashPos != -1 ?
-            uri.slice(0, hashPos) :
-            uri);
-}
-
 
 // NETWORK REACTIONS
 // ----------------------------------------------------------------------
@@ -129,105 +79,18 @@ xmppChannel.on(
 // GUI ACTIONS
 // ----------------------------------------------------------------------
 
-function xmppDisableDocument(document) {
-    if(xmppEnabledDocuments.remove(document || content.document))
-        xmppRefreshBrowser();
-}
-
-function xmppEnableDocument(document, account, address, type) {
-    var appDoc = document || content.document;
-    
-    if(xmppEnabledDocuments.has(appDoc))
-        return;
-
-    // BOOKKEEPING
-    
-    xmppEnabledDocuments.add(appDoc, account, address, type);
-
-    appDoc.addEventListener(
-        'unload', function() {
-            channel.release();
-            xmppEnabledDocuments.remove(appDoc);
-        }, false);
-
-    xmppRefreshBrowser();
-
-    // CONTENT
-
-    function gotDataFromPage(text) {
-        var message = new XML(text);
-        message.@to = /^\/.+$/.test(message.@to.toString()) ?
-            address + message.@to : address;
-        if(message.@type == undefined)
-            message.@type = type;
-        XMPP.send(account, message)        
-    }
-
-    appDoc.getElementById('output').addEventListener(
-        'DOMNodeInserted', function(event) {
-            gotDataFromPage(event.target.textContent);
-        }, false);
-
-    // NETWORK
-
-    var channel = XMPP.createChannel();
-
-    function gotDataFromXMPP(data) {
-        appDoc.getElementById('input').textContent =
-            data.stanza.toXMLString();
-    }
-
-    channel.on({
-        direction: 'in',
-        event: 'message',
-        session: function(s) {
-                return s.name == account;
-            },
-        stanza: function(s) {
-                return (XMPP.JID(s.@from).address == address);
-            }
-        }, function(message) { gotDataFromXMPP(message); });
-    
-    channel.on({
-        event: 'presence',
-        direction: 'in',
-        session: function(s) {
-                return s.name == account;
-            },
-        stanza: function(s) {
-                return XMPP.JID(s.@from).address == address;
-            }
-        }, function(presence) { gotDataFromXMPP(presence); });
-
-    if(type != 'groupchat')
-        channel.on({
-            direction: 'out',
-            event: 'message',
-            session: function(s) {
-                    return s.name == account;
-                },
-            stanza: function(s) {
-                    return XMPP.JID(s.@to).address == address;
-                }
-            }, function(message) { gotDataFromXMPP(message); });
-
-    for each(var presence in XMPP.cache.presenceIn)
-        if(presence.session.name == account &&
-           XMPP.JID(presence.stanza.@from).address == address)
-            gotDataFromXMPP(presence);
-}
-
-function xmppRefreshBrowser() {
-    var link = xmppEnabledDocuments.get(content.document);
+function xmppRefresh() {
+    var browser = getBrowser().selectedBrowser;
     var toolbox = document.getElementById('xmpp-toolbox');
-    var toolbar = document.getElementById('xmpp-toolbox-toolbar');
-    var tooltip = document.getElementById('xmpp-toolbox-tooltip');
 
-    if(link) {
-        toolbar.getElementsByAttribute('role', 'address')[0].value = link.address;
-        tooltip.getElementsByAttribute('role', 'address')[0].value = link.address;
-        tooltip.getElementsByAttribute('role', 'account')[0].value = link.account;
-        toolbox.hidden = false;
+    if(browser.hasAttribute('address') &&
+       browser.hasAttribute('account')) {
+        var toolbar = document.getElementById('xmpp-toolbox-toolbar');
+        var tooltip = document.getElementById('xmpp-toolbox-tooltip');        
+            toolbar.getElementsByAttribute('role', 'address')[0].value = browser.getAttribute('address');
+            tooltip.getElementsByAttribute('role', 'address')[0].value = browser.getAttribute('address');
+            tooltip.getElementsByAttribute('role', 'account')[0].value = browser.getAttribute('account');
+            toolbox.hidden = false;
     } else
         toolbox.hidden = true;
 }
@@ -273,7 +136,7 @@ var xmppLocationChangeListener = {
         throw Components.results.NS_NOINTERFACE;
     },
     onLocationChange: function(aProgress, aRequest, aURI) {
-        xmppRefreshBrowser();
+        xmppRefresh();
     },
     onStateChange: function(aProgress, aRequest, aStateFlags, aStatus) {},
     onProgressChange: function() {},
@@ -285,6 +148,12 @@ var xmppLocationChangeListener = {
 window.addEventListener(
     'load', function(event) {
         getBrowser().addProgressListener(xmppLocationChangeListener);
+
+        getBrowser().addEventListener(
+            'DOMAttrModified', function(event) {
+                if(event.attrName == 'address')
+                    xmppRefresh();
+            }, false);
     }, false);
 
 function xmppChangeStatus(type) {

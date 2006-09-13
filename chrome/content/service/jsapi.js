@@ -368,6 +368,97 @@ function presenceSummary(account, address) {
 }
 
 
+// HYBRID-APP SUPPORT
+// ----------------------------------------------------------------------
+
+function enableContentDocument(panel, account, address, type) {
+    var appDoc = panel.contentDocument;
+
+    if(panel.hasAttribute('address') &&
+       panel.hasAttribute('account'))
+        return;
+    
+    // BOOKKEEPING
+
+    panel.setAttribute('account', account);
+    panel.setAttribute('address', address);
+
+    panel.addEventListener(
+        'unload', function(event) {
+            if(event.currentTarget != panel)
+               return;
+
+            channel.release();
+            panel.removeAttribute('account');
+            panel.removeAttribute('address');
+        }, true);
+
+    // CONTENT
+
+    function gotDataFromPage(text) {
+        var message = new XML(text);
+        message.@to = /^\/.+$/.test(message.@to.toString()) ?
+            address + message.@to : address;
+        if(message.@type == undefined)
+            message.@type = type;
+        XMPP.send(account, message)        
+    }
+
+    appDoc.getElementById('output').addEventListener(
+        'DOMNodeInserted', function(event) {
+            gotDataFromPage(event.target.textContent);
+        }, false);
+
+    // NETWORK
+
+    var channel = XMPP.createChannel();
+
+    function gotDataFromXMPP(data) {
+        appDoc.getElementById('input').textContent =
+            data.stanza.toXMLString();
+    }
+
+    channel.on({
+        direction: 'in',
+        event: 'message',
+        session: function(s) {
+                return s.name == account;
+            },
+        stanza: function(s) {
+                return (XMPP.JID(s.@from).address == address);
+            }
+        }, function(message) { gotDataFromXMPP(message); });
+    
+    channel.on({
+        event: 'presence',
+        direction: 'in',
+        session: function(s) {
+                return s.name == account;
+            },
+        stanza: function(s) {
+                return XMPP.JID(s.@from).address == address;
+            }
+        }, function(presence) { gotDataFromXMPP(presence); });
+
+    if(type != 'groupchat')
+        channel.on({
+            direction: 'out',
+            event: 'message',
+            session: function(s) {
+                    return s.name == account;
+                },
+            stanza: function(s) {
+                    return XMPP.JID(s.@to).address == address;
+                }
+            }, function(message) { gotDataFromXMPP(message); });
+
+    for each(var presence in XMPP.cache.presenceIn)
+        if(presence.session.name == account &&
+           XMPP.JID(presence.stanza.@from).address == address)
+            gotDataFromXMPP(presence);    
+}
+
+
 // INTERNALS
 // ----------------------------------------------------------------------
 
