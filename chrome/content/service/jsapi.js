@@ -372,10 +372,13 @@ function presenceSummary(account, address) {
 // ----------------------------------------------------------------------
 
 function enableContentDocument(panel, account, address, type) {
-    var appDoc = panel.contentDocument;
-
     if(panel.hasAttribute('address') &&
        panel.hasAttribute('account'))
+        return;
+
+    var appDoc = panel.contentDocument;
+    if(!(appDoc.getElementById('input') &&
+         appDoc.getElementById('output')))
         return;
     
     // BOOKKEEPING
