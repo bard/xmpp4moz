@@ -144,7 +144,7 @@ Author: Massimiliano Mirra, <bard [at] hyperstruct [dot] net>
 
         <toolbarspring/>
 
-        <toolbarbutton label="Detach" oncommand="xmppDisableContent();"/>
+        <toolbarbutton label="Disconnect" oncommand="xmppDisableContent();"/>
       </toolbar>
     </toolbox>
   </vbox>

@@ -79,6 +79,10 @@ xmppChannel.on(
 // GUI ACTIONS
 // ----------------------------------------------------------------------
 
+function xmppDisableContent() {
+    XMPP.disableContentDocument(getBrowser().selectedBrowser);
+}
+
 function xmppRefresh() {
     var browser = getBrowser().selectedBrowser;
     var toolbox = document.getElementById('xmpp-toolbox');

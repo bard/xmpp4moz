@@ -415,6 +415,7 @@ function enableContentDocument(panel, account, address, type) {
     // NETWORK
 
     var channel = XMPP.createChannel();
+    contentPanel.xmppChannel = channel;
 
     function gotDataFromXMPP(data) {
         appDoc.getElementById('input').textContent =
@@ -461,6 +462,12 @@ function enableContentDocument(panel, account, address, type) {
             gotDataFromXMPP(presence);    
 }
 
+function disableContentDocument(panel) {
+    panel.removeAttribute('address');
+    panel.removeAttribute('account');
+    panel.xmppChannel.release();
+}
+
 
 // INTERNALS
 // ----------------------------------------------------------------------
@@ -484,6 +491,7 @@ function _up(jid, opts) {
 
     var password, connectionHost, connectionPort, ssl, continuation, requester;
     if(jid) {
+        
         var account = this.getAccountByJid(jid);
         password = opts.password || account.password;
         connectionHost = opts.host || account.connectionHost;
