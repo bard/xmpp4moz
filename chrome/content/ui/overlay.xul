@@ -84,16 +84,15 @@ Author: Massimiliano Mirra, <bard [at] hyperstruct [dot] net>
                    availability="unavailable">
       <menupopup id="xmpp-menu-accounts-secondary">
         <menuseparator/>
-        <menu label="Status">
+        
+        <menu label="Connected Accounts" accesskey="o"
+              oncommand="xmppRequestedChangeStatus(event);
+                         event.stopPropagation();">
           <menupopup>
-            <menuitem class="menuitem-iconic" role="online" label="Online"
-                      oncommand="xmppChangeStatus('available'); event.stopPropagation();"/>
-            <menuitem class="menuitem-iconic" role="away" label="Away"
-                      oncommand="xmppChangeStatus('away'); event.stopPropagation();"/>
-            <menuitem class="menuitem-iconic" role="dnd" label="Do Not Disturb"
-                      oncommand="xmppChangeStatus('dnd'); event.stopPropagation();"/>
-            <menuitem class="menuitem-iconic" role="offline" label="Offline"
-                      oncommand="xmppChangeStatus('unavailable'); event.stopPropagation();"/>
+            <menuitem class="menuitem-iconic" role="online" label="Online" value="available"/>
+            <menuitem class="menuitem-iconic" role="away" label="Away" value="away"/>
+            <menuitem class="menuitem-iconic" role="dnd" label="Busy" value="dnd"/>
+            <menuitem class="menuitem-iconic" role="offline" label="Offline" value="unavailable"/>
           </menupopup>
         </menu>
         <menuitem class="menuitem-iconic" command="xmpp-command-open-preferences"/>

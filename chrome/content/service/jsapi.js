@@ -415,7 +415,7 @@ function enableContentDocument(panel, account, address, type) {
     // NETWORK
 
     var channel = XMPP.createChannel();
-    contentPanel.xmppChannel = channel;
+    panel.xmppChannel = channel;
 
     function gotDataFromXMPP(data) {
         appDoc.getElementById('input').textContent =

@@ -91,10 +91,10 @@ function xmppRefresh() {
        browser.hasAttribute('account')) {
         var toolbar = document.getElementById('xmpp-toolbox-toolbar');
         var tooltip = document.getElementById('xmpp-toolbox-tooltip');        
-            toolbar.getElementsByAttribute('role', 'address')[0].value = browser.getAttribute('address');
-            tooltip.getElementsByAttribute('role', 'address')[0].value = browser.getAttribute('address');
-            tooltip.getElementsByAttribute('role', 'account')[0].value = browser.getAttribute('account');
-            toolbox.hidden = false;
+        toolbar.getElementsByAttribute('role', 'address')[0].value = browser.getAttribute('address');
+        tooltip.getElementsByAttribute('role', 'address')[0].value = browser.getAttribute('address');
+        tooltip.getElementsByAttribute('role', 'account')[0].value = browser.getAttribute('account');
+        toolbox.hidden = false;
     } else
         toolbox.hidden = true;
 }
@@ -112,6 +112,46 @@ function xmppAddToolbarButton() {
             'xmpp-button,urlbar-container');
         toolbar.setAttribute('currentset', toolbar.currentSet);
         toolbox.ownerDocument.persist(toolbar.id, 'currentset');
+    }
+}
+
+function xmppRequestedChangeStatus(event) {
+    xmppChangeStatus(event.target.value);
+}
+
+
+// NETWORK ACTIONS
+// ----------------------------------------------------------------------
+
+function xmppChangeStatus(type) {
+    for each(var account in XMPP.accounts) {
+        if(XMPP.isUp(account)) {
+            if(type == 'unavailable')
+                XMPP.down(account);
+            else {
+                var stanza;
+                for each(var presence in XMPP.cache.presenceOut) 
+                    if(presence.session.name == account.jid) {
+                        stanza = presence.stanza.copy();
+                        break;
+                    }
+
+                stanza = stanza || <presence/>;
+
+                switch(type) {
+                case 'available':
+                    delete stanza.show;
+                    break;
+                case 'away':
+                    stanza.show = <show>away</show>;
+                    break;
+                case 'dnd':
+                    stanza.show = <show>dnd</show>;
+                    break;
+                }
+                XMPP.send(account, stanza);
+            }
+        }
     }
 }
 
@@ -160,40 +200,8 @@ window.addEventListener(
             }, false);
     }, false);
 
-function xmppChangeStatus(type) {
-    for each(var account in XMPP.accounts) {
-        if(XMPP.isUp(account)) {
-            if(type == 'unavailable')
-                XMPP.down(account);
-            else {
-                var stanza;
-                for each(var presence in XMPP.cache.presenceOut) 
-                    if(presence.session.name == account.jid) {
-                        stanza = presence.stanza.copy();
-                        break;
-                    }
 
-                stanza = stanza || <presence/>;
-
-                switch(type) {
-                case 'available':
-                    delete stanza.show;
-                    break;
-                case 'away':
-                    stanza.show = <show>away</show>;
-                    break;
-                case 'dnd':
-                    stanza.show = <show>dnd</show>;
-                    break;
-                }
-                XMPP.send(account, stanza);
-            }
-        }
-    }
-}
-
-
-// HOOKS
+// GUI HOOKS
 // ----------------------------------------------------------------------
 
 function xmppSelectedAccount(accountJid) {
@@ -202,4 +210,3 @@ function xmppSelectedAccount(accountJid) {
     else
         XMPP.up(accountJid);
 }
-
