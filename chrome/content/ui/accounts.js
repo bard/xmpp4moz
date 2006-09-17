@@ -16,15 +16,20 @@ function xmppRefreshAccounts(menuPopup) {
         menuItem.setAttribute('label', account.jid);
         menuItem.setAttribute('value', account.jid);
         menuItem.setAttribute('class', 'menuitem-iconic');
-        menuItem.setAttribute(
-            'availability', XMPP.isUp(account.jid) ? 'available' : 'unavailable');
 
+        var accountPresence = { stanza: <presence type="unavailable"/> };
         for each(var presence in XMPP.cache.presenceOut) 
-            if(presence.session.name == account.jid && 
-               presence.stanza.show != undefined) {
-                menuItem.setAttribute('show', presence.stanza.show);
+            if(presence.session.name == account.jid) {
+                accountPresence = presence;
                 break;
             }
+
+        menuItem.setAttribute('availability',
+                              accountPresence.stanza.@type == undefined ?
+                              'available' : 'unavailable')
+
+        menuItem.setAttribute('show',
+                              accountPresence.stanza.show.toString());
 
         menuPopup.insertBefore(menuItem, menuPopup.firstChild);
     }
