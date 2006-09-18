@@ -388,12 +388,11 @@ function enableContentDocument(panel, account, address, type) {
 
     panel.addEventListener(
         'unload', function(event) {
-            if(event.currentTarget != panel)
-               return;
-
-            channel.release();
-            panel.removeAttribute('account');
-            panel.removeAttribute('address');
+            if(event.target == panel.contentDocument) {
+                channel.release();
+                panel.removeAttribute('account');
+                panel.removeAttribute('address');
+            }
         }, true);
 
     // CONTENT
