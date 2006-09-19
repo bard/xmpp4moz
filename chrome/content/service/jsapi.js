@@ -416,9 +416,9 @@ function enableContentDocument(panel, account, address, type) {
     var channel = XMPP.createChannel();
     panel.xmppChannel = channel;
 
-    function gotDataFromXMPP(data) {
+    function gotDataFromXMPP(stanza) {
         appDoc.getElementById('input').textContent =
-            data.stanza.toXMLString();
+            stanza.toXMLString();
     }
 
     channel.on({
@@ -430,7 +430,7 @@ function enableContentDocument(panel, account, address, type) {
         stanza: function(s) {
                 return (XMPP.JID(s.@from).address == address);
             }
-        }, function(message) { gotDataFromXMPP(message); });
+        }, function(message) { gotDataFromXMPP(message.stanza); });
     
     channel.on({
         event: 'presence',
@@ -441,7 +441,7 @@ function enableContentDocument(panel, account, address, type) {
         stanza: function(s) {
                 return XMPP.JID(s.@from).address == address;
             }
-        }, function(presence) { gotDataFromXMPP(presence); });
+        }, function(presence) { gotDataFromXMPP(presence.stanza); });
 
     if(type != 'groupchat')
         channel.on({
@@ -453,12 +453,16 @@ function enableContentDocument(panel, account, address, type) {
             stanza: function(s) {
                     return XMPP.JID(s.@to).address == address;
                 }
-            }, function(message) { gotDataFromXMPP(message); });
+            }, function(message) {
+                       var stanza = message.stanza.copy();
+                       stanza.@from = account;
+                       gotDataFromXMPP(stanza);
+                   });
 
     for each(var presence in XMPP.cache.presenceIn)
         if(presence.session.name == account &&
            XMPP.JID(presence.stanza.@from).address == address)
-            gotDataFromXMPP(presence);    
+            gotDataFromXMPP(presence.stanza);
 }
 
 function disableContentDocument(panel) {
