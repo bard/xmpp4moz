@@ -207,7 +207,7 @@ function createChannel(baseFilter) {
             this._watchers.push({pattern: pattern, handler: handler});
         },
 
-        handle: function(event) {
+        receive: function(event) {
             this._handle1(event, this._watchers, this._match1);
         },
 
@@ -236,7 +236,7 @@ function createChannel(baseFilter) {
                 pattern.stanza = stanza;
                 break;
             }
-            this.handle(pattern)
+            this.receive(pattern)
         },
 
         release: function() {
