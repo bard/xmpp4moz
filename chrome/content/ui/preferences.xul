@@ -13,82 +13,89 @@
               image="chrome://xmpp4moz/skin/status/available-big.png"
               orient="vertical">
 
-      <groupbox flex="1">
-        <caption label="Jabber Accounts"/>
-        <hbox flex="1">
-          <vbox flex="1">
-            <listbox id="xmpp-accounts" rows="12" flex="1" onselect="xmppAccountSelected();"/>
-            <button label="Create New" accesskey="N" flex="1" oncommand="xmppCreateAccount();"/>
-          </vbox>
+      <tabbox flex="1">
+        <tabs id="xmpp-tabs">
+          <tab label="Accounts"/>
+        </tabs>
 
-          <vbox id="xmpp-account-info" flex="2" hidden="true">
-            <grid>
-              <columns>
-                <column flex="0"/>
-                <column flex="1"/>
-              </columns>
-              <rows>
-                <row align="center">
-                  <label value="Address:" control="xmpp-address" accesskey="A"/>
-                  <textbox id="xmpp-address"
-                           onchange="xmppFieldChanged(this);" oninput="xmppModifiedAddress(this.value);"/>
-                </row>
+        <tabpanels id="xmpp-tabpanels" flex="1">
+          <tabpanel flex="1">
+            <hbox flex="1">
+              <vbox flex="1">
+                <listbox id="xmpp-accounts" rows="12" flex="1" onselect="xmppAccountSelected();"/>
+                <button label="Create New" accesskey="N" flex="1" oncommand="xmppCreateAccount();"/>
+              </vbox>
 
-                <row align="center">
-                  <label value="Resource:" control="xmpp-resource" accesskey="R"/>
-                  <textbox id="xmpp-resource" onchange="xmppFieldChanged(this);"/>
-                </row>
+              <vbox id="xmpp-account-info" flex="2" hidden="true">
+                <grid>
+                  <columns>
+                    <column flex="0"/>
+                    <column flex="1"/>
+                  </columns>
+                  <rows>
+                    <row align="center">
+                      <label value="Address:" control="xmpp-address" accesskey="A"/>
+                      <textbox id="xmpp-address"
+                               onchange="xmppFieldChanged(this);" oninput="xmppModifiedAddress(this.value);"/>
+                    </row>
 
-                <row align="center">
-                  <label value="Password:" control="xmpp-password" accesskey="P"/>
-                  <textbox id="xmpp-password" type="password" onchange="xmppFieldChanged(this);"/>
-                </row>
-              </rows>
-            </grid>
+                    <row align="center">
+                      <label value="Resource:" control="xmpp-resource" accesskey="R"/>
+                      <textbox id="xmpp-resource" onchange="xmppFieldChanged(this);"/>
+                    </row>
 
-            <hbox pack="end">
-              <button id="xmpp-register-account" label="Register this Account with Server..." accesskey="R"
-                      oncommand="xmppRegisterAccount();"/>
-              <button label="Advanced..." accesskey="v"
-                      oncommand="this.parentNode.nextSibling.hidden =
-                                 !this.parentNode.nextSibling.hidden;"/>
-            </hbox>
- 
-            <grid hidden="true">
-              <columns>
-                <column flex="0"/>
-                <column flex="1"/>
-              </columns>
-              <rows>
-                <row align="center">
-                  <label value="Server for Connection:" control="xmpp-connection-host" accesskey="S"/>
-                  <textbox id="xmpp-connection-host" onchange="xmppFieldChanged(this);"/>
-                </row>
+                    <row align="center">
+                      <label value="Password:" control="xmpp-password" accesskey="P"/>
+                      <textbox id="xmpp-password" type="password" onchange="xmppFieldChanged(this);"/>
+                    </row>
+                  </rows>
+                </grid>
 
-                <row align="center">
-                  <label value="Server Port:" control="xmpp-connection-port" accesskey="P"/>
-                  <textbox id="xmpp-connection-port" onchange="xmppFieldChanged(this);"/>
-                </row>
+                <hbox pack="end">
+                  <button id="xmpp-register-account" label="Register this Account with Server..." accesskey="R"
+                          oncommand="xmppRegisterAccount();"/>
+                  <button label="Advanced..." accesskey="v"
+                          oncommand="this.parentNode.nextSibling.hidden =
+                                     !this.parentNode.nextSibling.hidden;"/>
+                </hbox>
+                
+                <grid hidden="true">
+                  <columns>
+                    <column flex="0"/>
+                    <column flex="1"/>
+                  </columns>
+                  <rows>
+                    <row align="center">
+                      <label value="Server for Connection:" control="xmpp-connection-host" accesskey="S"/>
+                      <textbox id="xmpp-connection-host" onchange="xmppFieldChanged(this);"/>
+                    </row>
 
-                <row align="center">
-                  <label value="Encryption:" control="xmpp-connection-security" accesskey="e"/>
-                  <radiogroup id="xmpp-connection-security" value="1" orient="horizontal"
-                              oncommand="xmppFieldChanged(this);">
-                    <radio value="1" label="SSL" selected="true" flex="1"/>
-                    <radio value="0" label="None" flex="1"/>
-                  </radiogroup>
-                </row>
-              </rows>
-            </grid>
+                    <row align="center">
+                      <label value="Server Port:" control="xmpp-connection-port" accesskey="P"/>
+                      <textbox id="xmpp-connection-port" onchange="xmppFieldChanged(this);"/>
+                    </row>
 
-            <separator flex="1"/>
-            <hbox pack="end">
-              <button id="xmpp-delete-account" label="Delete this Account" accesskey="D"
-                      oncommand="xmppDeleteAccount();"/> 
-            </hbox>
-          </vbox>
-        </hbox>
-      </groupbox>
+                    <row align="center">
+                      <label value="Encryption:" control="xmpp-connection-security" accesskey="e"/>
+                      <radiogroup id="xmpp-connection-security" value="1" orient="horizontal"
+                                  oncommand="xmppFieldChanged(this);">
+                        <radio value="1" label="SSL" selected="true" flex="1"/>
+                        <radio value="0" label="None" flex="1"/>
+                      </radiogroup>
+                    </row>
+                  </rows>
+                </grid>
+
+                <separator flex="1"/>
+                <hbox pack="end">
+                  <button id="xmpp-delete-account" label="Delete this Account" accesskey="D"
+                          oncommand="xmppDeleteAccount();"/> 
+                </hbox>
+              </vbox>
+            </hbox>            
+          </tabpanel>
+        </tabpanels>
+      </tabbox>
 
     </prefpane>
   </prefwindow>
