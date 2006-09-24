@@ -454,9 +454,7 @@ function enableContentDocument(panel, account, address, type) {
                     return XMPP.JID(s.@to).address == address;
                 }
             }, function(message) {
-                       var stanza = message.stanza.copy();
-                       stanza.@from = account;
-                       gotDataFromXMPP(stanza);
+                       gotDataFromXMPP(message.stanza);
                    });
 
     for each(var presence in XMPP.cache.presenceIn)
