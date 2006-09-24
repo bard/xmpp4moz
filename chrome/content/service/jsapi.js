@@ -331,6 +331,14 @@ function register(jid, password, opts) {
 // UTILITIES
 // ----------------------------------------------------------------------
 
+function extractSubRoster(roster, jid) {
+    var ns_roster = 'jabber:iq:roster';
+    var subRoster = <iq type="result"><query xmlns="jabber:iq:roster"></query></iq>;
+    subRoster.@to = roster.@to;
+    subRoster.ns_roster::query.item = roster..ns_roster::item.(@jid == jid);
+    return subRoster;
+}
+
 function presenceSummary(account, address) {
     var presences;
     if(account && address) 
@@ -456,6 +464,10 @@ function enableContentDocument(panel, account, address, type) {
             }, function(message) {
                        gotDataFromXMPP(message.stanza);
                    });
+
+    for each(var roster in XMPP.cache.roster)
+        if(roster.session.name == account)
+            gotDataFromXMPP(extractSubRoster(roster.stanza, address));
 
     for each(var presence in XMPP.cache.presenceIn)
         if(presence.session.name == account &&
