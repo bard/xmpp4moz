@@ -20,7 +20,8 @@
     <toolbar>
       <toolbaritem flex="1" align="center">
         <label value="Query:" accesskey="Q" control="disco-target"/>
-        <textbox id="disco-target" flex="1"/>
+        <textbox id="disco-target" flex="1"
+                 onkeypress="pressedKeyInQueryTarget(event);"/>
       </toolbaritem>
       <toolbarbutton label="Run" accesskey="R"
                      oncommand="initialDiscovery(_('disco-target').value);"/>

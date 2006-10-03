@@ -93,6 +93,14 @@ function initialDiscovery(jid) {
 // GUI REACTIONS
 // ----------------------------------------------------------------------
 
+function pressedKeyInQueryTarget(event) {
+    if(event.keyCode == KeyEvent.DOM_VK_RETURN) {
+        event.preventDefault();
+        discover(event.target.value);
+        event.target.blur();
+    }    
+}
+
 function requestedInfo(element) {
     var jid = attr(element, 'xmpp:jid');
     var node = attr(element, 'xmpp:node');
