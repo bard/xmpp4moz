@@ -13,6 +13,7 @@ const ns_items = 'http://jabber.org/protocol/disco#items';
 // ----------------------------------------------------------------------
 
 var channel;
+var debugMode;
 
 
 // GUI INITIALIZATION AND FINALIZATION
@@ -33,15 +34,18 @@ function init(event) {
             }},
         function(iq) { receivedItems(iq); });
 
-    document.addEventListener(
-        'mouseover', function(event) {
-            if(!event.target.hasAttributeNS)
-                return;
+    if(debugMode)
+        document.addEventListener(
+            'mouseover', function(event) {
+                if(!event.target.hasAttributeNS)
+                    return;
             
-            document.getElementById('status').label =
-                'JID: ' + attr(event.target, 'xmpp:jid') +
-                ', Node: ' + attr(event.target, 'xmpp:node');
-        }, false);
+                document.getElementById('status').label =
+                    'JID: ' + attr(event.target, 'xmpp:jid') +
+                    ', Node: ' + attr(event.target, 'xmpp:node');
+            }, false);
+
+    _('disco-target').focus();
 }
 
 function finish() {
