@@ -23,8 +23,8 @@
         <textbox id="disco-target" flex="1"
                  onkeypress="pressedKeyInQueryTarget(event);"/>
       </toolbaritem>
-      <toolbarbutton label="Run" accesskey="R"
-                     oncommand="initialDiscovery(_('disco-target').value);"/>
+      <toolbarbutton label="Send" accesskey="S"
+                     oncommand="discover(_('disco-target').value);"/>
       <toolbaritem align="center">
         <label value="As:" accesskey="A" control="accounts"/>
         <menulist id="accounts" flex="1" label="" sizetopopup="none" class="menulist-compact">
@@ -47,15 +47,13 @@
 
       <vbox xulx:role="info" xulx:loaded="false"
             hidden="true" style="margin-left: 1.5em; margin-top: 0.5em;" class="inset">
-        <hbox>
-          <label value="Name:"/>
-          <label xulx:role="name" style="font-style: italic;"/>
+        <label xulx:role="error" value="hello" hidden="true"/>
+        <hbox xulx:role="identity">
+          <label value="Name:"/><label xulx:role="name" style="font-style: italic;"/>
           <label value="|"/>
-          <label value="Category:"/>
-          <label xulx:role="category" style="font-style: italic;"/>
+          <label value="Category:"/><label xulx:role="category" style="font-style: italic;"/>
           <label value="|"/>
-          <label value="Type:"/>
-          <label xulx:role="type" style="font-style: italic;"/>        
+          <label value="Type:"/><label xulx:role="type" style="font-style: italic;"/>        
         </hbox>
         <listbox xulx:role="features" rows="5" class="inset" hidden="true">
           <listhead>
@@ -72,7 +70,7 @@
     </vbox>
   </box>
 
-  <statusbar hidden="true">
+  <statusbar>
     <statusbarpanel id="status" flex="1"/>
   </statusbar>
 </window> 

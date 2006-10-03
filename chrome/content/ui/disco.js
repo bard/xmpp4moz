@@ -80,7 +80,7 @@ function getItems(jid, node) {
 // GUI ACTIONS
 // ----------------------------------------------------------------------
 
-function initialDiscovery(jid) {
+function discover(jid) {
     var xulItem = cloneBlueprint('item');
     xulItem.setAttributeNS(ns('xmpp'), 'jid', jid);
     _(xulItem, {'xulx:role': 'jid'}).value = jid;
@@ -155,21 +155,31 @@ function receivedInfo(iq) {
     var jid = iq.stanza.@from;
     var node = iq.stanza.ns_info::query.@node;
     var xulInfo = getInfo(jid, node);
-    
-    _(xulInfo, {'xulx:role': 'name'}).value = iq.stanza..ns_info::identity.@name;
-    _(xulInfo, {'xulx:role': 'category'}).value = iq.stanza..ns_info::identity.@category;
-    _(xulInfo, {'xulx:role': 'type'}).value = iq.stanza..ns_info::identity.@type;
 
+    if(iq.stanza.@type == 'error') {
+        var xulError = _(xulInfo, {'xulx:role': 'error'});
+        var xulIdentity = _(xulInfo, {'xulx:role': 'identity'});
+        xulError.value = 'Error: ';
+        if(iq.stanza.error.*.length() > 0) 
+            xulError.value += iq.stanza.error.*[0].name().localName.replace(/-/g, ' ') + ' ';
+        xulError.value += '(' + iq.stanza.error.@code + ')';
+        xulIdentity.hidden = true;
+        xulError.hidden = false;
+    } else {    
+        _(xulInfo, {'xulx:role': 'name'}).value = iq.stanza..ns_info::identity.@name;
+        _(xulInfo, {'xulx:role': 'category'}).value = iq.stanza..ns_info::identity.@category;
+        _(xulInfo, {'xulx:role': 'type'}).value = iq.stanza..ns_info::identity.@type;
 
-    var xulFeatures = _(xulInfo, {'xulx:role': 'features'});
-    var featuresCount = iq.stanza..ns_info::feature.length();
-    if(featuresCount > 0) {
-        xulFeatures.hidden = false;
-        xulFeatures.setAttribute('rows', Math.min(5, featuresCount));
+        var xulFeatures = _(xulInfo, {'xulx:role': 'features'});
+        var featuresCount = iq.stanza..ns_info::feature.length();
+        if(featuresCount > 0) {
+            xulFeatures.hidden = false;
+            xulFeatures.setAttribute('rows', Math.min(5, featuresCount));
+        }
+
+        for each(var feature in iq.stanza..ns_info::feature) 
+            xulFeatures.appendItem(feature.@var);
     }
-
-    for each(var feature in iq.stanza..ns_info::feature) 
-        xulFeatures.appendItem(feature.@var);
 
     xulInfo.setAttributeNS(ns('xulx'), 'loaded', 'true');
     xulInfo.hidden = false;
