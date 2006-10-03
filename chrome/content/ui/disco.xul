@@ -1,0 +1,77 @@
+<?xml version="1.0"?>
+<?xml-stylesheet href="chrome://global/skin/" type="text/css"?>
+<?xul-overlay href="chrome://xmpp4moz/content/ui/accounts.xul"?>
+
+<!DOCTYPE window>
+<window title="Service Discovery"
+        xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul"
+        xmlns:html="http://www.w3.org/1999/xhtml"
+        xmlns:xmpp="http://hyperstruct.net/xmpp"
+        xmlns:xulx="http://hyperstruct.net/xul-extensions"
+        onload="init(event);"
+        onunload="finish(event);"
+        width="800" height="600">
+
+  <script type="application/x-javascript" src="../xmpp.js"/>
+  <script type="application/x-javascript" src="utils.js"/>
+  <script type="application/x-javascript" src="disco.js"/>
+
+  <toolbox>
+    <toolbar>
+      <toolbaritem flex="1" align="center">
+        <label value="Query:" accesskey="Q" control="disco-target"/>
+        <textbox id="disco-target" flex="1"/>
+      </toolbaritem>
+      <toolbarbutton label="Run" accesskey="R"
+                     oncommand="initialDiscovery(_('disco-target').value);"/>
+      <toolbaritem align="center">
+        <label value="As:" accesskey="A" control="accounts"/>
+        <menulist id="accounts" flex="1" label="" sizetopopup="none" class="menulist-compact">
+          <menupopup id="xmpp-menu-accounts"/>
+        </menulist>        
+      </toolbaritem>
+    </toolbar>
+  </toolbox>
+
+  <vbox flex="1" id="main" style="overflow: auto;"/>
+
+  <box id="blueprints" hidden="true">
+    <vbox xulx:role="item" xmpp:jid="" xmpp:node="">
+      <hbox align="center">
+        <label xulx:role="jid" style="font-weight: bold;"/>
+        <spacer flex="1"/>
+        <label class="text-link" value="Info ⇓" onclick="requestedInfo(this);"/>
+        <label class="text-link" value="Items ⇓" onclick="requestedItems(this);"/>
+      </hbox>
+
+      <vbox xulx:role="info" xulx:loaded="false"
+            hidden="true" style="margin-left: 1.5em; margin-top: 0.5em;" class="inset">
+        <hbox>
+          <label value="Name:"/>
+          <label xulx:role="name" style="font-style: italic;"/>
+          <label value="|"/>
+          <label value="Category:"/>
+          <label xulx:role="category" style="font-style: italic;"/>
+          <label value="|"/>
+          <label value="Type:"/>
+          <label xulx:role="type" style="font-style: italic;"/>        
+        </hbox>
+        <listbox xulx:role="features" rows="5" class="inset" hidden="true">
+          <listhead>
+            <listheader flex="1" label="Features"/>
+          </listhead>
+        </listbox>
+      </vbox>
+
+      <vbox xulx:role="items" xulx:loaded="false"
+            hidden="true" style="margin-left: 1.5em;" class="inset">
+        <label xulx:role="notice" hidden="true" value="No items were found."
+               style="font-style: italic;"/>
+      </vbox>
+    </vbox>
+  </box>
+
+  <statusbar hidden="true">
+    <statusbarpanel id="status" flex="1"/>
+  </statusbar>
+</window> 

@@ -40,7 +40,13 @@ Author: Massimiliano Mirra, <bard [at] hyperstruct [dot] net>
              accesskey="o"
              oncommand="window.open(
                         'chrome://xmpp4moz/content/ui/console.xul',
-                        'xmpp-console', 'chrome,alwaysRaised');"/>
+                        'xmpp-console', 'chrome');"/>
+    <command id="xmpp-command-open-disco"
+             label="Service Discovery"
+             accesskey="D"
+             oncommand="window.open(
+                        'chrome://xmpp4moz/content/ui/disco.xul',
+                        'xmpp-disco', 'chrome');"/>
     <command id="xmpp-command-open-preferences"
              label="Configure..."
              accesskey="C"
@@ -63,6 +69,7 @@ Author: Massimiliano Mirra, <bard [at] hyperstruct [dot] net>
           </menupopup>
         </menu>
         <menuitem class="menuitem-iconic" command="xmpp-command-open-console"/>
+        <menuitem class="menuitem-iconic" command="xmpp-command-open-disco"/>
       </menupopup>
     </menu>
   </menubar>
