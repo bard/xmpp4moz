@@ -474,6 +474,13 @@ function enableContentDocument(panel, account, address, type) {
         if(presence.session.name == account &&
            XMPP.JID(presence.stanza.@from).address == address)
             gotDataFromXMPP(presence.stanza);
+
+    if(type == 'groupchat') 
+        for each(var presence in XMPP.cache.presenceOut) 
+            if(presence.session.name == account &&
+               presence.stanza.@to != undefined &&
+               XMPP.JID(presence.stanza.@to).address == address) 
+                gotDataFromXMPP(presence.stanza);
 }
 
 function disableContentDocument(panel) {

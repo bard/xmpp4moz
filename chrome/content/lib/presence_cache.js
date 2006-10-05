@@ -11,7 +11,8 @@ function receive(newObject) {
     for(var i=0, l=this._store.length; i<l; i++) {
         cachedObject = this._store[i];
         if(cachedObject.session.name == newObject.session.name &&
-           cachedObject.stanza.getAttribute('from') == newObject.stanza.getAttribute('from')) {
+           cachedObject.stanza.getAttribute('from') == newObject.stanza.getAttribute('from')
+           && cachedObject.stanza.getAttribute('to') == newObject.stanza.getAttribute('to')) {
             found = true;
             break;
         }

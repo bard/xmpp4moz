@@ -150,8 +150,7 @@ function open(jid, server, port, ssl, streamObserver) {
             if(topic == 'stanza-out' && subject.
                nodeName == 'presence' &&
                (subject.getAttribute('type') == undefined ||
-                subject.getAttribute('type') == 'unavailable') &&
-               !subject.hasAttribute('to'))
+                subject.getAttribute('type') == 'unavailable'))
                 cache.presenceOut.receive({session: sessions.get(data), 
                                           stanza: subject});
 
