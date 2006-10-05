@@ -48,6 +48,14 @@ xmppChannel.on(
             function(reply) {
                 document.
                     getElementById('xmpp-status').hidden = true;
+
+                if(reply.stanza.@type == 'error' &&
+                   window == Components.classes["@mozilla.org/appshell/window-mediator;1"]
+                   .getService(Components.interfaces.nsIWindowMediator)
+                   .getMostRecentWindow('navigator:browser'))
+                   window.alert('Error during Jabber authentication: ' +
+                                reply.stanza.error.*[0].name().localName.replace(/-/g, ' ') +
+                                ' (' + reply.stanza.error.@code + ')');
             });
     });
 
