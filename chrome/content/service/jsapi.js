@@ -407,6 +407,7 @@ function enableContentDocument(panel, account, address, type) {
 
     function gotDataFromPage(text) {
         var message = new XML(text);
+        delete message.@from;
         message.@to = /^\/.+$/.test(message.@to.toString()) ?
             address + message.@to : address;
         if(message.@type == undefined)
