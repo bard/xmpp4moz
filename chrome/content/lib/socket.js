@@ -37,7 +37,7 @@ function constructor(h, p, o) {
 
 function write(data) {
     try {
-        this._outstream.write(data, data.length);
+        this._outstream.writeString(data);
     } catch(e if e.name == 'NS_BASE_STREAM_CLOSED') {
         this._instream.close();
         this._outstream.close();
@@ -59,19 +59,25 @@ function connect() {
     else
         this._transport = this._transportService.createTransport(null, 0, this._host, this._port, null);
 
-    this._outstream = this._transport.openOutputStream(0,0,0);
-    this._stream = this._transport.openInputStream(0,0,0);
+    this._baseOutstream = this._transport.openOutputStream(0,0,0);
+    this._outstream = Components
+        .classes["@mozilla.org/intl/converter-output-stream;1"]
+        .createInstance(Components.interfaces.nsIConverterOutputStream);
+    this._outstream.init(this._baseOutstream, 'UTF-8', 0, '?'.charCodeAt(0))
+
+    this._baseInstream = this._transport.openInputStream(0,0,0);
     this._instream = Components
-        .classes["@mozilla.org/scriptableinputstream;1"]
-        .createInstance(Components.interfaces.nsIScriptableInputStream);
-    this._instream.init(this._stream);
+        .classes["@mozilla.org/intl/converter-input-stream;1"]
+        .createInstance(Components.interfaces.nsIConverterInputStream);
+    this._instream.init(this._baseInstream, 'UTF-8', 0,
+            Components.interfaces.nsIConverterInputStream.DEFAULT_REPLACEMENT_CHARACTER);
     this._connected = true;
 
     var pump = Components
         .classes["@mozilla.org/network/input-stream-pump;1"]
         .createInstance(Components.interfaces.nsIInputStreamPump);
 
-    pump.init(this._stream, -1, -1, 0, 0, false);
+    pump.init(this._baseInstream, -1, -1, 0, 0, false);
 
     var socket = this;
     var listener = {
@@ -84,7 +90,9 @@ function connect() {
             socket._handle('stop', status);
         },
         onDataAvailable: function(request, context, inputStream, offset, count){
-            socket._handle('data', socket._instream.read(count));
+            var data = {};
+            socket._instream.readString(count, data);
+            socket._handle('data', data.value);
         }
     };
 

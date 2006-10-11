@@ -42,14 +42,11 @@ const Cu = Components.utils;
 
 const loader = Cc['@mozilla.org/moz/jssubscript-loader;1']
     .getService(Ci.mozIJSSubScriptLoader);
-const converter = Cc["@mozilla.org/intl/scriptableunicodeconverter"]
-    .getService(Ci.nsIScriptableUnicodeConverter);
 const serializer = Cc['@mozilla.org/xmlextras/xmlserializer;1']
     .getService(Ci.nsIDOMSerializer);
 const domParser = Cc['@mozilla.org/xmlextras/domparser;1']
     .getService(Ci.nsIDOMParser);
 
-converter.charset = 'UTF-8';
 loader.loadSubScript('chrome://xmpp4moz/content/lib/module_manager.js');
 const module = new ModuleManager(['chrome://xmpp4moz/content']);
 const Parser = module.require('class', 'service/parser');
@@ -184,10 +181,6 @@ function _stream(direction, state) {
 }
 
 function _data(direction, data) {
-    data = converter[direction == 'in' ?
-                     'ConvertToUnicode' :
-                     'ConvertFromUnicode'](data);
-
     this.notifyObservers(data, 'data-' + direction, this.name);
 
     if(direction == 'in')
