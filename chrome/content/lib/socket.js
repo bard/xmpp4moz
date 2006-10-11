@@ -18,17 +18,19 @@
   Author: Massimiliano Mirra, <bard [at] hyperstruct [dot] net>
 */
 
+const Cc = Components.classes;
+const Ci = Components.interfaces;
+
 var mixin = module.require('package', 'mixin');
 var event = module.require('package', 'event_handling');
 
-function constructor(h, p, o) {
-    this._host = h;
-    this._port = p;
-    this._opts = o || {};
+function constructor(host, port, opts) {
+    this._host = host;
+    this._port = port;
+    this._opts = opts || {};
     
-    this._transportService = Components
-        .classes["@mozilla.org/network/socket-transport-service;1"]
-        .getService(Components.interfaces.nsISocketTransportService);
+    this._transportService = Cc["@mozilla.org/network/socket-transport-service;1"]
+        .getService(Ci.nsISocketTransportService);
 
     var eventManager = new event.Manager();
     mixin.forward(this, 'on', eventManager);
@@ -60,22 +62,19 @@ function connect() {
         this._transport = this._transportService.createTransport(null, 0, this._host, this._port, null);
 
     this._baseOutstream = this._transport.openOutputStream(0,0,0);
-    this._outstream = Components
-        .classes["@mozilla.org/intl/converter-output-stream;1"]
-        .createInstance(Components.interfaces.nsIConverterOutputStream);
+    this._outstream = Cc["@mozilla.org/intl/converter-output-stream;1"]
+        .createInstance(Ci.nsIConverterOutputStream);
     this._outstream.init(this._baseOutstream, 'UTF-8', 0, '?'.charCodeAt(0))
 
     this._baseInstream = this._transport.openInputStream(0,0,0);
-    this._instream = Components
-        .classes["@mozilla.org/intl/converter-input-stream;1"]
-        .createInstance(Components.interfaces.nsIConverterInputStream);
+    this._instream = Cc["@mozilla.org/intl/converter-input-stream;1"]
+        .createInstance(Ci.nsIConverterInputStream);
     this._instream.init(this._baseInstream, 'UTF-8', 0,
-            Components.interfaces.nsIConverterInputStream.DEFAULT_REPLACEMENT_CHARACTER);
+            Ci.nsIConverterInputStream.DEFAULT_REPLACEMENT_CHARACTER);
     this._connected = true;
 
-    var pump = Components
-        .classes["@mozilla.org/network/input-stream-pump;1"]
-        .createInstance(Components.interfaces.nsIInputStreamPump);
+    var pump = Cc["@mozilla.org/network/input-stream-pump;1"]
+        .createInstance(Ci.nsIInputStreamPump);
 
     pump.init(this._baseInstream, -1, -1, 0, 0, false);
 
