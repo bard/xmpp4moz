@@ -385,8 +385,8 @@ function enableContentDocument(panel, account, address, type) {
         return;
 
     var appDoc = panel.contentDocument;
-    if(!(appDoc.getElementById('input') &&
-         appDoc.getElementById('output')))
+    if(!(appDoc.getElementById('xmpp-incoming') &&
+         appDoc.getElementById('xmpp-outgoing')))
         return;
     
     // BOOKKEEPING
@@ -415,7 +415,7 @@ function enableContentDocument(panel, account, address, type) {
         XMPP.send(account, message)        
     }
 
-    appDoc.getElementById('output').addEventListener(
+    appDoc.getElementById('xmpp-outgoing').addEventListener(
         'DOMNodeInserted', function(event) {
             gotDataFromPage(event.target.textContent);
         }, false);
@@ -426,7 +426,7 @@ function enableContentDocument(panel, account, address, type) {
     panel.xmppChannel = channel;
 
     function gotDataFromXMPP(stanza) {
-        appDoc.getElementById('input').textContent =
+        appDoc.getElementById('xmpp-incoming').textContent =
             stanza.toXMLString();
     }
 
