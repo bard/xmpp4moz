@@ -132,17 +132,6 @@ function open(jid, server, port, ssl, streamObserver) {
                 }
             }
 
-            if(topic == 'stream-out' && asString(subject) == 'close') {
-                for each(var presence in cache.presenceIn.copy()) {
-                    var syntheticPresence = presence.stanza.cloneNode(true);
-                    syntheticPresence.removeAttribute('id');
-                    syntheticPresence.setAttribute('type', 'unavailable');
-                    session.receive(serializer.serializeToString(syntheticPresence));
-                }
-                transport.disconnect();
-                sessions.closed(session);
-            }
-
             if(topic == 'stanza-in' && subject.nodeName == 'presence')
                 cache.presenceIn.receive({session: sessions.get(data),
                                          stanza: subject});
@@ -174,6 +163,17 @@ function open(jid, server, port, ssl, streamObserver) {
                              </iq>;
                     session.send(stanza.toXMLString(), null);
                 }
+            }
+
+            if(topic == 'stream-out' && asString(subject) == 'close') {
+                for each(var presence in cache.presenceIn.copy()) {
+                    var syntheticPresence = presence.stanza.cloneNode(true);
+                    syntheticPresence.removeAttribute('id');
+                    syntheticPresence.setAttribute('type', 'unavailable');
+                    session.receive(serializer.serializeToString(syntheticPresence));
+                }
+                transport.disconnect();
+                sessions.closed(session);
             }
         }
     }
