@@ -1,3 +1,14 @@
+// GLOBAL DEFINITIONS
+// ----------------------------------------------------------------------
+
+var Cc = Components.classes;
+var Ci = Components.interfaces;
+var Cr = Components.results;
+
+var prefBranch = Cc["@mozilla.org/preferences-service;1"]
+    .getService(Ci.nsIPrefBranch);
+
+
 // GLOBAL STATE
 // ----------------------------------------------------------------------
 
@@ -49,8 +60,8 @@ function initOverlay() {
                         getElementById('xmpp-status').hidden = true;
 
                     if(reply.stanza.@type == 'error' &&
-                       window == Components.classes["@mozilla.org/appshell/window-mediator;1"]
-                       .getService(Components.interfaces.nsIWindowMediator)
+                       window == Cc["@mozilla.org/appshell/window-mediator;1"]
+                       .getService(Ci.nsIWindowMediator)
                        .getMostRecentWindow('navigator:browser')) {
                         window.alert('Error during Jabber authentication: ' +
                                      reply.stanza.error.*[0].name().localName.replace(/-/g, ' ') +
@@ -171,10 +182,6 @@ function changeStatus(type) {
 
 window.addEventListener(
     'load', function(event) {
-        var prefBranch = Components
-            .classes["@mozilla.org/preferences-service;1"]
-            .getService(Components.interfaces.nsIPrefBranch);
-
         if(prefBranch.getBoolPref('xmpp.firstInstall')) {
             prefBranch.setBoolPref('xmpp.firstInstall', false);
             addToolbarButton();
@@ -183,11 +190,11 @@ window.addEventListener(
 
 var locationChangeListener = {
     QueryInterface: function(aIID) {
-        if(aIID.equals(Components.interfaces.nsIWebProgressListener) ||
-           aIID.equals(Components.interfaces.nsISupportsWeakReference) ||
-           aIID.equals(Components.interfaces.nsISupports))
+        if(aIID.equals(Ci.nsIWebProgressListener) ||
+           aIID.equals(Ci.nsISupportsWeakReference) ||
+           aIID.equals(Ci.nsISupports))
             return this;
-        throw Components.results.NS_NOINTERFACE;
+        throw Cr.NS_NOINTERFACE;
     },
     onLocationChange: function(aProgress, aRequest, aURI) {
         refresh();
