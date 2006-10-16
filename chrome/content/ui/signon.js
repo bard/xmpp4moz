@@ -1,16 +1,24 @@
+// GLOBAL DEFINITIONS
+// ----------------------------------------------------------------------
+
+var xmpp = xmpp || {};
+xmpp.ui = xmpp.ui || {};
+
+
+// GLOBAL STATE
+// ----------------------------------------------------------------------
+
 var prefBranch = Components
     .classes["@mozilla.org/preferences-service;1"]
     .getService(Components.interfaces.nsIPrefService)
     .getBranch("xmpp.account.")
     .QueryInterface(Components.interfaces.nsIPrefBranch2);
 
-var prefObserver = {
-    observe: function(subject, topic, data) {
-        refreshAccountList();
-    }
-};
-
 var request;
+
+
+// INITIALIZATION
+// ----------------------------------------------------------------------
 
 function init() {
     request = window.arguments[0];
@@ -26,17 +34,9 @@ function finish() {
     prefBranch.removeObserver('', prefObserver);
 }
 
-function doOk() {
-    request.jid = request.jid || _('accounts').value;
-    request.password = _('password').value;
-    request.confirm = true;
 
-    return true;
-}
-
-function doCancel() {
-    return true;
-}
+// GUI ACTIONS
+// ----------------------------------------------------------------------
 
 function configureAccounts() {
     Components
@@ -45,6 +45,7 @@ function configureAccounts() {
         .getMostRecentWindow("navigator:browser")
         .openPreferences('xmpp-pane');
 }
+
 
 // ----------------------------------------------------------------------
 // REACTIONS
@@ -59,6 +60,25 @@ function selectedAccount(jid) {
         _('already-connected').hidden = true;
     }
 }
+
+function doOk() {
+    request.jid = request.jid || _('accounts').value;
+    request.password = _('password').value;
+    request.confirm = true;
+
+    return true;
+}
+
+function doCancel() {
+    return true;
+}
+
+var prefObserver = {
+    observe: function(subject, topic, data) {
+        refreshAccountList();
+    }
+};
+
 
 // ----------------------------------------------------------------------
 // UTILITIES
@@ -76,10 +96,11 @@ function deleteChildren(container) {
     }
 }
 
+
 // ----------------------------------------------------------------------
 // HOOKS
 
-function xmppLoadedAccounts() {
+xmpp.ui.loadedAccounts = function() {
     var accounts = XMPP.accounts;
     if(request.jid) {
         for each(var account in accounts) {

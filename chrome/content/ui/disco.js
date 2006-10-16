@@ -1,6 +1,9 @@
 // GLOBAL DEFINITIONS
 // ----------------------------------------------------------------------
 
+var xmpp = xmpp || {};
+xmpp.ui = xmpp.ui || {};
+
 const ns_xul = 'http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul';
 const ns_xulx = 'http://hyperstruct.net/xul-extensions';
 const ns_html = 'http://www.w3.org/1999/xhtml';
@@ -214,7 +217,7 @@ function receivedItems(iq) {
 // HOOKS
 // ----------------------------------------------------------------------
 
-function xmppLoadedAccounts() {
+xmpp.ui.loadedAccounts = function() {
     for each(var account in XMPP.accounts) {
         if(XMPP.isUp(account.jid)) {
             _('accounts').value = account.jid;

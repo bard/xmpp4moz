@@ -1,6 +1,9 @@
 // GLOBAL DEFINITIONS
 // ----------------------------------------------------------------------
 
+var xmpp = xmpp || {};
+xmpp.ui = xmpp.ui || {};
+
 const ns_roster = new Namespace('jabber:iq:roster');
 
 const stanzaTemplates = {
@@ -263,7 +266,7 @@ function sendStanza(account, xml) {
 // ----------------------------------------------------------------------
 // HOOKS
 
-function xmppLoadedAccounts() {
+xmpp.ui.loadedAccounts = function(accountJid) {
     for each(var account in XMPP.accounts) {
         if(XMPP.isUp(account.jid)) {
             _('accounts').value = account.jid;

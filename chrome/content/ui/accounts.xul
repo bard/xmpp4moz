@@ -7,12 +7,12 @@
   <script type="application/x-javascript" src="accounts.js"/>
 
   <menupopup id="xmpp-menu-accounts"
-             onpopupshowing="xmppRefreshAccounts(this);"
-             oncommand="if(typeof(xmppSelectedAccount) == 'function')
-                        xmppSelectedAccount(event.target.value);"/>
+             onpopupshowing="xmpp.ui.refreshAccounts(this);"
+             oncommand="if(typeof(xmpp.ui.selectedAccount) == 'function')
+                        xmpp.ui.selectedAccount(event.target.value);"/>
 
   <menupopup id="xmpp-menu-accounts-secondary"
-             onpopupshowing="xmppRefreshAccounts(this);"
-             oncommand="if(typeof(xmppSelectedAccount) == 'function')
-                        xmppSelectedAccount(event.target.value);"/>
+             onpopupshowing="xmpp.ui.refreshAccounts(this);"
+             oncommand="if(typeof(xmpp.ui.selectedAccount) == 'function')
+                        xmpp.ui.selectedAccount(event.target.value);"/>
 </overlay>

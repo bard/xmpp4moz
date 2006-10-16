@@ -1,12 +1,26 @@
+// GLOBAL DEFINITIONS
+// ----------------------------------------------------------------------
+
+var xmpp = xmpp || {};
+xmpp.ui = xmpp.ui || {};
+
+
+// GUI REACTIONS
+// ----------------------------------------------------------------------
+
 window.addEventListener(
     'load', function(event) {
-        xmppRefreshAccounts(
+        xmpp.ui.refreshAccounts(
             document.getElementById('xmpp-menu-accounts'));
-        if(typeof(xmppLoadedAccounts) == 'function')
-            xmppLoadedAccounts();
+        if(typeof(xmpp.ui.loadedAccounts) == 'function')
+            xmpp.ui.loadedAccounts();
     }, false);
 
-function xmppRefreshAccounts(menuPopup) {
+
+// GUI ACTIONS
+// ----------------------------------------------------------------------
+
+xmpp.ui.refreshAccounts = function(menuPopup) {
     while(menuPopup.firstChild &&
           menuPopup.firstChild.nodeName != 'menuseparator')
         menuPopup.removeChild(menuPopup.firstChild);

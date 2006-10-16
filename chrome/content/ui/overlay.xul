@@ -87,13 +87,13 @@ Author: Massimiliano Mirra, <bard [at] hyperstruct [dot] net>
                    class="toolbarbutton-1 chromeclass-toolbar-additional"
                    type="menu-button"
                    label="Jabber"
-                   oncommand="if(event.target == this) xmppToggleLivebar();"
+                   oncommand="if(event.target == this) xmpp4moz.toggleLivebar();"
                    availability="unavailable">
       <menupopup id="xmpp-menu-accounts-secondary">
         <menuseparator/>
         
-        <menu label="Connected Accounts" accesskey="o"
-              oncommand="xmppRequestedChangeStatus(event);
+        <menu label="Set Status" accesskey="S"
+              oncommand="xmpp4moz.requestedChangeStatus(event);
                          event.stopPropagation();">
           <menupopup>
             <menuitem class="menuitem-iconic" role="online" label="Online" value="available"/>
@@ -150,7 +150,7 @@ Author: Massimiliano Mirra, <bard [at] hyperstruct [dot] net>
 
         <toolbarspring/>
 
-        <toolbarbutton label="Disconnect" oncommand="xmppDisableContent();"/>
+        <toolbarbutton label="Disconnect" oncommand="xmpp4moz.disableContent();"/>
       </toolbar>
     </toolbox>
   </vbox>
