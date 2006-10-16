@@ -39,9 +39,8 @@ function initOverlay() {
                         s.*::query.length() > 0 &&
                         s.*::query.name().uri == 'jabber:iq:auth') }},
         function(iq) {
-            channel.on({
-                event: 'iq',  // TODO: need one-shot listeners here!
-                direction: 'in',
+            var reaction = channel.on({
+                event: 'iq', direction: 'in',
                 session: function(s) {
                         return s.name == iq.session.name;
                     },
@@ -49,6 +48,8 @@ function initOverlay() {
                         return s.@id == iq.stanza.@id;
                     }},
                 function(reply) {
+                    channel.forget(reaction);
+
                     document.
                         getElementById('xmpp-status').hidden = true;
 
