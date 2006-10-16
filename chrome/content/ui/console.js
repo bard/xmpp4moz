@@ -16,9 +16,14 @@ const stanzaTemplates = {
     iq: {
         'Plain': <iq/>,
 
-        'Disco': 
+        'Disco/Info': 
         <iq type="get" to="">
         <query xmlns="http://jabber.org/protocol/disco#info"/>
+        </iq>,
+
+        'Disco/Items': 
+        <iq type="get" to="">
+        <query xmlns="http://jabber.org/protocol/disco#items"/>
         </iq>,
 
         'vCard': <iq to="" type="get"><vCard xmlns="vcard-temp"/></iq>,
