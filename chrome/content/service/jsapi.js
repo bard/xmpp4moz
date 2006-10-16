@@ -204,7 +204,15 @@ function createChannel(baseFilter) {
         },            
 
         on: function(pattern, handler) {
-            this._watchers.push({pattern: pattern, handler: handler});
+            var reaction = {pattern: pattern, handler: handler};
+            this._watchers.push(reaction);
+            return reaction;
+        },
+
+        forget: function(watcher) {
+            var index = this._watchers.indexOf(watcher);
+            if(index != -1) 
+                this._watchers.splice(index, 1);
         },
 
         receive: function(event) {
