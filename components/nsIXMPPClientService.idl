@@ -19,6 +19,8 @@ interface nsIXMPPClientService: nsISupports
 
     boolean isUp(in string accountJid);
 
+    nsIXMPPClientSession getSession(in string accountJid);
+
     void send(in string accountJid, in string stanza, in nsIObserver anObserver);
 
  	void addObserver(in nsIObserver anObserver, in string aTopic, in boolean ownsWeak);

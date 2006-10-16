@@ -226,6 +226,10 @@ function rosterCache() {
     return arrayOfObjectsToEnumerator(cache.roster.copy());
 }
 
+function getSession(jid) {
+    return sessions.get(jid);
+}
+
 
 // INTERNALS
 // ----------------------------------------------------------------------

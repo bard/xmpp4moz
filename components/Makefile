@@ -1,4 +1,4 @@
-IDLC=/usr/lib/firefox/xpidl
+IDLC=/usr/lib/xulrunner/sdk/bin/xpidl
 INC=-I. -I/usr/share/idl/xulrunner
 XPTS=nsIXMPPClientService.xpt nsIXMPPClientSession.xpt
 
