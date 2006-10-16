@@ -225,7 +225,8 @@ function createChannel(baseFilter) {
             var pattern = {
                 event: match[1],
                 direction: match[2],
-                session: { name: data.toString() } // XXX hack - should get real session rather that something that looks like it
+                account: data.toString(),
+                session: XMPP.service.getSession(data.toString()) || { name: data.toString() }
             }
 
             switch(pattern.event) {
