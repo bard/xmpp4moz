@@ -1,10 +1,11 @@
-// Set by xmppShowAccount();
+// GLOBAL STATE
+// ----------------------------------------------------------------------
 
 var xmppSelectedAccountKey;
 
 
+// GUI ACTIONS
 // ----------------------------------------------------------------------
-// ACTIONS
 
 function xmppRefreshAccountList() {
     var accountList = document.getElementById('xmpp-accounts');
@@ -29,7 +30,8 @@ function xmppShowAccount(accountKey) {
             .toLowerCase() 
     }
 
-    document.getElementById('xmpp-account-info').hidden = false;
+    document.getElementById('xmpp-account-message').hidden = true;
+    document.getElementById('xmpp-account-settings').hidden = false;
     var account = XMPP.getAccountByKey(accountKey);
 
     for each(var accountField in
@@ -84,15 +86,17 @@ function xmppDeleteAccount(accountKey) {
         .deleteBranch('xmpp.account.' + accountKey + '.');
 
     xmppRefreshAccountList();
-    document.getElementById('xmpp-account-info').hidden = true;
+    document.getElementById('xmpp-account-message').hidden = false;
+    document.getElementById('xmpp-account-settings').hidden = true;
 }
 
 function xmppRegisterAccount() {
     window.alert('Not implemented yet.');
 }
 
+
+// GUI REACTIONS
 // ----------------------------------------------------------------------
-// REACTIONS
 
 function xmppFieldChanged(field) {
     function camelize(string) {
@@ -134,4 +138,3 @@ function xmppAccountSelected() {
         return;
     xmppShowAccount(addressItem.value);
 }
-
