@@ -40,13 +40,8 @@ function initOverlay() {
                         s.*::query.name().uri == 'jabber:iq:auth') }},
         function(iq) {
             var reaction = channel.on({
-                event: 'iq', direction: 'in',
-                session: function(s) {
-                        return s.name == iq.session.name;
-                    },
-                stanza: function(s) {
-                        return s.@id == iq.stanza.@id;
-                    }},
+                event: 'iq', direction: 'in', session: iq.session,
+                stanza: function(s) { return s.@id == iq.stanza.@id; }},                
                 function(reply) {
                     channel.forget(reaction);
 
