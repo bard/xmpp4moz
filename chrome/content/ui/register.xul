@@ -1,0 +1,31 @@
+<?xml version="1.0"?>
+<?xul-overlay href="chrome://xmpp4moz/content/ui/dataforms.xul"?>
+
+<!DOCTYPE overlay>
+<overlay xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul"
+         xmlns:html="http://www.w3.org/1999/xhtml"
+         xmlns:xmpp="http://hyperstruct.net/xmpp"
+         xmlns:xulx="http://hyperstruct.net/xul-extensions">
+
+  <script type="application/x-javascript" src="utils.js"/>
+  <script type="application/x-javascript" src="register.js"/>
+
+  <box id="blueprints">
+    <vbox xulx:role="registration-form">
+      <description xulx:role="instructions"/>
+      <grid>
+        <columns>
+          <column flex="0"/>
+          <column flex="1"/>
+        </columns>
+
+        <rows xulx:role="fields"/>
+      </grid>
+    </vbox>
+
+    <row xulx:role="registration-form-field" align="center">
+      <label xulx:role="label"/>
+      <textbox xulx:role="value"/>
+    </row>
+  </box>
+</overlay>

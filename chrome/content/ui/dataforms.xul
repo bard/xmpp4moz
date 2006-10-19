@@ -1,0 +1,113 @@
+<?xml version="1.0"?>
+
+<!DOCTYPE overlay>
+<overlay xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul"
+         xmlns:xulx="http://hyperstruct.net/xul-extensions">
+  
+  <script type="application/x-javascript" src="utils.js"/>
+  <script type="application/x-javascript" src="dataforms.js"/>
+
+  <box id="blueprints" hidden="true">
+    <vbox xulx:role="data-form">
+      <label xulx:role="title" class="header"/>
+      <description xulx:role="instructions"/>    
+      <grid>
+        <columns>
+          <column flex="0"/>
+          <column flex="1"/>
+        </columns>
+
+        <rows xulx:role="fields"/>
+      </grid>    
+    </vbox>
+    
+    <row xulx:role="data-form-field-text-single" align="center">
+      <label xulx:role="label"/>
+      <vbox>
+        <description xulx:role="desc" hidden="true"/>
+        <textbox xulx:role="value"/>
+      </vbox>
+    </row>
+
+    <row xulx:role="data-form-field-fixed" align="center">
+      <spacer/>
+      <vbox>
+        <description xulx:role="desc" hidden="true"/>
+        <description xulx:role="value"/>
+      </vbox>
+    </row>
+
+    <row xulx:role="data-form-field-text-multi" align="center">
+      <label xulx:role="label"/>
+      <vbox>
+        <description xulx:role="desc" hidden="true"/>
+        <textbox xulx:role="value" multiline="true"/>
+      </vbox>
+    </row>
+
+    <row xulx:role="data-form-field-hidden" hidden="true">
+      <spacer/>
+      <vbox>        
+        <description xulx:role="desc" hidden="true"/>
+        <textbox xulx:role="value" disabled="true"/>
+      </vbox>
+    </row>
+
+    <row xulx:role="data-form-field-boolean" align="center">
+      <label xulx:role="label"/>
+      <vbox>
+        <description xulx:role="desc" hidden="true"/>
+        <checkbox xulx:role="value"/>
+      </vbox>
+    </row>
+
+    <row xulx:role="data-form-field-text-private" align="center">
+      <label xulx:role="label"/>
+      <vbox>
+        <description xulx:role="desc" hidden="true"/>
+        <textbox xulx:role="value" type="password"/>        
+      </vbox>
+    </row>
+
+    <row xulx:role="data-form-field-list-multi" align="center">
+      <label xulx:role="label"/>
+      <vbox>
+        <description xulx:role="desc" hidden="true"/>
+        <listbox xulx:role="value" seltype="multiple" rows="4"/>
+      </vbox>
+    </row>
+    
+    <row xulx:role="data-form-field-list-single" align="center">
+      <label xulx:role="label"/>
+      <vbox>
+        <description xulx:role="desc" hidden="true"/>        
+        <listbox xulx:role="value" seltype="single" rows="4"/>
+      </vbox>
+    </row>
+
+    <row xulx:role="data-form-field-jid-single" align="center">
+      <label xulx:role="label"/>
+      <vbox>
+        <description xulx:role="desc" hidden="true"/> 
+        <textbox xulx:role="value"/>
+      </vbox>
+    </row>
+
+    <row xulx:role="data-form-field-jid-multi" align="center">
+      <label xulx:role="label"/>
+      <vbox>
+        <description xulx:role="desc" hidden="true"/> 
+        <listbox xulx:role="value" rows="4" seltype="multiple"/>
+        <hbox align="center">
+          <label value="JID"/>
+          <textbox flex="1"/>
+          <button label="+" oncommand="var list = this.parentNode.previousSibling;
+                                       var text = this.previousSibling;
+                                       if(text.value) list.appendItem(text.value);"/>
+          <button label="-" oncommand="var list = this.parentNode.previousSibling;
+                                       if(list.selectedItem) list.removeItemAt(list.selectedIndex);"/>
+        </hbox>
+      </vbox>
+    </row>
+  </box>
+</overlay>
