@@ -7,6 +7,8 @@ var Cr = Components.results;
 
 var prefBranch = Cc["@mozilla.org/preferences-service;1"]
     .getService(Ci.nsIPrefBranch);
+var prompts = Cc["@mozilla.org/embedcomp/prompt-service;1"]
+    .getService(Ci.nsIPromptService); 
 
 
 // GLOBAL STATE
@@ -63,9 +65,11 @@ function initOverlay() {
                        window == Cc["@mozilla.org/appshell/window-mediator;1"]
                        .getService(Ci.nsIWindowMediator)
                        .getMostRecentWindow('navigator:browser')) {
-                        window.alert('Error during Jabber authentication: ' +
-                                     reply.stanza.error.*[0].name().localName.replace(/-/g, ' ') +
-                                     ' (' + reply.stanza.error.@code + ')');
+                        var message =
+                            'Error during Jabber authentication: ' +
+                            reply.stanza.error.*[0].name().localName.replace(/-/g, ' ') +
+                            ' (' + reply.stanza.error.@code + ')';
+                        prompts.alert(null, 'Error', message);
                         reply.session.close();
                     }
                 });

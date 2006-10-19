@@ -9,7 +9,7 @@
     <script type="application/x-javascript" src="preferences.js"/>
     
     <prefpane id="xmpp-pane" label="Jabber"
-              onpaneload="xmppRefreshAccountList();"
+              onpaneload="xmppPrefs.refreshAccountList();"
               image="chrome://xmpp4moz/skin/status/available-big.png"
               orient="vertical">
 
@@ -22,8 +22,8 @@
           <tabpanel flex="1">
             <hbox flex="1">
               <vbox flex="1">
-                <listbox id="xmpp-accounts" rows="12" flex="1" onselect="xmppAccountSelected();"/>
-                <button label="Add" accesskey="A" flex="1" oncommand="xmppCreateAccount();"/>
+                <listbox id="xmpp-accounts" rows="12" flex="1" onselect="xmppPrefs.selectedAccount();"/>
+                <button label="Add" accesskey="A" flex="1" oncommand="xmppPrefs.createAccount();"/>
               </vbox>
 
               <groupbox flex="2">
@@ -31,7 +31,7 @@
                 <vbox id="xmpp-account-message" flex="1">
                   <spacer flex="1"/>
                   <description style="text-align: center;">
-                    Add an account or select an existing one to modify settings.
+                    Add an account or select an existing one to modify it.
                   </description>
                   <spacer flex="1"/>
                 </vbox>
@@ -46,26 +46,29 @@
                       <row align="center">
                         <label value="Address:" control="xmpp-address" accesskey="A"/>
                         <textbox id="xmpp-address"
-                                 onchange="xmppFieldChanged(this);" oninput="xmppModifiedAddress(this.value);"/>
+                                 onchange="xmppPrefs.changedField(this);"
+                                 oninput="xmppPrefs.modifiedAddress(this.value);"/>
                       </row>
 
                       <row align="center">
                         <label value="Resource:" control="xmpp-resource" accesskey="R"/>
-                        <textbox id="xmpp-resource" onchange="xmppFieldChanged(this);"/>
+                        <textbox id="xmpp-resource"
+                                 onchange="xmppPrefs.changedField(this);"/>
                       </row>
 
                       <row align="center">
                         <label value="Password:" control="xmpp-password" accesskey="P"/>
-                        <textbox id="xmpp-password" type="password" onchange="xmppFieldChanged(this);"/>
+                        <textbox id="xmpp-password" type="password"
+                                 onchange="xmppPrefs.changedField(this);"/>
                       </row>
                     </rows>
                   </grid>
 
                   <hbox pack="end">
                     <button id="xmpp-register-account" label="Register with Server..." accesskey="R"
-                            oncommand="xmppRegisterAccount();"/>
+                            oncommand="xmppPrefs.requestedRegisterAccount();"/>
                     <button id="xmpp-delete-account" label="Delete" accesskey="D"
-                            oncommand="xmppDeleteAccount();"/>
+                            oncommand="xmppPrefs.deleteAccount();"/>
                     <button label="Advanced..." accesskey="v"
                             oncommand="this.parentNode.nextSibling.hidden =
                                        !this.parentNode.nextSibling.hidden;"/>
@@ -79,18 +82,20 @@
                     <rows>
                       <row align="center">
                         <label value="Server for Connection:" control="xmpp-connection-host" accesskey="S"/>
-                        <textbox id="xmpp-connection-host" onchange="xmppFieldChanged(this);"/>
+                        <textbox id="xmpp-connection-host"
+                                 onchange="xmppPrefs.changedField(this);"/>
                       </row>
 
                       <row align="center">
                         <label value="Server Port:" control="xmpp-connection-port" accesskey="P"/>
-                        <textbox id="xmpp-connection-port" onchange="xmppFieldChanged(this);"/>
+                        <textbox id="xmpp-connection-port"
+                                 onchange="xmppPrefs.changedField(this);"/>
                       </row>
 
                       <row align="center">
                         <label value="Encryption:" control="xmpp-connection-security" accesskey="e"/>
                         <radiogroup id="xmpp-connection-security" value="1" orient="horizontal"
-                                    oncommand="xmppFieldChanged(this);">
+                                    oncommand="xmppPrefs.changedField(this);">
                           <radio value="1" label="SSL" selected="true" flex="1"/>
                           <radio value="0" label="None" flex="1"/>
                         </radiogroup>
