@@ -104,7 +104,49 @@ function deleteAccount(accountKey) {
     _('xmpp-account-settings').hidden = true;
 }
 
-function registerAccount() {
+function registerAccount(address, host, port, ssl) {
+    var jid = address;
+    XMPP.open(
+        jid, { host: host, port: port, ssl: ssl },
+        function() {
+            XMPP.send(
+                jid,
+                <iq to={XMPP.JID(jid).hostname} type="get">
+                <query xmlns="jabber:iq:register"/>
+                </iq>,
+                function(reply) {
+                    var request = {
+                        confirm: false,
+                        query: reply.stanza.ns_register::query
+                    };
+                    window.openDialog(
+                        'chrome://xmpp4moz/content/ui/registration.xul',
+                        'xmpp4moz-registration', 'modal,centerscreen',
+                        request);
+                    
+                    if(request.confirm) {
+                        var iq = <iq to={XMPP.JID(jid).hostname} type="set"/>;
+                        iq.query = request.query;
+                        XMPP.send(
+                            jid, iq, function(reply) {
+                                if(reply.stanza.@type == 'result') 
+                                    prompts.alert(
+                                        null, 'Registration successful',
+                                        'Account successfully registered.');
+                                else
+                                    prompts.alert(
+                                        null, 'Registration error', 
+                                        reply.stanza.error.*[0].name().localName.replace(/-/g, ' ') +
+                                        ' (' + reply.stanza.error.@code + ')');
+                                    
+                                XMPP.close(jid);
+                            });
+                        
+                    } else {
+                        XMPP.close(jid);
+                    }
+                });
+        });
 }
 
 
