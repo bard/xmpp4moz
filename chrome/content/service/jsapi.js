@@ -311,7 +311,25 @@ function createChannel(baseFilter) {
     return channel;
 }
 
-function register(jid, password, opts) {
+function open(jid, opts, continuation) {
+    var connectionHost = opts.host || XMPP.JID(jid).hostname;
+    var connectionPort = opts.port || 5223;
+    var ssl = (opts.ssl == undefined ? true : opts.ssl);
+
+    var streamReplyObserver = {
+        observe: function(subject, topic, data) {
+            continuation();
+        }
+    };
+
+    service.open(jid, connectionHost, connectionPort, ssl, streamReplyObserver);
+}
+
+function close(jid) {
+    service.close(jid);
+}
+
+function register(jid, password, opts, continuation) {
     service.open(
         jid,
         opts.host || JID(jid).hostname,
@@ -327,11 +345,7 @@ function register(jid, password, opts) {
         </query>
         </iq>,
         function(reply) {
-            if(reply.stanza.@type == 'result') {
-                opts.success();
-            } else {
-                opts.failure();
-            }
+            continuation(reply);
             service.close(jid);
         });
 }
@@ -573,8 +587,8 @@ function _up(jid, opts) {
                             XMPP.send(jid, <presence/>);
                             if(continuation)
                                 continuation(jid);
-                        }
-                    });                
+                        } 
+                    });
             }
         };
 
