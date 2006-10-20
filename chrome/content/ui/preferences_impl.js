@@ -35,6 +35,13 @@ function v(id) {
 // GUI ACTIONS
 // ----------------------------------------------------------------------
 
+function openServerMap() {
+    var window = Cc["@mozilla.org/appshell/window-mediator;1"]
+        .getService(Ci.nsIWindowMediator)
+        .getMostRecentWindow('navigator:browser');
+    window.loadURI('https://www.xmpp.net/map/node');
+}
+
 function refreshAccountList() {
     for(var i=_('xmpp-accounts').getRowCount()-1; i>=0; i--) 
         _('xmpp-accounts').removeItemAt(i);

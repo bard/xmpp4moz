@@ -45,9 +45,14 @@
                     <rows>
                       <row align="center">
                         <label value="Address:" control="xmpp-address" accesskey="A"/>
-                        <textbox id="xmpp-address"
-                                 onchange="xmppPrefs.changedField(this);"
-                                 oninput="xmppPrefs.modifiedAddress(this.value);"/>
+                        <hbox flex="1" align="center">
+                          <textbox id="xmpp-address"
+                                   onchange="xmppPrefs.changedField(this);"
+                                   oninput="xmppPrefs.modifiedAddress(this.value);"
+                                   flex="1"/>
+                          <label class="text-link" value="Choose Server..."
+                                 onclick="xmppPrefs.openServerMap();"/>
+                        </hbox>
                       </row>
 
                       <row align="center">
