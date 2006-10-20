@@ -43,10 +43,10 @@ xmpp.ui.createDataForm = function(form) {
         }
         var xulField = cloneBlueprint('data-form-field-' + field.@type);
 
-        xulField.setAttributeNS(ns('data'), 'var', field.@var);
-        xulField.setAttributeNS(ns('data'), 'type', field.@type);        
+        xulField.setAttributeNS(ns_data, 'var', field.@var);
+        xulField.setAttributeNS(ns_data, 'type', field.@type);        
         if(field.ns_data::required.length() > 0) 
-            xulField.setAttributeNS(ns('data'), 'required', 'true');
+            xulField.setAttributeNS(ns_data, 'required', 'true');
         
         if(field.@label != undefined)
             _(xulField, {'xulx:role': 'label'}).value = field.@label;        
@@ -118,7 +118,7 @@ xmpp.ui.readDataForm = function(xulForm) {
     var xulField = _(xulForm, {'xulx:role': 'fields'}).firstChild;
 
     while(xulField) {
-        if(xulField.getAttributeNS(ns('data'), 'type') != 'fixed') {
+        if(xulField.getAttributeNS(ns_data, 'type') != 'fixed') {
             var field = <field/>;
             field.@var = xulField.getAttribute('var');
             field.@type = xulField.getAttribute('type');
@@ -154,11 +154,11 @@ xmpp.ui.readDataForm = function(xulForm) {
                 break;
             }
 
-            if(xulField.getAttributeNS(ns('data'), 'required') == 'true' &&
+            if(xulField.getAttributeNS(ns_data, 'required') == 'true' &&
                field.value == undefined) {
                 var label = _(xulField, {'xulx:role': 'label'});
                 throw new Error('Field "' +
-                                (label ? label.value : xulField.getAttributeNS(ns('data'), 'var')) +
+                                (label ? label.value : xulField.getAttributeNS(ns_data, 'var')) +
                                 '" is required.');
             }
 

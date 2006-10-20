@@ -85,7 +85,7 @@ function getItems(jid, node) {
 
 function discover(jid) {
     var xulItem = cloneBlueprint('item');
-    xulItem.setAttributeNS(ns('xmpp'), 'jid', jid);
+    xulItem.setAttributeNS(ns_xmpp, 'jid', jid);
     _(xulItem, {'xulx:role': 'jid'}).value = jid;
     _('main').appendChild(xulItem);
     discoveryInfo(_('accounts').value, jid);
@@ -109,7 +109,7 @@ function requestedInfo(element) {
     var node = attr(element, 'xmpp:node');
 
     var xulInfo = getInfo(jid, node);
-    if(xulInfo.getAttributeNS(ns('xulx'), 'loaded') == 'true') 
+    if(xulInfo.getAttributeNS(ns_xulx, 'loaded') == 'true') 
         toggleHidden(xulInfo);
     else
         discoveryInfo(_('accounts').value, jid, node);
@@ -120,7 +120,7 @@ function requestedItems(element) {
     var node = attr(element, 'xmpp:node');
 
     var xulItems = getItems(jid, node);
-    if(xulItems.getAttributeNS(ns('xulx'), 'loaded') == 'true')
+    if(xulItems.getAttributeNS(ns_xulx, 'loaded') == 'true')
         toggleHidden(xulItems);
     else
         discoveryItems(_('accounts').value, jid, node);
@@ -184,7 +184,7 @@ function receivedInfo(iq) {
             xulFeatures.appendItem(feature.@var);
     }
 
-    xulInfo.setAttributeNS(ns('xulx'), 'loaded', 'true');
+    xulInfo.setAttributeNS(ns_xulx, 'loaded', 'true');
     xulInfo.hidden = false;
 }
 
@@ -199,9 +199,9 @@ function receivedItems(iq) {
     for each(var item in iq.stanza..ns_items::item) {
         var xulItem = cloneBlueprint('item');
 
-        xulItem.setAttributeNS(ns('xmpp'), 'jid', item.@jid);
-        xulItem.setAttributeNS(ns('xmpp'), 'name', item.@name);
-        xulItem.setAttributeNS(ns('xmpp'), 'node', item.@node);
+        xulItem.setAttributeNS(ns_xmpp, 'jid', item.@jid);
+        xulItem.setAttributeNS(ns_xmpp, 'name', item.@name);
+        xulItem.setAttributeNS(ns_xmpp, 'node', item.@node);
         _(xulItem, {'xulx:role': 'jid'}).value = (item.@name == undefined ?
                                                   item.@jid :
                                                   item.@jid + '/' + item.@name);
@@ -209,7 +209,7 @@ function receivedItems(iq) {
         xulItems.appendChild(xulItem);
     }
 
-    xulItems.setAttributeNS(ns('xulx'), 'loaded', 'true');
+    xulItems.setAttributeNS(ns_xulx, 'loaded', 'true');
     xulItems.hidden = false;
 }
 
