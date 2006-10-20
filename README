@@ -1,6 +1,1 @@
-xmpp4moz is a library to ease creation of Firefox extensions and other
-Mozilla applications that use the XMPP protocol (Extensible Messaging
-and Presence Protocol), also known as Jabber.
-
-It includes a slightly modified version of the pull parser from the
-XML for <SCRIPT> suite (http://xmljs.sourceforge.net).
+Please see http://dev.hyperstruct.net/xmpp4moz.
