@@ -106,6 +106,16 @@ function deleteAccount(accountKey) {
 
 function registerAccount(address, host, port, ssl) {
     var jid = address;
+
+    var request = {
+        confirm: false,
+        query: undefined, 
+        presets: {
+            username: XMPP.JID(jid).username,
+            password: v('xmpp-password')
+        }
+    };
+
     XMPP.open(
         jid, { host: host, port: port, ssl: ssl },
         function() {
@@ -115,10 +125,8 @@ function registerAccount(address, host, port, ssl) {
                 <query xmlns="jabber:iq:register"/>
                 </iq>,
                 function(reply) {
-                    var request = {
-                        confirm: false,
-                        query: reply.stanza.ns_register::query
-                    };
+                    request.query = reply.stanza.ns_register::query;
+
                     window.openDialog(
                         'chrome://xmpp4moz/content/ui/registration.xul',
                         'xmpp4moz-registration', 'modal,centerscreen',
