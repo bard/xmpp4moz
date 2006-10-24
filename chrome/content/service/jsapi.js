@@ -439,12 +439,21 @@ function presenceSummary(account, address) {
 // HYBRID-APP SUPPORT
 // ----------------------------------------------------------------------
 
-function enableContentDocument(panel, account, address, type) {
+function enableContentDocument(panel, account, address, type, createSocket) {
     if(panel.hasAttribute('address') &&
        panel.hasAttribute('account'))
         return;
 
     var appDoc = panel.contentDocument;
+    if(createSocket) 
+        for each(var socketPartId in ['xmpp-incoming', 'xmpp-outgoing'])
+            if(!appDoc.getElementById(socketPartId)) {
+                var socketPart = appDoc.createElement('div');
+                socketPart.setAttribute('style', 'display: none;');
+                socketPart.setAttribute('id', socketPartId);
+                appDoc.documentElement.appendChild(socketPart);
+        }
+    
     if(!(appDoc.getElementById('xmpp-incoming') &&
          appDoc.getElementById('xmpp-outgoing')))
         return;
