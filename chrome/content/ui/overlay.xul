@@ -77,7 +77,7 @@
   <!-- MENUS -->
 
   <menubar id="main-menubar">
-    <menu label="Jabber" accesskey="J" position="1" insertafter="helpMenu">
+    <menu label="Jabber" accesskey="J" position="1" insertbefore="helpMenu">
       <menupopup id="xmpp-menu-main">
         <menu label="Accounts" accesskey="A">
           <menupopup id="xmpp-menu-accounts">
