@@ -104,7 +104,6 @@
                    class="toolbarbutton-1 chromeclass-toolbar-additional"
                    type="menu-button"
                    label="Jabber"
-                   oncommand="if(event.target == this) xmpp4moz.toggleLivebar();"
                    availability="unavailable">
       <menupopup id="xmpp-menu-accounts-secondary">
         <menuseparator/>
