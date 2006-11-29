@@ -81,14 +81,20 @@
                     <rows>
                       <row align="center">
                         <label value="Address:" control="xmpp-address" accesskey="A"/>
-                        <hbox flex="1" align="center">
-                          <textbox id="xmpp-address"
-                                   onchange="xmppPrefs.changedField(this);"
-                                   oninput="xmppPrefs.modifiedAddress(this.value);"
-                                   flex="1"/>
-                          <label class="text-link" value="Choose Server..."
-                                 onclick="xmppPrefs.openServerMap();"/>
-                        </hbox>
+                        <vbox flex="1">
+                          <hbox flex="1" align="center">
+                            <textbox id="xmpp-address"
+                                     onchange="xmppPrefs.changedField(this);"
+                                     oninput="xmppPrefs.modifiedAddress(this.value);"
+                                     flex="1"/>
+                            <label class="text-link" style="font-size: smaller;"
+                                   value="Choose Server..."
+                                   onclick="xmppPrefs.openServerMap();"/>
+                          </hbox>
+                          <description style="font-size: smaller;">
+                            (Example: john@jabber.org, ben.bitdiddle@gmail.com)
+                          </description>
+                        </vbox>
                       </row>
 
                       <row align="center">
