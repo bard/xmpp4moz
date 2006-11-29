@@ -274,22 +274,26 @@ function getSession(jid) {
 function arrayOfObjectsToEnumerator(array) {
     var i=0;
 
+    function xpcomize(object) {
+        if(typeof(object) == 'string') {
+            var xpcomString = Cc["@mozilla.org/supports-string;1"]
+                .createInstance(Ci.nsISupportsString);
+            xpcomString.data = object[name];
+            return xpcomString;
+        } else if(object instanceof Ci.nsISupports) {
+            return object;
+        } else {
+            throw new Error('Neither an XPCOM object nor a string. (' + object + ')');
+        }
+    }
+
     var enumerator = {
         getNext: function() {
             var object = array[i++];
-            var dict = Cc['@mozilla.org/dictionary;1'].createInstance(Ci.nsIDictionary);            
-            for(var name in object) {
-                if(typeof(object[name]) == 'string') {
-                    var xpcString = Cc["@mozilla.org/supports-string;1"]
-                        .createInstance(Ci.nsISupportsString);
-                    xpcString.data = object[name];
-                    dict.setValue(name, xpcString);
-                } else {
-                    dict.setValue(name, object[name]);
-                }
-            }
-
-            return dict;
+            var prop = Cc['@mozilla.org/properties;1'].createInstance(Ci.nsIProperties);
+            for(var name in object) 
+                prop.set(name, xpcomize(object[name]))
+            return prop
         },
 
         hasMoreElements: function() {

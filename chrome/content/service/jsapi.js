@@ -84,38 +84,58 @@ const serializer = Cc['@mozilla.org/xmlextras/xmlserializer;1']
 // ----------------------------------------------------------------------
 
 var cache = {
-    _enumToArray: function(enumeration) {
-        var objects = [];
-        while(enumeration.hasMoreElements()) {
-            var cachedObject = enumeration
-                .getNext()
-                .QueryInterface(Ci.nsIDictionary);
 
-            var object = {
-                session: cachedObject.getValue('session').QueryInterface(Ci.nsIXMPPClientSession),
-                stanza: new XML(serializer.serializeToString(cachedObject.getValue('stanza')))
+    // Accesses cache via XPCOM, as usual.
+    
+    _cleanRead: function(cacheName) {
+        var enum = service[cacheName + 'Cache']();
+        var objects = [];
+        var cachedObject, outputObject;
+        
+        while(enum.hasMoreElements()) {
+            cachedObject = enum.getNext().QueryInterface(Ci.nsIProperties);
+
+            outputObject = {
+                session: cachedObject.get('session', Ci.nsIXMPPClientSession),
+                stanza: new XML(serializer.serializeToString(
+                                    cachedObject.get('stanza', Ci.nsIDOMElement))),
+                direction: (cachedObject.has('direction') ?
+                            cachedObject.get('direction', Ci.nsISupportsString).toString() :
+                            undefined)
             };
 
-            if(cachedObject.hasKey('direction'))
-                object.direction = cachedObject
-                    .getValue('direction')
-                    .QueryInterface(Ci.nsISupportsString).toString();
-
-            objects.push(object);
+            objects.push(outputObject);
         }
         return objects;
     },
 
+    // Accesses cache via wrappedJSObject, bypassing XPCOM. Will only
+    // work as long as nsIXMPPClientService is implemented in
+    // Javascript, revert to _cleanRead if/when it is implemented in
+    // C++.
+
+    _directRead: function(cacheName) {
+        var internalCache = service.wrappedJSObject.cache[cacheName].copy();
+        return internalCache.map(
+            function(object) {
+                return {
+                stanza: new XML(serializer.serializeToString(object.stanza)),
+                        session: object.session,
+                        direction: object.direction
+                        }
+            });
+    },
+    
     get roster() {
-        return this._enumToArray(service.rosterCache());
+        return this._directRead('roster');
     },
 
     get presenceIn() {
-        return this._enumToArray(service.presenceInCache());
+        return this._directRead('presenceIn');
     },
 
     get presenceOut() {
-        return this._enumToArray(service.presenceOutCache());
+        return this._directRead('presenceOut');
     }
 };
 
