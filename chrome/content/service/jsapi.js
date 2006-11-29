@@ -140,7 +140,7 @@ function nickFor(account, address) {
 }
 
 function JID(string) {
-    var m = string.match(/^(.+@)?(.+?)(?:\/|$)(.*$)/);
+    var m = string.match(/^(.+?@)?(.+?)(?:\/|$)(.*$)/);
 
     var jid = {};
 
