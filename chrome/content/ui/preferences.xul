@@ -98,12 +98,6 @@
                       </row>
 
                       <row align="center">
-                        <label value="Resource:" control="xmpp-resource" accesskey="R"/>
-                        <textbox id="xmpp-resource"
-                                 onchange="xmppPrefs.changedField(this);"/>
-                      </row>
-
-                      <row align="center">
                         <label value="Password:" control="xmpp-password" accesskey="P"/>
                         <textbox id="xmpp-password" type="password"
                                  onchange="xmppPrefs.changedField(this);"/>
@@ -127,6 +121,12 @@
                       <column flex="1"/>
                     </columns>
                     <rows>
+                      <row align="center">
+                        <label value="Resource:" control="xmpp-resource" accesskey="R"/>
+                        <textbox id="xmpp-resource"
+                                 onchange="xmppPrefs.changedField(this);"/>
+                      </row>
+
                       <row align="center">
                         <label value="Server for Connection:" control="xmpp-connection-host" accesskey="S"/>
                         <textbox id="xmpp-connection-host"
