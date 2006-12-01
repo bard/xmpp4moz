@@ -7,7 +7,8 @@
     <em:id>xmpp4moz@hyperstruct.net</em:id>
     <em:version></em:version>
     <em:type>2</em:type>
-   
+
+    <!-- firefox -->
     <em:targetApplication>
       <Description>
         <em:id>{ec8030f7-c20a-464f-9b0e-13a3a9e97384}</em:id>
@@ -15,10 +16,21 @@
         <em:maxVersion>2.0.0.*</em:maxVersion>
       </Description>
     </em:targetApplication>
+
+    <!-- flock -->
+
+    <em:targetApplication>
+      <Description>
+        <em:id>{a463f10c-3994-11da-9945-000d60ca027b}</em:id>
+        <em:maxVersion>1.0</em:maxVersion>
+        <em:minVersion>0.4</em:minVersion>
+      </Description>
+    </em:targetApplication>
    
     <em:name>XMPP4Moz</em:name>
-    <em:description>XMPP Client Services for Mozilla</em:description>
+    <em:description>XMPP integration layer for Mozilla</em:description>
     <em:creator>Massimiliano Mirra</em:creator>
     <em:updateURL>http://dev.hyperstruct.net/download/update.rdf</em:updateURL>
+    <em:homepageURL>http://dev.hyperstruct.net/xmpp4moz</em:homepageURL>
   </Description>      
 </RDF>
