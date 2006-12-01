@@ -5,10 +5,11 @@
 
   <Description about="urn:mozilla:install-manifest">
     <em:id>xmpp4moz@hyperstruct.net</em:id>
-    <em:version></em:version>
+    <em:version>0.0.0</em:version>
     <em:type>2</em:type>
 
     <!-- firefox -->
+
     <em:targetApplication>
       <Description>
         <em:id>{ec8030f7-c20a-464f-9b0e-13a3a9e97384}</em:id>
