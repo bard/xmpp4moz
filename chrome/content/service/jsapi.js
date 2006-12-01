@@ -88,12 +88,12 @@ var cache = {
     // Accesses cache via XPCOM, as usual.
     
     _cleanRead: function(cacheName) {
-        var enum = service[cacheName + 'Cache']();
+        var enumeration = service[cacheName + 'Cache']();
         var objects = [];
         var cachedObject, outputObject;
         
-        while(enum.hasMoreElements()) {
-            cachedObject = enum.getNext().QueryInterface(Ci.nsIProperties);
+        while(enumeration.hasMoreElements()) {
+            cachedObject = enumeration.getNext().QueryInterface(Ci.nsIProperties);
 
             outputObject = {
                 session: cachedObject.get('session', Ci.nsIXMPPClientSession),
