@@ -67,6 +67,7 @@ loader.loadSubScript('chrome://xmpp4moz/content/lib/module_manager.js');
 const module = new ModuleManager(['chrome://xmpp4moz/content']);
 const Parser = module.require('class', 'service/parser');
 
+const KEEPALIVE_INTERVAL = 30000;
 
 // INITIALIZATION
 // ----------------------------------------------------------------------
@@ -77,6 +78,8 @@ function init() {
     this._parser = new Parser();
     this._pending = {};
     this._observers = [];
+    this._keepAlive = Cc['@mozilla.org/timer;1']
+        .createInstance(Ci.nsITimer);
 
     var session = this;
     this._parser.setObserver({
@@ -117,6 +120,10 @@ function open(server) {
               '<stream:stream xmlns="jabber:client" ' +
               'xmlns:stream="http://etherx.jabber.org/streams" ' +
               'to="' + server + '">');
+    _this = this;
+    this._keepAlive.initWithCallback(
+        {notify: function(timer) {_this.send(' ');}},
+        KEEPALIVE_INTERVAL, Ci.nsITimer.TYPE_REPEATING_SLACK);
 
     this._stream('out', 'open');
 }
@@ -132,6 +139,7 @@ function close() {
 
     this._stream('out', 'close');
     this.send('</stream:stream>');
+    this._keepAlive.cancel();
 }
 
 function isOpen() {
