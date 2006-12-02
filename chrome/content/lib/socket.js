@@ -38,20 +38,14 @@
 const Cc = Components.classes;
 const Ci = Components.interfaces;
 
-var mixin = module.require('package', 'mixin');
-var event = module.require('package', 'event_handling');
-
 function constructor(host, port, opts) {
     this._host = host;
     this._port = port;
     this._opts = opts || {};
-    
+    this._eventListeners = {};
+
     this._transportService = Cc["@mozilla.org/network/socket-transport-service;1"]
         .getService(Ci.nsISocketTransportService);
-
-    var eventManager = new event.Manager();
-    mixin.forward(this, 'on', eventManager);
-    mixin.forward(this, '_handle', eventManager, 'postHandle');
 }
 
 function write(data) {
@@ -76,7 +70,8 @@ function connect() {
         this._transport = this._transportService.createTransport(
             ['ssl'], 1, this._host, this._port, null);
     else
-        this._transport = this._transportService.createTransport(null, 0, this._host, this._port, null);
+        this._transport = this._transportService.createTransport(
+            null, 0, this._host, this._port, null);
 
     this._baseOutstream = this._transport.openOutputStream(0,0,0);
     this._outstream = Cc["@mozilla.org/intl/converter-output-stream;1"]
@@ -122,4 +117,14 @@ function disconnect() {
     this._instream.close();
     this._outstream.close();
     this._connected = false;
+}
+
+function on(eventName, action) {
+    this._eventListeners[eventName] = action;
+}
+
+function _handle(eventName, info) {
+    var action = this._eventListeners[eventName];
+    if(action)
+        action(info);
 }
