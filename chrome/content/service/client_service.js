@@ -126,6 +126,7 @@ function open(jid, server, port, ssl, streamObserver) {
     transport.on(
         'start', function() {
             log('Xmpp E: Transport for ' + session.name + ' opening');
+            session.open(JID(jid).hostname);
         });
     transport.on(
         'stop',  function() {
@@ -217,9 +218,7 @@ function open(jid, server, port, ssl, streamObserver) {
 
     session.addObserver(sessionObserver, null, false);
 
-
     transport.connect();
-    session.open(JID(jid).hostname);
     return session;
 }
 

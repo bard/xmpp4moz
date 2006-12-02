@@ -35,18 +35,33 @@
  * ***** END LICENSE BLOCK ***** */
 
 
+// GLOBAL DEFINITIONS
+// ----------------------------------------------------------------------
+
 const Cc = Components.classes;
 const Ci = Components.interfaces;
+
+const srvEventQueue = Cc['@mozilla.org/event-queue-service;1']
+    .getService(Ci.nsIEventQueueService);
+const srvThread = Cc['@mozilla.org/thread;1']
+    .getService(Ci.nsIThread);
+const srvSocketTransport = Cc["@mozilla.org/network/socket-transport-service;1"]
+    .getService(Ci.nsISocketTransportService);
+
+
+// INITIALIZATION
+// ----------------------------------------------------------------------
 
 function constructor(host, port, opts) {
     this._host = host;
     this._port = port;
     this._opts = opts || {};
     this._eventListeners = {};
-
-    this._transportService = Cc["@mozilla.org/network/socket-transport-service;1"]
-        .getService(Ci.nsISocketTransportService);
 }
+
+
+// PUBLIC INTERFACE - SESSION MANAGEMENT AND DATA EXCHANGE
+// ----------------------------------------------------------------------
 
 function write(data) {
     try {
@@ -67,47 +82,54 @@ function connect() {
         return;
             
     if(this._opts.ssl)
-        this._transport = this._transportService.createTransport(
+        this._transport = srvSocketTransport.createTransport(
             ['ssl'], 1, this._host, this._port, null);
     else
-        this._transport = this._transportService.createTransport(
+        this._transport = srvSocketTransport.createTransport(
             null, 0, this._host, this._port, null);
 
-    this._baseOutstream = this._transport.openOutputStream(0,0,0);
-    this._outstream = Cc["@mozilla.org/intl/converter-output-stream;1"]
-        .createInstance(Ci.nsIConverterOutputStream);
-    this._outstream.init(this._baseOutstream, 'UTF-8', 0, '?'.charCodeAt(0))
-
-    this._baseInstream = this._transport.openInputStream(0,0,0);
-    this._instream = Cc["@mozilla.org/intl/converter-input-stream;1"]
-        .createInstance(Ci.nsIConverterInputStream);
-    this._instream.init(this._baseInstream, 'UTF-8', 0,
-            Ci.nsIConverterInputStream.DEFAULT_REPLACEMENT_CHARACTER);
-    this._connected = true;
-
-    var pump = Cc["@mozilla.org/network/input-stream-pump;1"]
-        .createInstance(Ci.nsIInputStreamPump);
-
-    pump.init(this._baseInstream, -1, -1, 0, 0, false);
-
     var socket = this;
+
+    this._transport.setEventSink(
+        {onTransportStatus: function(transport, status, progress, progressMax) {
+                if(status == Ci.nsISocketTransport.STATUS_CONNECTED_TO) {
+                    socket._connected = true;
+                    socket._handle('start');
+                }
+            }}, 
+        srvEventQueue.createFromIThread(
+            srvThread.currentThread, true));
+
+    var baseOutstream = this._transport.openOutputStream(0,0,0);
+    this._outstream = Cc['@mozilla.org/intl/converter-output-stream;1']
+        .createInstance(Ci.nsIConverterOutputStream);
+
+    var baseInstream = this._transport.openInputStream(0,0,0);
+    this._instream = Cc['@mozilla.org/intl/converter-input-stream;1']
+        .createInstance(Ci.nsIConverterInputStream);
+
+    var inputPump = Cc['@mozilla.org/network/input-stream-pump;1']
+        .createInstance(Ci.nsIInputStreamPump);
+    inputPump.init(baseInstream, -1, -1, 0, 0, false);
+
     var listener = {
-        onStartRequest: function(request, context){
-            socket._handle('start');
-        },
-        onStopRequest: function(request, context, status){
+        onStartRequest: function(request, context) {},
+        onStopRequest: function(request, context, status) {
             socket._instream.close();
             socket._outstream.close();
             socket._handle('stop', status);
         },
-        onDataAvailable: function(request, context, inputStream, offset, count){
+        onDataAvailable: function(request, context, inputStream, offset, count) {
             var data = {};
             socket._instream.readString(count, data);
             socket._handle('data', data.value);
         }
     };
+    inputPump.asyncRead(listener, null);
 
-    pump.asyncRead(listener, null);
+    this._outstream.init(baseOutstream, 'UTF-8', 0, '?'.charCodeAt(0));
+    this._instream.init(baseInstream, 'UTF-8', 0,
+                        Ci.nsIConverterInputStream.DEFAULT_REPLACEMENT_CHARACTER);
 }
 
 function disconnect() {
@@ -122,6 +144,10 @@ function disconnect() {
 function on(eventName, action) {
     this._eventListeners[eventName] = action;
 }
+
+
+// INTERNALS
+// ----------------------------------------------------------------------
 
 function _handle(eventName, info) {
     var action = this._eventListeners[eventName];
