@@ -162,14 +162,19 @@ function send(data, observer) {
         }
     }
 
-    var domStanza = domParser.parseFromString(data, 'text/xml').documentElement;
-
-    if(domStanza.tagName == 'parsererror' ||
-       domStanza.namespaceURI == 'http://www.mozilla.org/newlayout/xml/parsererror.xml')
+    if(/^(<\?xml version="1.0"\?><stream:stream|<\/stream:stream>)/.test(data))
+        // Session: work around apparently uncatchable exception from
+        // parseFromString() by not attempting to parse known invalid
+        // XML (stream prologue/epilogue).
         this._data('out', data);
-    else
-        this._stanza('out', domStanza, handler);
-
+    else {
+        var domStanza = domParser.parseFromString(data, 'text/xml').documentElement;
+        if(domStanza.tagName == 'parsererror' ||
+           domStanza.namespaceURI == 'http://www.mozilla.org/newlayout/xml/parsererror.xml')
+            this._data('out', data);
+        else
+            this._stanza('out', domStanza, handler);        
+    } 
 }
 
 /**
