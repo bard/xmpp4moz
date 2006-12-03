@@ -390,30 +390,6 @@ function close(jid) {
     service.close(jid);
 }
 
-function register(jid, password, opts, continuation) {
-    var transport = Cc['@hyperstruct.net/xmpp4moz/xmpptransport;1?type=tcp']
-        .createInstance(Ci.nsIXMPPTransport);
-    transport.init(opts.host || JID(jid).hostname,
-                   opts.port || 5223,   
-                   opts.ssl == undefined ? true : opts.ssl,
-                   connectionPort, ssl);
-    
-    service.open(jid, transport);
-
-    this.send(
-        jid,
-        <iq to={JID(jid).hostname} type="set">
-        <query xmlns="jabber:iq:register">
-        <username>{JID(jid).username}</username>
-        <password>{password}</password>
-        </query>
-        </iq>,
-        function(reply) {
-            continuation(reply);
-            service.close(jid);
-        });
-}
-
 
 // UTILITIES
 // ----------------------------------------------------------------------
