@@ -379,7 +379,11 @@ function open(jid, opts, continuation) {
         }
     };
 
-    service.open(jid, connectionHost, connectionPort, ssl, streamReplyObserver);
+    var transport = Cc['@hyperstruct.net/xmpp4moz/xmpptransport;1?type=tcp']
+        .createInstance(Ci.nsIXMPPTransport);
+    transport.init(connectionHost, connectionPort, ssl);
+
+    service.open(jid, transport, streamReplyObserver);
 }
 
 function close(jid) {
@@ -387,12 +391,15 @@ function close(jid) {
 }
 
 function register(jid, password, opts, continuation) {
-    service.open(
-        jid,
-        opts.host || JID(jid).hostname,
-        opts.port || 5223,
-        opts.ssl == undefined ? true : opts.ssl);
+    var transport = Cc['@hyperstruct.net/xmpp4moz/xmpptransport;1?type=tcp']
+        .createInstance(Ci.nsIXMPPTransport);
+    transport.init(opts.host || JID(jid).hostname,
+                   opts.port || 5223,   
+                   opts.ssl == undefined ? true : opts.ssl,
+                   connectionPort, ssl);
     
+    service.open(jid, transport);
+
     this.send(
         jid,
         <iq to={JID(jid).hostname} type="set">
@@ -658,7 +665,11 @@ function _up(jid, opts) {
             }
         };
 
-        service.open(jid, connectionHost, connectionPort, ssl, streamReplyObserver);
+        var transport = Cc['@hyperstruct.net/xmpp4moz/xmpptransport;1?type=tcp']
+            .createInstance(Ci.nsIXMPPTransport);
+        transport.init(connectionHost, connectionPort, ssl);
+
+        service.open(jid, transport, streamReplyObserver);
     }
 }
 

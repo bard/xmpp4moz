@@ -1,0 +1,26 @@
+#include "nsISupports.idl"
+#include "nsIObserver.idl"
+
+interface nsIObserver;
+
+[scriptable, uuid(b8a71ae4-8419-4768-9255-3735126f69a9)]
+interface nsIXMPPTransport: nsISupports
+{
+    void init(in string host, in long port, in boolean ssl);
+
+    boolean write(in string data);
+
+    boolean isConnected();
+
+    boolean isOpen();
+
+    void connect();
+
+    void disconnect();
+
+ 	void addObserver(in nsIObserver anObserver, in string aTopic, in boolean ownsWeak);
+
+    void removeObserver(in nsIObserver anObserver, in string aTopic);
+
+    void notifyObservers(in nsISupports aSubject, in string aTopic, in wstring someData);
+};  

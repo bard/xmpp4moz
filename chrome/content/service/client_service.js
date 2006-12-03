@@ -50,7 +50,6 @@ const serializer = Cc['@mozilla.org/xmlextras/xmlserializer;1']
 loader.loadSubScript('chrome://xmpp4moz/content/lib/module_manager.js');
 const module = new ModuleManager(['chrome://xmpp4moz/content']);
 
-const Transport = module.require('class', 'lib/socket');
 const PresenceCache = module.require('class', 'lib/presence_cache');
 const RosterCache = module.require('class', 'lib/roster_cache');
 
@@ -106,14 +105,7 @@ function isUp(jid) {
     return (session && session.isOpen());
 }
 
-function open(jid, server, port, ssl, streamObserver) {
-    server = server || jid.match(/@([^\/]+)/)[1];
-    port = port || 5223;
-    if(ssl == undefined)
-        ssl = true;
-
-
-    var transport = new Transport(server, port, { ssl: ssl });
+function open(jid, transport, streamObserver) {
     var session = Cc['@hyperstruct.net/xmpp4moz/xmppsession;1']
         .createInstance(Ci.nsIXMPPClientSession);
     session.setName(jid);
@@ -122,19 +114,24 @@ function open(jid, server, port, ssl, streamObserver) {
     sessions.created(session);
     
 
-    transport.on('data',  function(data) { session.receive(data); });
-    transport.on(
-        'start', function() {
-            log('Xmpp E: Transport for ' + session.name + ' opening');
-            session.open(JID(jid).hostname);
-        });
-    transport.on(
-        'stop',  function() {
-            log('Xmpp E: Transport for ' + session.name + ' closing');
-            if(session.isOpen()) 
-                session.close();
-        });
-
+    transport.addObserver({
+        observe: function(subject, topic, data) {
+                switch(topic) {
+                case 'start':
+                    log('Xmpp E: Transport for ' + session.name + ' opening');
+                    session.open(JID(jid).hostname);                    
+                    break;
+                case 'stop':
+                    log('Xmpp E: Transport for ' + session.name + ' closing');
+                    if(session.isOpen()) 
+                        session.close();
+                    break;
+                case 'data':
+                    session.receive(data);
+                    break;
+                }
+            }
+        }, null, false);
 
     var client = this;
     var sessionObserver = {

@@ -2,6 +2,7 @@
 #include "nsIObserver.idl"
 #include "nsISimpleEnumerator.idl"
 #include "nsIXMPPClientSession.idl"
+#include "nsIXMPPTransport.idl"
 
 interface nsIObserver;
 interface nsISimpleEnumerator;
@@ -12,7 +13,7 @@ interface nsIXMPPClientService: nsISupports
     void reload();
 
     nsIXMPPClientSession open(in string accountJid,
-                              in string host, in string port, in boolean ssl,
+                              in nsIXMPPTransport transport,
                               in nsIObserver streamObserver);
 
     void close(in string accountJid);

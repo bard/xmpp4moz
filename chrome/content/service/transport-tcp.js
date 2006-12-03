@@ -52,11 +52,11 @@ const srvSocketTransport = Cc["@mozilla.org/network/socket-transport-service;1"]
 // INITIALIZATION
 // ----------------------------------------------------------------------
 
-function constructor(host, port, opts) {
+function init(host, port, ssl) {
     this._host = host;
     this._port = port;
-    this._opts = opts || {};
-    this._eventListeners = {};
+    this._ssl = ssl;
+    this._observers = [];
 }
 
 
@@ -65,11 +65,11 @@ function constructor(host, port, opts) {
 
 function write(data) {
     try {
-        this._outstream.writeString(data);
+        return this._outstream.writeString(data);
     } catch(e if e.name == 'NS_BASE_STREAM_CLOSED') {
         this._instream.close();
         this._outstream.close();
-        this._handle('stop');
+        this.notifyObservers(_xpcomize('stub'), 'stop', null);
     }
 }
 
@@ -81,7 +81,7 @@ function connect() {
     if(this._connected)
         return;
             
-    if(this._opts.ssl)
+    if(this._ssl)
         this._transport = srvSocketTransport.createTransport(
             ['ssl'], 1, this._host, this._port, null);
     else
@@ -94,7 +94,7 @@ function connect() {
         {onTransportStatus: function(transport, status, progress, progressMax) {
                 if(status == Ci.nsISocketTransport.STATUS_CONNECTED_TO) {
                     socket._connected = true;
-                    socket._handle('start');
+                    socket.notifyObservers(_xpcomize('stub'), 'start', null);
                 }
             }}, 
         srvEventQueue.createFromIThread(
@@ -112,20 +112,19 @@ function connect() {
         .createInstance(Ci.nsIInputStreamPump);
     inputPump.init(baseInstream, -1, -1, 0, 0, false);
 
-    var listener = {
+    inputPump.asyncRead({
         onStartRequest: function(request, context) {},
         onStopRequest: function(request, context, status) {
-            socket._instream.close();
-            socket._outstream.close();
-            socket._handle('stop', status);
-        },
+                socket._instream.close();
+                socket._outstream.close();
+                socket.notifyObservers(_xpcomize('stub'), 'stop', null);
+            },
         onDataAvailable: function(request, context, inputStream, offset, count) {
-            var data = {};
-            socket._instream.readString(count, data);
-            socket._handle('data', data.value);
-        }
-    };
-    inputPump.asyncRead(listener, null);
+                var data = {};
+                socket._instream.readString(count, data);
+                socket.notifyObservers(_xpcomize('stub'), 'data', data.value);
+            }
+        }, null);
 
     this._outstream.init(baseOutstream, 'UTF-8', 0, '?'.charCodeAt(0));
     this._instream.init(baseInstream, 'UTF-8', 0,
@@ -141,16 +140,42 @@ function disconnect() {
     this._connected = false;
 }
 
-function on(eventName, action) {
-    this._eventListeners[eventName] = action;
+// XXX implement "topic" and "ownsWeak" parameters as per IDL interface
+function addObserver(observer) {
+    this._observers.push(observer);    
+}
+
+// XXX implement "topic" parameter as per IDL interface
+function removeObserver(observer) {
+    var index = this._observers.indexOf(observer);
+    if(index != -1) 
+        this._observers.splice(index, 1);    
+}
+
+function notifyObservers(subject, topic, data) {
+    subject = _xpcomize(subject);
+
+    for each(var observer in this._observers) 
+        try {
+            observer.observe(subject, topic, data);
+        } catch(e) {
+            Cu.reportError(e);
+            // XXX possibly remove buggy observers
+        }
 }
 
 
 // INTERNALS
 // ----------------------------------------------------------------------
 
-function _handle(eventName, info) {
-    var action = this._eventListeners[eventName];
-    if(action)
-        action(info);
+function _xpcomize(string) {
+    if(string instanceof Ci.nsISupportsString)
+        return string;
+    else if(typeof(string) == 'string') {
+        var xpcomized = Cc["@mozilla.org/supports-string;1"]
+            .createInstance(Ci.nsISupportsString);
+        xpcomized.data = string;
+        return xpcomized;
+    } else
+        throw new Error('Not an XPCOM nor a Javascript string. (' + string + ')');
 }
