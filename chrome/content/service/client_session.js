@@ -103,6 +103,17 @@ function setName(string) {
     this._name = string;
 }
 
+function startKeepAlive() {
+    session = this;
+    this._keepAlive.initWithCallback(
+        {notify: function(timer) {session.send(' ');}},
+        KEEPALIVE_INTERVAL, Ci.nsITimer.TYPE_REPEATING_SLACK);    
+}
+
+function stopKeepAlive() {
+    this._keepAlive.cancel();
+}
+
 
 // PUBLIC INTERFACE - SESSION MANAGEMENT AND DATA EXCHANGE
 // ----------------------------------------------------------------------
@@ -120,10 +131,6 @@ function open(server) {
               '<stream:stream xmlns="jabber:client" ' +
               'xmlns:stream="http://etherx.jabber.org/streams" ' +
               'to="' + server + '">');
-    _this = this;
-    this._keepAlive.initWithCallback(
-        {notify: function(timer) {_this.send(' ');}},
-        KEEPALIVE_INTERVAL, Ci.nsITimer.TYPE_REPEATING_SLACK);
 
     this._stream('out', 'open');
 }
@@ -139,7 +146,6 @@ function close() {
 
     this._stream('out', 'close');
     this.send('</stream:stream>');
-    this._keepAlive.cancel();
 }
 
 function isOpen() {
