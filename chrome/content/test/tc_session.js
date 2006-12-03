@@ -35,155 +35,220 @@
  * ***** END LICENSE BLOCK ***** */
 
 
-var Specification = mozlab.mozunit.Specification;
-var assert        = mozlab.mozunit.assertions;
-var module        = new ModuleManager(['..']);
+// DEFINITIONS
+// ----------------------------------------------------------------------
 
-var spec = new Specification('Session');
+var Cc = Components.classes;
+var Ci = Components.interfaces;
 
-var Session = module.require('class', 'session');
+Cc['@mozilla.org/moz/jssubscript-loader;1']
+.getService(Ci.mozIJSSubScriptLoader)
+    .loadSubScript('chrome://xmpp4moz/content/lib/module_manager.js');
+
+var module     = new ModuleManager(['chrome://mozlab/content']);
+var mozunit    = module.require('package', 'mozunit/package');
+var assert     = mozunit.assertions;
+var spec       = new mozunit.Specification('Session');
+
+
+// UTILITIES
+// ----------------------------------------------------------------------
+
+function createSession() {
+    return Cc['@hyperstruct.net/xmpp4moz/xmppsession;1'].createInstance(Ci.nsIXMPPClientSession);
+}
+
+function asString(thing) {
+    if(thing instanceof Ci.nsISupportsString)
+        return thing.toString();
+    else if(thing instanceof Ci.nsIDOMElement)
+        return Cc['@mozilla.org/xmlextras/xmlserializer;1']
+            .getService(Ci.nsIDOMSerializer)
+            .serializeToString(thing);
+    else
+        throw new Error('Ooops');
+}
+
+
+// SPECIFICATION
+// ----------------------------------------------------------------------
 
 spec.stateThat = {
-    'Open stream': function() {
-        var session = new Session();
+    'Session can open a stream': function() {
+        var session = createSession();
         var output;
-        session.on({tag: 'data', direction: 'out'},
-                   function(data) { output = data.content; });
+
+        session.addObserver({
+            observe: function(subject, topic, data) {
+                    if(topic == 'data-out')
+                        output = asString(subject);
+                }}, null, false);
 
         session.open('localhost');
         assert.equals('<?xml version="1.0"?>' +
                       '<stream:stream xmlns="jabber:client" ' +
                       'xmlns:stream="http://etherx.jabber.org/streams" '+
                       'to="localhost">', output);
+
     },
 
-    'Close stream': function() {
-        var session = new Session();
+    'Session can close a stream': function() {
+        var session = createSession();
         var output;
-        session.on({tag: 'data', direction: 'out'},
-                   function(data) { output = data.content; });
+        
+        session.addObserver({
+            observe: function(subject, topic, data) {
+                    if(topic == 'data-out')
+                        output = asString(subject);
+                }}, null, false);
 
-        session.open();
+        session.open('localhost');
         session.close();
         assert.equals('</stream:stream>', output);       
     },
 
-    'Tell if stream is open or not': function() {
-        var session = new Session();
+    'Session can tell whether stream is open or not': function() {
+        var session = createSession();
 
         assert.isFalse(session.isOpen());
-        session.open();
+        session.open('localhost');
         assert.isTrue(session.isOpen());
         session.close();
         assert.isFalse(session.isOpen());
     },
 
-    'Error if opening already opened session': function() {
-        var session = new Session();
+    'Session throws error when trying to open already opened stream': function() {
+        var session = createSession();
 
-        session.open();
-        assert.raises(new Error(), function() {
-                          session.open();
+        session.open('localhost');
+        assert.raises('NS_ERROR_XPC_JS_THREW_JS_OBJECT', function() {
+                          session.open('localhost');
                       });
     },
 
-    'Error if closing already closed session': function() {
-        var session = new Session();        
+    'Session throws error when trying to close already closed stream': function() {
+        var session = createSession();
 
-        session.open();
-        session.close();
-        assert.raises(new Error(), function() {
+        session.open('localhost');
+        session.close()
+        assert.raises('NS_ERROR_XPC_JS_THREW_JS_OBJECT', function() {
                           session.close();
-                      });
+                      });        
     },
 
-    'Accept incoming data': function() {
+    'Outgoing XML stanzas are stamped with incrementing IDs': function() {
+        var session = new createSession();
+        var output;
         
-    },
-
-    'Expose outgoing data via handler': function() {
+        session.addObserver({
+            observe: function(subject, topic, data) {
+                    if(topic == 'data-out')
+                        output = asString(subject);
+                }}, null, false);
+        session.open('localhost');
         
-    },
-    
-    'Register procedures to handle incoming and outgoing data': function() {
-
-    },
-
-    'Register procedures to handle incoming and outgoing stanzas': function() {
-        var session = new Session();
-
-        var seen = [];
-        session.on({tag: 'iq'}, function(iq) { seen.push(iq); });
-        session.on({tag: 'presence'}, function(presence) { seen.push(presence) });
-
-        session.send(<iq type="get"/>);
-        session.send(<presence/>);
-        session.send(<iq type="set"/>);
-
-        assert.equals('iq', seen[0].stanza.name());
-        assert.equals('presence', seen[1].stanza.name());
-        assert.equals('iq', seen[2].stanza.name());
-    },
-
-    'Send plain text': function() {
-        var session = new Session();
-        var output;
-        session.on({tag: 'data', direction: 'out'},
-                   function(data) { output = data.content; });
-
-        session.send('<message to="alyssa@localhost"/>')
-        assert.equals('<message to="alyssa@localhost"/>', output);
-    },
-
-    'Send XML stanzas': function() {
-        var session = new Session();
-        var output;
-        session.on({tag: 'data', direction: 'out'},
-                   function(data) { output = data.content; });
-
-        session.send(<message to="alyssa@localhost"/>);
+        session.send('<message to="alyssa@localhost"/>', null);
         assert.equals('<message to="alyssa@localhost" id="1000"/>', output);
-    },
-
-    'Stamp outgoing XML stanzas with incrementing IDs': function() {
-        var session = new Session();
-        var output;
-        session.on({tag: 'data', direction: 'out'},
-                   function(data) { output = data.content; });
-
-        session.send(<message to="alyssa@localhost"/>)
-        assert.equals('<message to="alyssa@localhost" id="1000"/>', output);
-        session.send(<message to="alyssa@localhost"/>)
+        session.send('<message to="alyssa@localhost"/>', null);
         assert.equals('<message to="alyssa@localhost" id="1001"/>', output);
     },
 
-    'Optionally associate a reply handler to an XML stanza': function() {
-        var session = new Session();
-        var output, reply;
-        session.on({tag: 'data', direction: 'out'},
-                   function(data) { output = data.content.replace(/\n\s*/mg, ''); });
-        
-        session.send(<iq type="get"><query xmlns="test"/></iq>,
-                     function(r) { reply = r; });
-        assert.equals('<iq type="get" id="1000"><query xmlns="test"/></iq>', output);
+    'All traffic is reported in the "data-(in|out)" topic of the session observer': function() {
+        var session = new createSession();
+        var receivedData = 0;
+        var sentData = 0;
 
-        session.receive(<iq id="1000" type="result"/>);
-        assert.equals('iq', reply.stanza.name())
+        session.addObserver({
+            observe: function(subject, topic, data) {
+                    if(topic == 'data-in')
+                        receivedData += 1;
+                    if(topic == 'data-out')
+                        sentData += 1;
+                }}, null, false);
+
+        session.open('localhost');
+        assert.equals(1, sentData);
+        session.receive('<stream:stream>');
+        assert.equals(1, receivedData);
+
+        session.send('<message/>', null);
+        assert.equals(2, sentData);
+        session.receive('<message/>');
+        assert.equals(2, receivedData);
+    },
+    
+    'XML stream state changes are reported in the "stream-(in|out)" topic of the session observer': function() {
+        var session = new createSession();
+        var receivedStream, sentStream;;
+        
+        session.addObserver({
+            observe: function(subject, topic, data) {
+                    if(topic == 'stream-in')
+                        receivedStream = true;
+                    if(topic == 'stream-out')
+                        sentStream = true;
+                }}, null, false);
+        session.open('localhost');
+
+        assert.isFalse(sentStream);
+        session.open('localhost');
+        assert.isTrue(sentStream);
+
+        assert.isFalse(receivedStream);
+        session.receive('<stream:stream from="localhost">');
+        assert.isTrue(receivedStream);
     },
 
-    'Stanzas passed to handlers know to what session they belong': function() {
-        var session = new Session();
-        var seen = [];
+    'XML stanzas are reported in the "stanza-(in|out)" topic of the session observer': function() {
+        var session = new createSession();
+        var receivedStanza, sentStanza;
         
-        session.on({tag: 'iq'}, function(iq) {
-                       seen.push(iq);
-                   });
-        
-        session.send(<iq type="get"/>);
-        session.receive(<iq type="result"/>);
+        session.addObserver({
+            observe: function(subject, topic, data) {
+                    if(topic == 'stanza-in')
+                        receivedStanza = true;
+                    if(topic == 'stanza-out')
+                        sentStanza = true;
+                }}, null, false);
+        session.open('localhost');
 
-        assert.equals(session, seen[0].session);
-        assert.equals(session, seen[1].session);
+        assert.isFalse(sentStanza);
+        session.send('<message to="alyssa@localhost"/>', null);
+        assert.isTrue(sentStanza);
+
+        assert.isFalse(receivedStanza);
+        session.receive('<message from="foo@bar/Test"/>');
+        assert.isTrue(receivedStanza);
+    },
+
+    'Observers can be associated to the reply to a specific stanza': function() {
+        var session = createSession();
+        var reply;
+
+        var replyObserver = {
+            observe: function(subject, topic, data) {
+                reply = asString(subject);
+            }
+        };
+        session.open('localhost');
+
+        session.send('<iq type="get"><query xmlns="test"/></iq>', replyObserver);
+        session.receive('<iq id="1000" type="result"/>');
+        assert.equals('<iq id="1000" type="result"/>', reply);
+    },
+
+    'Observers get back the name of the session the events are coming from, if set': function() {
+        var session = createSession();
+        var reportedSessionName;
+
+        session.setName('jim@enterprise.glxy')
+        session.addObserver({
+            observe: function(subject, topic, data) {
+                    reportedSessionName = data;
+                }}, null, false);
+
+        session.open('localhost');
+        assert.equals('jim@enterprise.glxy', reportedSessionName);
     }
 };
 
