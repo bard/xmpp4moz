@@ -112,26 +112,7 @@ function open(jid, transport, streamObserver) {
 
 
     sessions.created(session);
-    
 
-    transport.addObserver({
-        observe: function(subject, topic, data) {
-                switch(topic) {
-                case 'start':
-                    log('Xmpp E: Transport for ' + session.name + ' opening');
-                    session.open(JID(jid).hostname);                    
-                    break;
-                case 'stop':
-                    log('Xmpp E: Transport for ' + session.name + ' closing');
-                    if(session.isOpen()) 
-                        session.close();
-                    break;
-                case 'data':
-                    session.receive(data);
-                    break;
-                }
-            }
-        }, null, false);
 
     var client = this;
     var sessionObserver = {
@@ -215,7 +196,30 @@ function open(jid, transport, streamObserver) {
 
     session.addObserver(sessionObserver, null, false);
 
-    transport.connect();
+    transport.addObserver({
+        observe: function(subject, topic, data) {
+                switch(topic) {
+                case 'start':
+                    log('Xmpp E: Transport for ' + session.name + ' opening');
+                    session.open(JID(jid).hostname);                    
+                    break;
+                case 'stop':
+                    log('Xmpp E: Transport for ' + session.name + ' closing');
+                    if(session.isOpen()) 
+                        session.close();
+                    break;
+                case 'data':
+                    session.receive(data);
+                    break;
+                }
+            }
+        }, null, false);
+
+    if(transport.isConnected()) 
+        session.open(JID(jid).hostname);
+    else
+        transport.connect();
+
     return session;
 }
 
