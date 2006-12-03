@@ -565,9 +565,8 @@ function disableContentDocument(panel) {
 // INTERNALS
 // ----------------------------------------------------------------------
 
-function _promptAccount(jid, requester) {        
+function _promptAccount(jid) {        
     var params = {
-        requester: requester,
         confirm: false,
         jid: jid,
         password: undefined
@@ -582,26 +581,20 @@ function _promptAccount(jid, requester) {
 function _up(jid, opts) {
     opts = opts || {};
 
-    var password, connectionHost, connectionPort, ssl, continuation, requester;
+    var password, continuation;
+    continuation = opts.continuation;
     if(jid) {
-        
         var account = this.getAccountByJid(jid);
         password = opts.password || account.password;
-        connectionHost = opts.host || account.connectionHost;
-        connectionPort = opts.port || account.connectionPort;
+        opts.host = opts.host || account.connectionHost;
+        opts.port = opts.port || account.connectionPort;
         if(opts.ssl == undefined)
-            ssl = (account.connectionSecurity == 1);
-        else
-            ssl = opts.ssl;
-    } else {
+            opts.ssl = (account.connectionSecurity == 1);
+    } else 
         password = opts.password;
-        connectionHost = opts.host;
-        connectionPort = opts.port;
-        ssl = opts.ssl;
-    }
-    
-    var continuation = opts.continuation;
-    var requester = opts.requester;
+
+    delete opts.password;
+    delete opts.continuation;
 
     if(!((jid && password) || (jid && this.isUp(jid)))) {
         var userInput = this._promptAccount(jid, requester);
@@ -617,35 +610,28 @@ function _up(jid, opts) {
     else if(jid && password) {
         var XMPP = this;
 
-        var streamReplyObserver = {
-            observe: function(subject, topic, data) {
-                XMPP.send(
-                    jid,
-                    <iq to={JID(jid).hostname} type="set">
-                    <query xmlns="jabber:iq:auth">
-                    <username>{JID(jid).username}</username>
-                    <password>{password}</password>
-                    <resource>{JID(jid).resource}</resource>
-                    </query></iq>,
-                    function(reply) {
-                        if(reply.stanza.@type == 'result') {
-                            XMPP.send(jid,
-                                      <iq type="get">
-                                      <query xmlns="jabber:iq:roster"/>
-                                      </iq>);
-                            XMPP.send(jid, <presence/>);
-                            if(continuation)
-                                continuation(jid);
-                        } 
-                    });
-            }
-        };
-
-        var transport = Cc['@hyperstruct.net/xmpp4moz/xmpptransport;1?type=tcp']
-            .createInstance(Ci.nsIXMPPTransport);
-        transport.init(connectionHost, connectionPort, ssl);
-
-        service.open(jid, transport, streamReplyObserver);
+        open(jid, opts,
+             function() {
+                 XMPP.send(
+                     jid,
+                     <iq to={JID(jid).hostname} type="set">
+                     <query xmlns="jabber:iq:auth">
+                     <username>{JID(jid).username}</username>
+                     <password>{password}</password>
+                     <resource>{JID(jid).resource}</resource>
+                     </query></iq>,
+                     function(reply) {
+                         if(reply.stanza.@type == 'result') {
+                             XMPP.send(jid,
+                                       <iq type="get">
+                                       <query xmlns="jabber:iq:roster"/>
+                                       </iq>);
+                             XMPP.send(jid, <presence/>);
+                             if(continuation)
+                                 continuation(jid);
+                         } 
+                     });
+             });        
     }
 }
 
