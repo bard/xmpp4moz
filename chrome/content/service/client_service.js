@@ -62,7 +62,7 @@ var observers = [], cache;
 var sessions = {
     _list: [],
 
-    created: function(session) {
+    activated: function(session) {
         var existingSession;
         
         for(var i=0, l=this._list.length; i<l; i++) 
@@ -106,15 +106,59 @@ function isUp(jid) {
 }
 
 function open(jid, transport, streamObserver) {
+    var session;
+    // if(requestedStartTLS)
+    //     _openSecuringSession(
+    //         jid, transport, function(transport) {
+    //             session = _openUserSession(jid, transport, streamObserver);
+    //             sessions.activated(session);
+    //         });
+    // else {
+    session = _openUserSession(jid, transport, streamObserver);
+    sessions.activated(session);
+    // }
+}
+
+function _openSecuringSession(jid, transport, continuation) {
+    var session = Cc['@hyperstruct.net/xmpp4moz/xmppsession;1']
+        .createInstance(Ci.nsIXMPPClientSession);
+
+    var sessionObserver = {};
+    var transportObserver = {};
+
+    session.addObserver(sessionObserver, null, false);
+    transport.addObserver(transportObserver, null, false);
+
+    session.removeObserver(sessionObserver, null);
+    transport.removeObserver(transportObserver, null);
+    continuation(transport);
+}
+
+function _openUserSession(jid, transport, streamObserver) {
     var session = Cc['@hyperstruct.net/xmpp4moz/xmppsession;1']
         .createInstance(Ci.nsIXMPPClientSession);
     session.setName(jid);
 
+    var transportObserver = {
+        observe: function(subject, topic, data) {
+            switch(topic) {
+                case 'start':
+                log('Xmpp E: Transport for ' + session.name + ' opening');
+                session.open(JID(jid).hostname);
+                break;
+                case 'stop':
+                log('Xmpp E: Transport for ' + session.name + ' closing');
+                if(session.isOpen()) 
+                    session.close();
+                break;
+                case 'data':
+                session.receive(data);
+                break;
+            }
+        }
+    };
 
-    sessions.created(session);
-
-
-    var client = this;
+    var service = this;
     var sessionObserver = {
         observe: function(subject, topic, data) {
             log('Xmpp E: ' + topic);
@@ -165,7 +209,7 @@ function open(jid, transport, streamObserver) {
                     cache.roster.receive({session: sessions.get(data), stanza: subject});
             }
 
-            client.notifyObservers(subject, topic, data);
+            service.notifyObservers(subject, topic, data);
 
             if(topic == 'stanza-in' && subject.nodeName == 'iq' &&
                subject.getAttribute('type') == 'get') {
@@ -195,25 +239,7 @@ function open(jid, transport, streamObserver) {
     }
 
     session.addObserver(sessionObserver, null, false);
-
-    transport.addObserver({
-        observe: function(subject, topic, data) {
-                switch(topic) {
-                case 'start':
-                    log('Xmpp E: Transport for ' + session.name + ' opening');
-                    session.open(JID(jid).hostname);                    
-                    break;
-                case 'stop':
-                    log('Xmpp E: Transport for ' + session.name + ' closing');
-                    if(session.isOpen()) 
-                        session.close();
-                    break;
-                case 'data':
-                    session.receive(data);
-                    break;
-                }
-            }
-        }, null, false);
+    transport.addObserver(transportObserver, null, false);
 
     if(transport.isConnected()) 
         session.open(JID(jid).hostname);
