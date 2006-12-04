@@ -597,7 +597,7 @@ function _up(jid, opts) {
     delete opts.continuation;
 
     if(!((jid && password) || (jid && this.isUp(jid)))) {
-        var userInput = this._promptAccount(jid, requester);
+        var userInput = this._promptAccount(jid);
 
         if(userInput.confirm) {
             password = userInput.password;
