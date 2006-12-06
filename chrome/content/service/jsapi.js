@@ -646,11 +646,14 @@ function _send(jid, stanza, handler) {
                     });
             }
         };
-    
+
+    var settings = XML.settings();
+    XML.prettyPrinting = false;
     service.send(
         jid,
         typeof(stanza) == 'xml' ? stanza.toXMLString() : stanza.toString(),
         replyObserver);
+    XML.setSettings(settings);
 }
 
 this.__defineGetter__(
