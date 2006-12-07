@@ -478,14 +478,21 @@ function enableContentDocument(panel, account, address, type, createSocket) {
     // CONTENT
 
     function gotDataFromPage(text) {
+        var settings = XML.settings();
+        XML.prettyPrinting = false;
+        XML.ignoreWhitespace = false;
         var message = new XML(text);
+
         delete message.@from;
         message.@to = /^\/.+$/.test(message.@to.toString()) ?
             address + message.@to : address;
         if(message.@type == undefined)
             message.@type = type;
-        XMPP.send(account, message)        
+        XMPP.send(account, message);     
+
+        XML.setSettings(settings);
     }
+
 
     appDoc.getElementById('xmpp-outgoing').addEventListener(
         'DOMNodeInserted', function(event) {
@@ -649,6 +656,7 @@ function _send(jid, stanza, handler) {
 
     var settings = XML.settings();
     XML.prettyPrinting = false;
+    XML.ignoreWhitespace = false;
     service.send(
         jid,
         typeof(stanza) == 'xml' ? stanza.toXMLString() : stanza.toString(),
