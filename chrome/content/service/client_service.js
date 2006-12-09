@@ -53,11 +53,13 @@ const module = new ModuleManager(['chrome://xmpp4moz/content']);
 const PresenceCache = module.require('class', 'lib/presence_cache');
 const RosterCache = module.require('class', 'lib/roster_cache');
 
+const ns_disco_info = 'http://jabber.org/protocol/disco#info';    
+
 
 // GLOBAL STATE
 // ----------------------------------------------------------------------
 
-var observers = [], cache;
+var observers = [], cache, features = [];
 
 var sessions = {
     _list: [],
@@ -221,6 +223,9 @@ function _openUserSession(jid, transport, streamObserver) {
                              <identity category="client" type="pc" name="xmpp4moz"/>
                              </query>
                              </iq>;
+                    for each(var feature in features)
+                        stanza.ns_disco_info::query.appendChild(new XML(feature));
+
                     session.send(stanza.toXMLString(), null);
                 }
             }
@@ -293,6 +298,13 @@ function getSession(jid) {
     return sessions.get(jid);
 }
 
+function addFeature(discoInfoFeature) {
+    features.push(discoInfoFeature);
+}
+
+function removeFeature(discoInfoFeature) {
+    features.splice(features.indexOf(discoInfoFeature), 1);
+}
 
 // INTERNALS
 // ----------------------------------------------------------------------

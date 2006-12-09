@@ -30,6 +30,10 @@ interface nsIXMPPClientService: nsISupports
 
     void notifyObservers(in nsISupports aSubject, in string aTopic, in wstring someData);
 
+    void addFeature(in string discoInfoFeature);
+
+    void removeFeature(in string discoInfoFeature);
+
     nsISimpleEnumerator rosterCache();
 
     nsISimpleEnumerator presenceInCache();

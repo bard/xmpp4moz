@@ -79,6 +79,9 @@ const pref = Cc['@mozilla.org/preferences-service;1']
 const serializer = Cc['@mozilla.org/xmlextras/xmlserializer;1']
     .getService(Ci.nsIDOMSerializer);
 
+const ns_roster     = 'jabber:iq:roster';
+const ns_disco_info = 'http://jabber.org/protocol/disco#info';    
+
 
 // DEVELOPER INTERFACE
 // ----------------------------------------------------------------------
@@ -140,8 +143,6 @@ var cache = {
 };
 
 function nickFor(account, address) {
-    const ns_roster = new Namespace('jabber:iq:roster');
-
     var roster;
     for each(var r in XMPP.cache.roster) 
         if(r.session.name == account) {
@@ -227,7 +228,7 @@ function send(account, stanza, handler) {
                     }});
 }
 
-function createChannel(baseFilter) {
+function createChannel(features) {
     var channel = {
         _watchers: [],
 
@@ -307,6 +308,9 @@ function createChannel(baseFilter) {
 
         release: function() {
             XMPP.service.removeObserver(this, null, null);
+            if(features)
+                for each(var feature in features.ns_disco_info::feature) {
+                    XMPP.service.removeFeature(feature.toXMLString()); }
         },
 
         // not relying on non-local state
@@ -360,10 +364,14 @@ function createChannel(baseFilter) {
                 u[name] = y[name];
             return u;    
         }
-    }
+    };
 
     // PROVIDE TOPIC!
     service.addObserver(channel, null, null);
+
+    if(features)
+        for each(var feature in features.ns_disco_info::feature) 
+            XMPP.service.addFeature(feature.toXMLString());
         
     return channel;
 }
@@ -395,7 +403,6 @@ function close(jid) {
 // ----------------------------------------------------------------------
 
 function extractSubRoster(roster, jid) {
-    var ns_roster = 'jabber:iq:roster';
     var subRoster = <iq type="result"><query xmlns="jabber:iq:roster"></query></iq>;
     subRoster.@to = roster.@to;
     subRoster.ns_roster::query.item = roster..ns_roster::item.(@jid == jid);
@@ -488,7 +495,7 @@ function enableContentDocument(panel, account, address, type, createSocket) {
             address + message.@to : address;
         if(message.@type == undefined)
             message.@type = type;
-        XMPP.send(account, message);     
+        XMPP.send(account, message);
 
         XML.setSettings(settings);
     }
