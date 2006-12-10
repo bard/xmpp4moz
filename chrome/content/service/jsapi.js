@@ -232,35 +232,6 @@ function createChannel(features) {
     var channel = {
         _watchers: [],
 
-        // unused -- will be used for things like binding a
-        // channel to a specific session, even after the event
-        // handlers have already been defined
-            
-        _baseFilter: baseFilter,
-
-        // unused
-            
-        set baseFilter(val) {
-            this._baseFilter = val;
-        },
-
-        // unused
-
-        get baseFilter() {
-            return this._baseFilter;
-        },
-
-        // temporarily stop the channel from forwardin events to
-        // the handlers
-
-        pause: function() {
-            // stub
-        },
-
-        restart: function() {
-            // stub
-        },            
-
         on: function(pattern, handler) {
             var reaction = {pattern: pattern, handler: handler};
             this._watchers.push(reaction);
