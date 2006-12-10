@@ -272,6 +272,8 @@ function notifyObservers(subject, topic, data) {
             observer.observe(subject, topic, data);
         } catch(e) {
             Cu.reportError(e);
+            log('Observer raised exception: unregistered.');
+            this.removeObserver(observer);
         }
 }
 
