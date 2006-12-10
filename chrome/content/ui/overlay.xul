@@ -54,7 +54,7 @@
   <commandset id="mainCommandSet">
     <command id="xmpp-command-open-console"
              label="Console"
-             accesskey="o"
+             accesskey="C"
              oncommand="window.open(
                         'chrome://xmpp4moz/content/ui/console.xul',
                         'xmpp-console', 'chrome');"/>
