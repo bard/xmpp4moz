@@ -88,7 +88,7 @@
                                      oninput="xmppPrefs.modifiedAddress(this.value);"
                                      flex="1"/>
                             <label class="text-link" style="font-size: smaller;"
-                                   value="Choose Server..."
+                                   value="Server Map..."
                                    onclick="xmppPrefs.openServerMap();"/>
                           </hbox>
                           <description style="font-size: smaller;">
@@ -106,7 +106,7 @@
                   </grid>
 
                   <hbox pack="end">
-                    <button id="xmpp-register-account" label="Register with Server..." accesskey="R"
+                    <button id="xmpp-register-account" label="Create this Account..." accesskey="R"
                             oncommand="xmppPrefs.requestedRegisterAccount();"/>
                     <button id="xmpp-delete-account" label="Delete" accesskey="D"
                             oncommand="xmppPrefs.deleteAccount();"/>

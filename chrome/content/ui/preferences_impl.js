@@ -42,9 +42,11 @@ var Cc = Components.classes;
 var Ci = Components.interfaces;
 var Cr = Components.results;
 
-var prompts = Cc["@mozilla.org/embedcomp/prompt-service;1"]
+var appInfo =Cc['@mozilla.org/xre/app-info;1']
+    .getService(Ci.nsIXULAppInfo);
+var prompts = Cc['@mozilla.org/embedcomp/prompt-service;1']
     .getService(Ci.nsIPromptService); 
-var pref = Cc["@mozilla.org/preferences-service;1"]
+var pref = Cc['@mozilla.org/preferences-service;1']
     .getService(Ci.nsIPrefService)
     .getBranch('xmpp.account.');
 
@@ -73,10 +75,7 @@ function v(id) {
 // ----------------------------------------------------------------------
 
 function openServerMap() {
-    var window = Cc["@mozilla.org/appshell/window-mediator;1"]
-        .getService(Ci.nsIWindowMediator)
-        .getMostRecentWindow('navigator:browser');
-    window.loadURI('https://www.xmpp.net/map/node');
+    window.open('https://www.xmpp.net/map/node', 'xmpp-servers-map', '');
 }
 
 function refreshAccountList() {
@@ -124,8 +123,8 @@ function showAccount(accountKey) {
 function createAccount() {
     var newAccountKey = (new Date()).getTime();
     
-    pref.setCharPref(newAccountKey + '.address', 'user@server.org');
-    pref.setCharPref(newAccountKey + '.resource', 'Firefox');
+    pref.setCharPref(newAccountKey + '.address', 'new.user@jabber.sameplace.cc');
+    pref.setCharPref(newAccountKey + '.resource', appInfo.name);
     pref.setCharPref(newAccountKey + '.password', '');
     pref.setCharPref(newAccountKey + '.connectionHost', '');
     pref.setIntPref(newAccountKey + '.connectionPort', 5223);
