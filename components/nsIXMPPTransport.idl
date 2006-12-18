@@ -8,7 +8,7 @@ interface nsIXMPPTransport: nsISupports
 {
     void init(in string host, in long port, in boolean ssl);
 
-    boolean write(in string data);
+    boolean write(in AUTF8String data);
 
     boolean isConnected();
 

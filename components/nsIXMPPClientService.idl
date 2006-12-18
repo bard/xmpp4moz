@@ -22,7 +22,7 @@ interface nsIXMPPClientService: nsISupports
 
     nsIXMPPClientSession getSession(in string accountJid);
 
-    void send(in string accountJid, in string stanza, in nsIObserver anObserver);
+    void send(in string accountJid, in AUTF8String stanza, in nsIObserver anObserver);
 
  	void addObserver(in nsIObserver anObserver, in string aTopic, in boolean ownsWeak);
 

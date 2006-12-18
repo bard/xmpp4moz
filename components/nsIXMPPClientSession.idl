@@ -14,9 +14,9 @@ interface nsIXMPPClientSession: nsISupports
 
     boolean isOpen();
 
-    void send(in string data, in nsIObserver replyObserver);
+    void send(in AUTF8String data, in nsIObserver replyObserver);
 
-    void receive(in string data);
+    void receive(in AUTF8String data);
 
  	void addObserver(in nsIObserver anObserver, in string aTopic, in boolean ownsWeak);
 
