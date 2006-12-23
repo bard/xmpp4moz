@@ -251,7 +251,7 @@ function createChannel(features) {
         },
 
         observe: function(subject, topic, data) {
-            var match = topic.match(/^(stream|data|stanza)-(in|out)$/);
+            var match = topic.match(/^(stream|data|stanza|transport)-(in|out)$/);
             
             var pattern = {
                 event: match[1],
@@ -261,6 +261,10 @@ function createChannel(features) {
             }
 
             switch(pattern.event) {
+                case 'transport':
+                subject.QueryInterface(Ci.nsISupportsString).toString();
+                pattern.state = subject.toString();
+                break;
                 case 'stream':
                 subject.QueryInterface(Ci.nsISupportsString).toString();
                 pattern.state = subject.toString();

@@ -146,10 +146,12 @@ function _openUserSession(jid, transport, streamObserver) {
             switch(topic) {
                 case 'start':
                 log('Xmpp E: Transport for ' + session.name + ' opening');
+                service.notifyObservers(xpcomize('start'), 'transport-out', session.name);
                 session.open(JID(jid).hostname);
                 break;
                 case 'stop':
                 log('Xmpp E: Transport for ' + session.name + ' closing');
+                service.notifyObservers(xpcomize('stop'), 'transport-out', session.name);
                 if(session.isOpen()) 
                     session.close();
                 break;
@@ -308,24 +310,12 @@ function removeFeature(discoInfoFeature) {
     features.splice(features.indexOf(discoInfoFeature), 1);
 }
 
+
 // INTERNALS
 // ----------------------------------------------------------------------
 
 function arrayOfObjectsToEnumerator(array) {
     var i=0;
-
-    function xpcomize(object) {
-        if(typeof(object) == 'string') {
-            var xpcomString = Cc["@mozilla.org/supports-string;1"]
-                .createInstance(Ci.nsISupportsString);
-            xpcomString.data = object[name];
-            return xpcomString;
-        } else if(object instanceof Ci.nsISupports) {
-            return object;
-        } else {
-            throw new Error('Neither an XPCOM object nor a string. (' + object + ')');
-        }
-    }
 
     var enumerator = {
         getNext: function() {
@@ -354,6 +344,19 @@ cache = {
 
 // UTILITIES
 // ----------------------------------------------------------------------
+
+function xpcomize(thing) {
+    if(typeof(thing) == 'string') {
+        var xpcomString = Cc["@mozilla.org/supports-string;1"]
+            .createInstance(Ci.nsISupportsString);
+        xpcomString.data = thing;
+        return xpcomString;
+    } else if(thing instanceof Ci.nsISupports) {
+        return thing;
+    } else {
+        throw new Error('Neither an XPCOM object nor a string. (' + thing + ')');
+    }
+}
 
 function JID(string) {
     var m = string.match(/^(.+?@)?(.+?)(?:\/|$)(.*$)/);
