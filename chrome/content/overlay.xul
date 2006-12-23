@@ -46,7 +46,7 @@
 
   <!-- SCRIPTS -->
 
-  <script type="application/x-javascript" src="../xmpp.js"/>
+  <script type="application/x-javascript" src="chrome://xmpp4moz/content/xmpp.js"/>
   <script type="application/x-javascript" src="overlay.js"/>
 
   <!-- COMMANDS -->

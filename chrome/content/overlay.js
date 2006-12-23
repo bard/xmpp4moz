@@ -45,4 +45,4 @@ xmpp.ui = xmpp.ui || {};
 Components
 .classes['@mozilla.org/moz/jssubscript-loader;1']
 .getService(Components.interfaces.mozIJSSubScriptLoader)
-    .loadSubScript('chrome://xmpp4moz/content/ui/overlay_impl.js', xmpp4moz);
+    .loadSubScript('chrome://xmpp4moz/content/overlay_impl.js', xmpp4moz);
