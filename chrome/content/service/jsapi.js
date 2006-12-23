@@ -144,7 +144,7 @@ var cache = {
 
 function nickFor(account, address) {
     var roster;
-    for each(var r in XMPP.cache.roster) 
+    for each(var r in cache.roster) 
         if(r.session.name == account) {
             roster = r;
             break;
@@ -229,6 +229,8 @@ function send(account, stanza, handler) {
 }
 
 function createChannel(features) {
+    var XMPP = this;
+
     var channel = {
         _watchers: [],
 
@@ -383,13 +385,13 @@ function extractSubRoster(roster, jid) {
 function presenceSummary(account, address) {
     var presences;
     if(account && address) 
-        presences = XMPP.cache.presenceIn.filter(
+        presences = cache.presenceIn.filter(
             function(presence) {
                 return (presence.session.name == account &&
-                        XMPP.JID(presence.stanza.@from).address == address);
+                        JID(presence.stanza.@from).address == address);
             });
     else 
-        presences = XMPP.cache.presenceOut;
+        presences = cache.presenceOut;
 
     function find(array, criteria) {
         for each(var item in array)
