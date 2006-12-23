@@ -85,6 +85,7 @@
             <menuitem class="menuitem-iconic" command="xmpp-command-open-preferences"/>
           </menupopup>
         </menu>
+        <menuseparator id="xmpp-menu-applications-separator"/>
         <menuitem class="menuitem-iconic" command="xmpp-command-open-console"/>
         <menuitem class="menuitem-iconic" command="xmpp-command-open-disco"/>
       </menupopup>
@@ -108,7 +109,8 @@
       <menupopup id="xmpp-menu-accounts-secondary">
         <menuseparator/>
         
-        <menu label="Set Status" accesskey="S"
+        <menu id="xmpp-menu-set-status"
+              label="Set Status" accesskey="S"
               oncommand="xmpp4moz.requestedChangeStatus(event);
                          event.stopPropagation();">
           <menupopup>
