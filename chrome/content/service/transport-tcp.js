@@ -40,6 +40,7 @@
 
 const Cc = Components.classes;
 const Ci = Components.interfaces;
+const Cu = Components.utils;
 
 const srvEventQueue = Cc['@mozilla.org/event-queue-service;1']
     .getService(Ci.nsIEventQueueService);
