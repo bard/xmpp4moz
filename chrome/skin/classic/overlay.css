@@ -34,22 +34,8 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-[command="xmpp-command-toggle-livebar"]
-{
-  list-style-image: url("toggle.png");
-  }
 
-[command="xmpp-command-connect"]
-{
-  list-style-image: url("connect.png");
-  }
-
-[command="xmpp-command-disconnect"]
-{
-  list-style-image: url("disconnect.png");
-  }
-
-[command="xmpp-command-open-tracer"]
+[command="xmpp-command-open-disco"]
 {
   list-style-image: url("debug.png");
   }
