@@ -123,7 +123,7 @@ function showAccount(accountKey) {
 function createAccount() {
     var newAccountKey = (new Date()).getTime();
     
-    pref.setCharPref(newAccountKey + '.address', 'new.user@jabber.sameplace.cc');
+    pref.setCharPref(newAccountKey + '.address', 'new.user@sameplace.cc');
     pref.setCharPref(newAccountKey + '.resource', appInfo.name);
     pref.setCharPref(newAccountKey + '.password', '');
     pref.setCharPref(newAccountKey + '.connectionHost', '');
