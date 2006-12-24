@@ -157,7 +157,7 @@ function nickFor(account, address) {
         name = item.@name.toString();
     }
 
-    return name || XMPP.JID(address).username || address;
+    return name || JID(address).username || address;
 }
 
 function JID(string) {
@@ -523,7 +523,7 @@ function enableContentDocument(panel, account, address, type, createSocket) {
                     return s.name == account;
                 },
             stanza: function(s) {
-                    return XMPP.JID(s.@to).address == address;
+                    return JID(s.@to).address == address;
                 }
             }, function(message) {
                        gotDataFromXMPP(message.stanza);
