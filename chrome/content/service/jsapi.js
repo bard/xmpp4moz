@@ -229,7 +229,7 @@ function send(account, stanza, handler) {
 }
 
 function createChannel(features) {
-    var XMPP = this;
+    var _this = this;
 
     var channel = {
         _watchers: [],
@@ -257,7 +257,7 @@ function createChannel(features) {
                 event: match[1],
                 direction: match[2],
                 account: data.toString(),
-                session: XMPP.service.getSession(data.toString()) || { name: data.toString() }
+                session: _this.service.getSession(data.toString()) || { name: data.toString() }
             }
 
             switch(pattern.event) {
@@ -284,10 +284,10 @@ function createChannel(features) {
         },
 
         release: function() {
-            XMPP.service.removeObserver(this, null, null);
+            _this.service.removeObserver(this, null, null);
             if(features)
                 for each(var feature in features.ns_disco_info::feature) {
-                    XMPP.service.removeFeature(feature.toXMLString()); }
+                    _this.service.removeFeature(feature.toXMLString()); }
         },
 
         // not relying on non-local state
@@ -348,13 +348,13 @@ function createChannel(features) {
 
     if(features)
         for each(var feature in features.ns_disco_info::feature) 
-            XMPP.service.addFeature(feature.toXMLString());
+            service.addFeature(feature.toXMLString());
         
     return channel;
 }
 
 function open(jid, opts, continuation) {
-    var connectionHost = opts.host || XMPP.JID(jid).hostname;
+    var connectionHost = opts.host || JID(jid).hostname;
     var connectionPort = opts.port || 5223;
     var ssl = (opts.ssl == undefined ? true : opts.ssl);
 
@@ -472,7 +472,7 @@ function enableContentDocument(panel, account, address, type, createSocket) {
             address + message.@to : address;
         if(message.@type == undefined)
             message.@type = type;
-        XMPP.send(account, message);
+        send(account, message);
 
         XML.setSettings(settings);
     }
@@ -485,7 +485,7 @@ function enableContentDocument(panel, account, address, type, createSocket) {
 
     // NETWORK
 
-    var channel = XMPP.createChannel();
+    var channel = createChannel();
     panel.xmppChannel = channel;
 
     function gotDataFromXMPP(stanza) {
@@ -500,7 +500,7 @@ function enableContentDocument(panel, account, address, type, createSocket) {
                 return s.name == account;
             },
         stanza: function(s) {
-                return (XMPP.JID(s.@from).address == address);
+                return (JID(s.@from).address == address);
             }
         }, function(message) { gotDataFromXMPP(message.stanza); });
     
@@ -511,7 +511,7 @@ function enableContentDocument(panel, account, address, type, createSocket) {
                 return s.name == account;
             },
         stanza: function(s) {
-                return XMPP.JID(s.@from).address == address;
+                return JID(s.@from).address == address;
             }
         }, function(presence) { gotDataFromXMPP(presence.stanza); });
 
@@ -529,20 +529,20 @@ function enableContentDocument(panel, account, address, type, createSocket) {
                        gotDataFromXMPP(message.stanza);
                    });
 
-    for each(var roster in XMPP.cache.roster)
+    for each(var roster in cache.roster)
         if(roster.session.name == account)
             gotDataFromXMPP(extractSubRoster(roster.stanza, address));
 
-    for each(var presence in XMPP.cache.presenceIn)
+    for each(var presence in cache.presenceIn)
         if(presence.session.name == account &&
-           XMPP.JID(presence.stanza.@from).address == address)
+           JID(presence.stanza.@from).address == address)
             gotDataFromXMPP(presence.stanza);
 
     if(type == 'groupchat') 
-        for each(var presence in XMPP.cache.presenceOut) 
+        for each(var presence in cache.presenceOut) 
             if(presence.session.name == account &&
                presence.stanza.@to != undefined &&
-               XMPP.JID(presence.stanza.@to).address == address) 
+               JID(presence.stanza.@to).address == address) 
                 gotDataFromXMPP(presence.stanza);
 }
 
@@ -603,7 +603,7 @@ function _up(jid, opts) {
 
         open(jid, opts,
              function() {
-                 XMPP.send(
+                 send(
                      jid,
                      <iq to={JID(jid).hostname} type="set">
                      <query xmlns="jabber:iq:auth">
@@ -613,11 +613,11 @@ function _up(jid, opts) {
                      </query></iq>,
                      function(reply) {
                          if(reply.stanza.@type == 'result') {
-                             XMPP.send(jid,
-                                       <iq type="get">
-                                       <query xmlns="jabber:iq:roster"/>
-                                       </iq>);
-                             XMPP.send(jid, <presence/>);
+                             send(jid,
+                                  <iq type="get">
+                                  <query xmlns="jabber:iq:roster"/>
+                                  </iq>);
+                             send(jid, <presence/>);
                              if(continuation)
                                  continuation(jid);
                          } 
