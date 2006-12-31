@@ -130,7 +130,7 @@
   <statusbar id="status-bar">
     <statusbarpanel id="xmpp-status"  after="statusbarpanel-progress" hidden="true">
       <label id="xmpp-connecting-account"/>
-      <progressmeter mode="undetermined"/>
+      <progressmeter mode="undetermined" width="50"/>
     </statusbarpanel>
   </statusbar>
 
