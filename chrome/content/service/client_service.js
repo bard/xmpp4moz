@@ -176,11 +176,9 @@ function _openUserSession(jid, transport, streamObserver) {
             if(topic == 'stream-in' && asString(subject) == 'open' && streamObserver)
                 streamObserver.observe(subject, topic, data);
             
-            if(topic == 'stream-in' && asString(subject) == 'close') {
+            if(topic == 'stream-in' && asString(subject) == 'close') 
                 if(session.isOpen()) 
                     session.close();
-                transport.disconnect();
-            }
 
             if(topic == 'stanza-out' && subject.nodeName == 'presence' &&
                subject.hasAttribute('to') && 
