@@ -237,6 +237,16 @@ function _openUserSession(jid, transport, streamObserver) {
                     syntheticPresence.setAttribute('type', 'unavailable');
                     session.receive(serializer.serializeToString(syntheticPresence));
                 }
+
+                for each(var presence in cache.presenceOut.copy()) 
+                    if(presence.session == session) {
+                        var syntheticPresence = presence.stanza.cloneNode(true);
+                        syntheticPresence.removeAttribute('id');
+                        syntheticPresence.setAttribute('type', 'unavailable');
+                        cache.presenceOut.receive({session: sessions.get(data),
+                                                  stanza: syntheticPresence});
+                    }
+
                 transport.disconnect();
                 sessions.closed(session);
             }
