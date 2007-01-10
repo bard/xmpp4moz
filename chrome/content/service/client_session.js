@@ -67,7 +67,6 @@ loader.loadSubScript('chrome://xmpp4moz/content/lib/module_manager.js');
 const module = new ModuleManager(['chrome://xmpp4moz/content']);
 const Parser = module.require('class', 'service/parser');
 
-const KEEPALIVE_INTERVAL = 30000;
 
 // INITIALIZATION
 // ----------------------------------------------------------------------
@@ -78,8 +77,6 @@ function init() {
     this._parser = new Parser();
     this._pending = {};
     this._observers = [];
-    this._keepAlive = Cc['@mozilla.org/timer;1']
-        .createInstance(Ci.nsITimer);
 
     var session = this;
     this._parser.setObserver({
@@ -101,17 +98,6 @@ function init() {
 
 function setName(string) {
     this._name = string;
-}
-
-function startKeepAlive() {
-    session = this;
-    this._keepAlive.initWithCallback(
-        {notify: function(timer) {session.send(' ');}},
-        KEEPALIVE_INTERVAL, Ci.nsITimer.TYPE_REPEATING_SLACK);    
-}
-
-function stopKeepAlive() {
-    this._keepAlive.cancel();
 }
 
 
@@ -168,10 +154,10 @@ function send(data, observer) {
         }
     }
 
-    if(/^(<\?xml version="1.0"\?><stream:stream|<\/stream:stream>)/.test(data))
+    if(/^(<\?xml version="1.0"\?><stream:stream|<\/stream:stream>|\s*$)/.test(data))
         // Session: work around apparently uncatchable exception from
         // parseFromString() by not attempting to parse known invalid
-        // XML (stream prologue/epilogue).
+        // XML (stream prologue/epilogue, keepalives).
         this._data('out', data);
     else {
         var domStanza = domParser.parseFromString(data, 'text/xml').documentElement;

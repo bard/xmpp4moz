@@ -55,6 +55,11 @@ const RosterCache = module.require('class', 'lib/roster_cache');
 
 const ns_disco_info = 'http://jabber.org/protocol/disco#info';    
 
+const keepAliveTimer = Cc['@mozilla.org/timer;1']
+    .createInstance(Ci.nsITimer);
+
+const KEEPALIVE_INTERVAL = 30000;
+
 
 // GLOBAL STATE
 // ----------------------------------------------------------------------
@@ -95,8 +100,17 @@ var sessions = {
             if(session.name == jid)
                 return session;
         }
+    },
+
+    forEach: function(action) {
+        this._list.forEach(action);
     }
 };
+
+keepAliveTimer.initWithCallback(
+    { notify: function(timer) {
+            sessions.forEach(function(session) { session.send(' ', null); });
+        }}, KEEPALIVE_INTERVAL, Ci.nsITimer.TYPE_REPEATING_SLACK);
 
 
 // PUBLIC FUNCTIONALITY
