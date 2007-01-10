@@ -45,25 +45,25 @@
   list-style-image: url("preferences.png");
   }
 
-#xmpp-menu-accounts-secondary [role="offline"]
+#xmpp-popup-accounts-secondary [role="offline"]
 {
   list-style-image: url("chrome://xmpp4moz/skin/status/all-small.png");
   -moz-image-region: rect(48px 16px 64px 0px);  
   }
 
-#xmpp-menu-accounts-secondary [role="dnd"]
+#xmpp-popup-accounts-secondary [role="dnd"]
 {
   list-style-image: url("chrome://xmpp4moz/skin/status/all-small.png");
   -moz-image-region: rect(0px 16px 16px 0px);
   }
 
-#xmpp-menu-accounts-secondary [role="away"]
+#xmpp-popup-accounts-secondary [role="away"]
 {
   list-style-image: url("chrome://xmpp4moz/skin/status/all-small.png");
   -moz-image-region: rect(32px 16px 48px 0px);
   }
 
-#xmpp-menu-accounts-secondary [role="online"]
+#xmpp-popup-accounts-secondary [role="online"]
 {
   list-style-image: url("chrome://xmpp4moz/skin/status/all-small.png");
   -moz-image-region: rect(16px 16px 32px 0px);

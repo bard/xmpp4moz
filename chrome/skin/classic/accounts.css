@@ -34,31 +34,31 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-#xmpp-menu-accounts > menuitem[availability="unavailable"],
-#xmpp-menu-accounts-secondary > menuitem[availability="unavailable"]
+#xmpp-popup-accounts > menuitem[availability="unavailable"],
+#xmpp-popup-accounts-secondary > menuitem[availability="unavailable"]
 {
   list-style-image: url("chrome://xmpp4moz/skin/status/all-small.png"); 
   color: graytext ! important;
   -moz-image-region: rect(48px 16px 64px 0px);
   }
 
-#xmpp-menu-accounts > menuitem[availability="available"],
-#xmpp-menu-accounts-secondary > menuitem[availability="available"]
+#xmpp-popup-accounts > menuitem[availability="available"],
+#xmpp-popup-accounts-secondary > menuitem[availability="available"]
 {
   list-style-image: url("chrome://xmpp4moz/skin/status/all-small.png"); 
   -moz-image-region: rect(16px 16px 32px 0px);
   }
 
-#xmpp-menu-accounts > menuitem[availability="available"][show="dnd"],
-#xmpp-menu-accounts-secondary > menuitem[availability="available"][show="dnd"]
+#xmpp-popup-accounts > menuitem[availability="available"][show="dnd"],
+#xmpp-popup-accounts-secondary > menuitem[availability="available"][show="dnd"]
 {
   -moz-image-region: rect(0px 16px 16px 0px);
   }
 
-#xmpp-menu-accounts > menuitem[availability="available"][show="away"],
-#xmpp-menu-accounts-secondary > menuitem[availability="available"][show="away"],
-#xmpp-menu-accounts > menuitem[availability="available"][show="xa"],
-#xmpp-menu-accounts-secondary > menuitem[availability="available"][show="xa"]
+#xmpp-popup-accounts > menuitem[availability="available"][show="away"],
+#xmpp-popup-accounts-secondary > menuitem[availability="available"][show="away"],
+#xmpp-popup-accounts > menuitem[availability="available"][show="xa"],
+#xmpp-popup-accounts-secondary > menuitem[availability="available"][show="xa"]
 {
   -moz-image-region: rect(32px 16px 48px 0px);
   }

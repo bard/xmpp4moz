@@ -48,7 +48,7 @@ xmpp.ui = xmpp.ui || {};
 window.addEventListener(
     'load', function(event) {
         xmpp.ui.refreshAccounts(
-            document.getElementById('xmpp-menu-accounts'));
+            document.getElementById('xmpp-popup-accounts'));
         if(typeof(xmpp.ui.loadedAccounts) == 'function')
             xmpp.ui.loadedAccounts();
     }, false);

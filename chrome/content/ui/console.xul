@@ -141,7 +141,7 @@
       <toolbaritem align="center">
         <label value="Sending as:" accesskey="a" control="accounts"/>
         <menulist id="accounts" flex="1" label="" sizetopopup="none">
-          <menupopup id="xmpp-menu-accounts"/>
+          <menupopup id="xmpp-popup-accounts"/>
         </menulist>        
       </toolbaritem>
     </toolbar>

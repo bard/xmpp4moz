@@ -43,12 +43,12 @@
 
   <script type="application/x-javascript" src="accounts.js"/>
 
-  <menupopup id="xmpp-menu-accounts"
+  <menupopup id="xmpp-popup-accounts"
              onpopupshowing="xmpp.ui.refreshAccounts(this);"
              oncommand="if(typeof(xmpp.ui.selectedAccount) == 'function')
                         xmpp.ui.selectedAccount(event.target.value);"/>
 
-  <menupopup id="xmpp-menu-accounts-secondary"
+  <menupopup id="xmpp-popup-accounts-secondary"
              onpopupshowing="xmpp.ui.refreshAccounts(this);"
              oncommand="if(typeof(xmpp.ui.selectedAccount) == 'function')
                         xmpp.ui.selectedAccount(event.target.value);"/>

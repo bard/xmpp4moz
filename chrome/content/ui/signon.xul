@@ -64,7 +64,7 @@
           <label id="account-name" value="" hidden="true"/>
           <menulist id="accounts" flex="1" label="" sizetopopup="none"
                     hidden="true" oncommand="selectedAccount(this.value);">
-            <menupopup id="xmpp-menu-accounts"/>
+            <menupopup id="xmpp-popup-accounts"/>
           </menulist>      
         </hbox>        
       </row>

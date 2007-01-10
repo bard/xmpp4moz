@@ -64,7 +64,7 @@
       <toolbaritem align="center">
         <label value="As:" accesskey="A" control="accounts"/>
         <menulist id="accounts" flex="1" label="" sizetopopup="none" class="menulist-compact">
-          <menupopup id="xmpp-menu-accounts"/>
+          <menupopup id="xmpp-popup-accounts"/>
         </menulist>        
       </toolbaritem>
     </toolbar>
