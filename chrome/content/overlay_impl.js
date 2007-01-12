@@ -47,6 +47,7 @@ var prefBranch = Cc["@mozilla.org/preferences-service;1"]
 var prompts = Cc["@mozilla.org/embedcomp/prompt-service;1"]
     .getService(Ci.nsIPromptService); 
 
+var ns_muc      = 'http://jabber.org/protocol/muc';
 
 // GLOBAL STATE
 // ----------------------------------------------------------------------
@@ -117,7 +118,7 @@ function initOverlay() {
 
     channel.on(
         { event: 'presence', direction: 'out', stanza: function(s) {
-                return s.@type == undefined;
+                return s.@type == undefined && s.ns_muc::x == undefined;
             }},
         function(presence) {
             var summary = XMPP.presenceSummary();
