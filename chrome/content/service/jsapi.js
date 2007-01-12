@@ -79,6 +79,7 @@ const pref = Cc['@mozilla.org/preferences-service;1']
 const serializer = Cc['@mozilla.org/xmlextras/xmlserializer;1']
     .getService(Ci.nsIDOMSerializer);
 
+const ns_muc        = 'http://jabber.org/protocol/muc';
 const ns_roster     = 'jabber:iq:roster';
 const ns_disco_info = 'http://jabber.org/protocol/disco#info';    
 
@@ -395,7 +396,10 @@ function presenceSummary(account, address) {
                         JID(presence.stanza.@from).address == address);
             });
     else 
-        presences = cache.presenceOut;
+        presences = cache.presenceOut.filter(
+            function(presence) {
+                return presence.stanza.ns_muc::x == undefined;
+            });
 
     function find(array, criteria) {
         for each(var item in array)
