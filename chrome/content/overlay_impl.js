@@ -49,10 +49,19 @@ var prompts = Cc["@mozilla.org/embedcomp/prompt-service;1"]
 
 var ns_muc      = 'http://jabber.org/protocol/muc';
 
+
 // GLOBAL STATE
 // ----------------------------------------------------------------------
 
 var channel;
+
+
+// GUI UTILITIES
+// ----------------------------------------------------------------------
+
+function _(id) {
+    return document.getElementById('xmpp-' + id);
+}
 
 
 // INITIALIZATION
@@ -122,18 +131,16 @@ function initOverlay() {
             }},
         function(presence) {
             var summary = XMPP.presenceSummary();
-            var button = document.getElementById('xmpp-button');
-            button.setAttribute('availability', summary.stanza.@type.toString() || 'available');
-            button.setAttribute('show', summary.stanza.show.toString());
+            _('button').setAttribute('availability', summary.stanza.@type.toString() || 'available');
+            _('button').setAttribute('show', summary.stanza.show.toString());
         });
 
     channel.on(
         { event: 'stream', direction: 'out', state: 'close' },
         function(stream) {
             if(XMPP.accounts.every(XMPP.isDown)) {
-                var button = document.getElementById('xmpp-button');
-                button.setAttribute('availability', 'unavailable');
-                button.setAttribute('show', '');
+                _('button').setAttribute('availability', 'unavailable');
+                _('button').setAttribute('show', '');
             }
         });
 }
@@ -148,18 +155,18 @@ function disableContent() {
 
 function refresh() {
     var browser = getBrowser().selectedBrowser;
-    var toolbox = document.getElementById('xmpp-toolbox');
 
     if(browser.hasAttribute('address') &&
        browser.hasAttribute('account')) {
-        var toolbar = document.getElementById('xmpp-toolbox-toolbar');
-        var tooltip = document.getElementById('xmpp-toolbox-tooltip');        
-        toolbar.getElementsByAttribute('role', 'address')[0].value = browser.getAttribute('address');
-        tooltip.getElementsByAttribute('role', 'address')[0].value = browser.getAttribute('address');
-        tooltip.getElementsByAttribute('role', 'account')[0].value = browser.getAttribute('account');
-        toolbox.hidden = false;
+        _('toolbox-toolbar').getElementsByAttribute('role', 'address')[0]
+            .value = browser.getAttribute('address');
+        _('toolbox-tooltip').getElementsByAttribute('role', 'address')[0]
+            .value = browser.getAttribute('address');
+        _('toolbox-tooltip').getElementsByAttribute('role', 'account')[0]
+            .value = browser.getAttribute('account');
+        _('toolbox').hidden = false;
     } else
-        toolbox.hidden = true;
+        _('toolbox').hidden = true;
 }
 
 function addToolbarButton() {
