@@ -92,10 +92,6 @@
     </menu>
   </menubar>
 
-  <!-- BROWSER -->
-
-  <hbox id="browser"/>
-
   <!-- TOOLBAR -->
  
   <toolbox id="navigator-toolbox"/>

@@ -149,26 +149,6 @@ function initOverlay() {
 // GUI ACTIONS
 // ----------------------------------------------------------------------
 
-function disableContent() {
-    XMPP.disableContentDocument(getBrowser().selectedBrowser);
-}
-
-function refresh() {
-    var browser = getBrowser().selectedBrowser;
-
-    if(browser.hasAttribute('address') &&
-       browser.hasAttribute('account')) {
-        _('toolbox-toolbar').getElementsByAttribute('role', 'address')[0]
-            .value = browser.getAttribute('address');
-        _('toolbox-tooltip').getElementsByAttribute('role', 'address')[0]
-            .value = browser.getAttribute('address');
-        _('toolbox-tooltip').getElementsByAttribute('role', 'account')[0]
-            .value = browser.getAttribute('account');
-        _('toolbox').hidden = false;
-    } else
-        _('toolbox').hidden = true;
-}
-
 function addToolbarButton() {
     var toolbox = document.getElementById('navigator-toolbox');
     var toolbar = toolbox.getElementsByAttribute('id', 'nav-bar')[0];
@@ -232,38 +212,11 @@ function changeStatus(type) {
 window.addEventListener(
     'load', function(event) {
         if(prefBranch.getBoolPref('xmpp.firstInstall')) {
+            if(document.getElementById('navigator-toolbox')) 
+                addToolbarButton();
+
             prefBranch.setBoolPref('xmpp.firstInstall', false);
-            addToolbarButton();
         }
-    }, false);
-
-var locationChangeListener = {
-    QueryInterface: function(aIID) {
-        if(aIID.equals(Ci.nsIWebProgressListener) ||
-           aIID.equals(Ci.nsISupportsWeakReference) ||
-           aIID.equals(Ci.nsISupports))
-            return this;
-        throw Cr.NS_NOINTERFACE;
-    },
-    onLocationChange: function(aProgress, aRequest, aURI) {
-        refresh();
-    },
-    onStateChange: function(aProgress, aRequest, aStateFlags, aStatus) {},
-    onProgressChange: function() {},
-    onStatusChange: function() {},
-    onSecurityChange: function() {},
-    onLinkIconAvailable: function() {}
-};
-
-window.addEventListener(
-    'load', function(event) {
-        getBrowser().addProgressListener(locationChangeListener);
-
-        getBrowser().addEventListener(
-            'DOMAttrModified', function(event) {
-                if(event.attrName == 'address')
-                    refresh();
-            }, false);
     }, false);
 
 
@@ -275,4 +228,68 @@ xmpp.ui.selectedAccount = function(accountJid) {
         XMPP.down(accountJid);
     else
         XMPP.up(accountJid);
+};
+
+
+// BROWSER HANDLING
+// ----------------------------------------------------------------------
+
+if(typeof(getBrowser) == 'function') {
+
+    // GUI REACTIONS
+    // ----------------------------------------------------------------------
+
+    var locationChangeListener = {
+        QueryInterface: function(aIID) {
+            if(aIID.equals(Ci.nsIWebProgressListener) ||
+               aIID.equals(Ci.nsISupportsWeakReference) ||
+               aIID.equals(Ci.nsISupports))
+                return this;
+            throw Cr.NS_NOINTERFACE;
+        },
+        onLocationChange: function(aProgress, aRequest, aURI) {
+            refresh();
+        },
+        onStateChange: function(aProgress, aRequest, aStateFlags, aStatus) {},
+        onProgressChange: function() {},
+        onStatusChange: function() {},
+        onSecurityChange: function() {},
+        onLinkIconAvailable: function() {}
+    };
+
+    window.addEventListener(
+        'load', function(event) {
+            getBrowser().addProgressListener(locationChangeListener);
+
+            getBrowser().addEventListener(
+                'DOMAttrModified', function(event) {
+                    if(event.attrName == 'address')
+                        refresh();
+                }, false);
+        }, false);
+
+
+    // GUI ACTIONS
+    // ----------------------------------------------------------------------
+
+    function disableContent() {
+        XMPP.disableContentDocument(getBrowser().selectedBrowser);
+    }
+
+    function refresh() {
+        var browser = getBrowser().selectedBrowser;
+
+        if(browser.hasAttribute('address') &&
+           browser.hasAttribute('account')) {
+            _('toolbox-toolbar').getElementsByAttribute('role', 'address')[0]
+                .value = browser.getAttribute('address');
+            _('toolbox-tooltip').getElementsByAttribute('role', 'address')[0]
+                .value = browser.getAttribute('address');
+            _('toolbox-tooltip').getElementsByAttribute('role', 'account')[0]
+                .value = browser.getAttribute('account');
+            _('toolbox').hidden = false;
+        } else
+            _('toolbox').hidden = true;
+    }
 }
+

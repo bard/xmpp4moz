@@ -1,0 +1,171 @@
+<?xml version="1.0"?>
+
+<!-- ***** BEGIN LICENSE BLOCK *****
+   - Version: MPL 1.1/GPL 2.0/LGPL 2.1
+   -
+   - The contents of this file are subject to the Mozilla Public License Version
+   - 1.1 (the "License"); you may not use this file except in compliance with
+   - the License. You may obtain a copy of the License at
+   - http://www.mozilla.org/MPL/
+   -
+   - Software distributed under the License is distributed on an "AS IS" basis,
+   - WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+   - for the specific language governing rights and limitations under the
+   - License.
+   -
+   - The Original Code is xmpp4moz.
+   -
+   - The Initial Developer of the Original Code is
+   - Massimiliano Mirra <bard [at] hyperstruct [dot] net>.
+   - Portions created by the Initial Developer are Copyright (C) 2006
+   - the Initial Developer. All Rights Reserved.
+   -
+   - Contributor(s):
+   -
+   - Alternatively, the contents of this file may be used under the terms of
+   - either the GNU General Public License Version 2 or later (the "GPL"), or
+   - the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
+   - in which case the provisions of the GPL or the LGPL are applicable instead
+   - of those above. If you wish to allow use of your version of this file only
+   - under the terms of either the GPL or the LGPL, and not to allow others to
+   - use your version of this file under the terms of the MPL, indicate your
+   - decision by deleting the provisions above and replace them with the notice
+   - and other provisions required by the LGPL or the GPL. If you do not delete
+   - the provisions above, a recipient may use your version of this file under
+   - the terms of any one of the MPL, the GPL or the LGPL.
+   -
+   - ***** END LICENSE BLOCK ***** -->
+
+<?xml-stylesheet href="chrome://xmpp4moz/skin/overlay.css" type="text/css"?>
+<?xml-stylesheet href="chrome://xmpp4moz/skin/toolbar-button.css" type="text/css"?>
+<?xul-overlay href="chrome://xmpp4moz/content/ui/accounts.xul"?>
+
+<!DOCTYPE overlay>
+<overlay id="xmpp-overlay"
+         xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
+
+  <!-- SCRIPTS -->
+
+  <script type="application/x-javascript" src="chrome://xmpp4moz/content/xmpp.js"/>
+  <script type="application/x-javascript" src="overlay.js"/>
+
+  <!-- COMMANDS -->
+
+  <commandset id="mailCommands">
+    <command id="xmpp-command-open-console"
+             label="Console"
+             accesskey="C"
+             oncommand="window.open(
+                        'chrome://xmpp4moz/content/ui/console.xul',
+                        'xmpp-console', 'chrome');"/>
+    <command id="xmpp-command-open-disco"
+             label="Service Discovery"
+             accesskey="D"
+             oncommand="window.open(
+                        'chrome://xmpp4moz/content/ui/disco.xul',
+                        'xmpp-disco', 'chrome');"/>
+    <command id="xmpp-command-open-preferences"
+             label="Configure..."
+             accesskey="C"
+             oncommand="window.openOptionsDialog('xmpp-pane');"/>
+  </commandset>
+
+  <!-- KEYS -->
+
+  <keyset id="mailKeys"/>
+
+  <!-- MENUS -->
+
+  <menubar id="mail-menubar">
+    <menu label="Jabber" accesskey="J" position="1" insertbefore="tasksMenu">
+      <menupopup id="xmpp-menu-main">
+        <menu label="Accounts" accesskey="A">
+          <menupopup id="xmpp-popup-accounts">
+            <menuseparator/>
+            <menuitem class="menuitem-iconic" command="xmpp-command-open-preferences"/>
+          </menupopup>
+        </menu>
+        <menuseparator id="xmpp-menu-applications-separator"/>
+        <menuitem class="menuitem-iconic" command="xmpp-command-open-console"/>
+        <menuitem class="menuitem-iconic" command="xmpp-command-open-disco"/>
+      </menupopup>
+    </menu>
+  </menubar>
+
+  <!-- TOOLBAR -->
+ 
+  <toolbox id="mail-toolbox"/>
+
+  <toolbar id="mail-bar">
+    <toolbarbutton id="xmpp-button"
+                   class="toolbarbutton-1 chromeclass-toolbar-additional"
+                   type="menu-button"
+                   label="Jabber"
+                   availability="unavailable">
+      <menupopup id="xmpp-popup-accounts-secondary">
+        <menuseparator/>
+        
+        <menu id="xmpp-menu-set-status"
+              label="Set Status" accesskey="S"
+              oncommand="xmpp4moz.requestedChangeStatus(event);
+                         event.stopPropagation();">
+          <menupopup>
+            <menuitem class="menuitem-iconic" role="online" label="Online" value="available"/>
+            <menuitem class="menuitem-iconic" role="away" label="Away" value="away"/>
+            <menuitem class="menuitem-iconic" role="dnd" label="Busy" value="dnd"/>
+            <menuitem class="menuitem-iconic" role="offline" label="Offline" value="unavailable"/>
+          </menupopup>
+        </menu>
+        <menuitem class="menuitem-iconic" command="xmpp-command-open-preferences"/>
+      </menupopup>
+    </toolbarbutton>
+  </toolbar>
+
+  <!-- STATUS BAR -->
+
+  <statusbar id="status-bar">
+    <statusbarpanel id="xmpp-status"  after="statusbarpanel-progress" hidden="true">
+      <label id="xmpp-connecting-account"/>
+      <progressmeter mode="undetermined" width="50"/>
+    </statusbarpanel>
+  </statusbar>
+
+  <!-- CONTENT AREA -->
+
+  <vbox id="folderPaneBox">
+    <toolbox id="xmpp-toolbox" hidden="true">
+      <tooltip id="xmpp-toolbox-tooltip">
+        <grid>
+          <columns>
+            <column flex="0"/>
+            <column flex="1"/>
+          </columns>
+
+          <rows>
+            <row>
+              <label value="Account:"/>
+              <label role="account"/>
+            </row>
+
+            <row>
+              <label value="Address:"/>
+              <label role="address"/>
+            </row>
+          </rows>
+        </grid>
+
+      </tooltip>
+
+      <toolbar fullscreentoolbar="true" id="xmpp-toolbox-toolbar">
+        <toolbaritem align="center" tooltip="xmpp-toolbox-tooltip">
+          <label value="Connected to:"/>
+          <label role="address"/>
+        </toolbaritem>
+
+        <toolbarspring/>
+
+        <toolbarbutton label="Disconnect" oncommand="xmpp4moz.disableContent();"/>
+      </toolbar>
+    </toolbox>
+  </vbox>
+</overlay>

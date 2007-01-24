@@ -1,0 +1,162 @@
+<?xml version="1.0"?>
+
+<!-- ***** BEGIN LICENSE BLOCK *****
+   - Version: MPL 1.1/GPL 2.0/LGPL 2.1
+   -
+   - The contents of this file are subject to the Mozilla Public License Version
+   - 1.1 (the "License"); you may not use this file except in compliance with
+   - the License. You may obtain a copy of the License at
+   - http://www.mozilla.org/MPL/
+   -
+   - Software distributed under the License is distributed on an "AS IS" basis,
+   - WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+   - for the specific language governing rights and limitations under the
+   - License.
+   -
+   - The Original Code is xmpp4moz.
+   -
+   - The Initial Developer of the Original Code is
+   - Massimiliano Mirra <bard [at] hyperstruct [dot] net>.
+   - Portions created by the Initial Developer are Copyright (C) 2006
+   - the Initial Developer. All Rights Reserved.
+   -
+   - Contributor(s):
+   -
+   - Alternatively, the contents of this file may be used under the terms of
+   - either the GNU General Public License Version 2 or later (the "GPL"), or
+   - the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
+   - in which case the provisions of the GPL or the LGPL are applicable instead
+   - of those above. If you wish to allow use of your version of this file only
+   - under the terms of either the GPL or the LGPL, and not to allow others to
+   - use your version of this file under the terms of the MPL, indicate your
+   - decision by deleting the provisions above and replace them with the notice
+   - and other provisions required by the LGPL or the GPL. If you do not delete
+   - the provisions above, a recipient may use your version of this file under
+   - the terms of any one of the MPL, the GPL or the LGPL.
+   -
+   - ***** END LICENSE BLOCK ***** -->
+
+<overlay id="xmpp-overlay-preferences"
+         xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
+
+  <prefwindow id="MailPreferences">
+
+    <script type="application/x-javascript" src="../xmpp.js"/>
+    <script type="application/x-javascript" src="preferences.js"/>
+    
+    <prefpane id="xmpp-pane" label="Jabber"
+              onpaneload="xmppPrefs.refreshAccountList();"
+              image="chrome://xmpp4moz/skin/status/available-big.png"
+              orient="vertical">
+
+      <tabbox flex="1">
+        <tabs id="xmpp-tabs">
+          <tab label="Accounts"/>
+        </tabs>
+
+        <tabpanels id="xmpp-tabpanels" flex="1">
+          <tabpanel flex="1">
+            <hbox flex="1">
+              <vbox flex="1">
+                <listbox id="xmpp-accounts" rows="12" flex="1" onselect="xmppPrefs.selectedAccount();"/>
+                <button label="Add" accesskey="A" flex="1" oncommand="xmppPrefs.createAccount();"/>
+              </vbox>
+
+              <groupbox flex="2">
+                <caption label="Account settings"/>
+                <vbox id="xmpp-account-message" flex="1">
+                  <spacer flex="1"/>
+                  <description style="text-align: center;">
+                    Add an account or select an existing one to modify it.
+                  </description>
+                  <spacer flex="1"/>
+                </vbox>
+
+                <vbox id="xmpp-account-settings" flex="1" hidden="true">
+                  <grid>
+                    <columns>
+                      <column flex="0"/>
+                      <column flex="1"/>
+                    </columns>
+                    <rows>
+                      <row align="center">
+                        <label value="Address:" control="xmpp-address" accesskey="A"/>
+                        <vbox flex="1">
+                          <hbox flex="1" align="center">
+                            <textbox id="xmpp-address"
+                                     onchange="xmppPrefs.changedField(this);"
+                                     oninput="xmppPrefs.modifiedAddress(this.value);"
+                                     flex="1"/>
+                            <label class="text-link" style="font-size: smaller;"
+                                   value="Server Map..."
+                                   onclick="xmppPrefs.openServerMap();"/>
+                          </hbox>
+                          <description style="font-size: smaller;">
+                            (Example: john@jabber.org, ben.bitdiddle@gmail.com)
+                          </description>
+                        </vbox>
+                      </row>
+
+                      <row align="center">
+                        <label value="Password:" control="xmpp-password" accesskey="P"/>
+                        <textbox id="xmpp-password" type="password"
+                                 onchange="xmppPrefs.changedField(this);"/>
+                      </row>
+                    </rows>
+                  </grid>
+
+                  <hbox pack="end">
+                    <button id="xmpp-register-account" label="Create this Account..." accesskey="R"
+                            oncommand="xmppPrefs.requestedRegisterAccount();"/>
+                    <button id="xmpp-delete-account" label="Delete" accesskey="D"
+                            oncommand="xmppPrefs.deleteAccount();"/>
+                    <button label="Advanced..." accesskey="v"
+                            oncommand="this.parentNode.nextSibling.hidden =
+                                       !this.parentNode.nextSibling.hidden;"/>
+                  </hbox>
+                  
+                  <grid hidden="true">
+                    <columns>
+                      <column flex="0"/>
+                      <column flex="1"/>
+                    </columns>
+                    <rows>
+                      <row align="center">
+                        <label value="Resource:" control="xmpp-resource" accesskey="R"/>
+                        <textbox id="xmpp-resource"
+                                 onchange="xmppPrefs.changedField(this);"/>
+                      </row>
+
+                      <row align="center">
+                        <label value="Server for Connection:" control="xmpp-connection-host" accesskey="S"/>
+                        <textbox id="xmpp-connection-host"
+                                 onchange="xmppPrefs.changedField(this);"/>
+                      </row>
+
+                      <row align="center">
+                        <label value="Server Port:" control="xmpp-connection-port" accesskey="P"/>
+                        <textbox id="xmpp-connection-port"
+                                 onchange="xmppPrefs.changedField(this);"/>
+                      </row>
+
+                      <row align="center">
+                        <label value="Encryption:" control="xmpp-connection-security" accesskey="e"/>
+                        <radiogroup id="xmpp-connection-security" value="1" orient="horizontal"
+                                    oncommand="xmppPrefs.changedField(this);">
+                          <radio value="1" label="SSL" selected="true" flex="1"/>
+                          <radio value="0" label="None" flex="1"/>
+                        </radiogroup>
+                      </row>
+                    </rows>
+                  </grid> 
+                </vbox>
+              </groupbox>
+
+            </hbox>            
+          </tabpanel>
+        </tabpanels>
+      </tabbox>
+
+    </prefpane>
+  </prefwindow>
+</overlay>
