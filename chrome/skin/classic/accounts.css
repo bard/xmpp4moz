@@ -34,6 +34,12 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
+menulist > #xmpp-popup-accounts > menuitem[availability="unavailable"],
+menulist > #xmpp-popup-accounts-secondary > menuitem[availability="unavailable"]
+{
+    color: graytext ! important;
+}
+
 #xmpp-popup-accounts > menuitem[availability="unavailable"],
 #xmpp-popup-accounts-secondary > menuitem[availability="unavailable"]
 {
@@ -44,7 +50,6 @@
 #xmpp-popup-accounts > menuitem[availability="available"],
 #xmpp-popup-accounts-secondary > menuitem[availability="available"]
 {
-  font-weight: bold ! important;
   list-style-image: url("chrome://xmpp4moz/skin/status/all-small.png"); 
   -moz-image-region: rect(16px 16px 32px 0px);
   }
