@@ -150,18 +150,23 @@ function initOverlay() {
 // ----------------------------------------------------------------------
 
 function addToolbarButton() {
-    var toolbox = document.getElementById('navigator-toolbox');
-    var toolbar = toolbox.getElementsByAttribute('id', 'nav-bar')[0];
+    var toolbar =
+        document.getElementById('nav-bar') ||
+        document.getElementById('mail-bar') ||
+        document.getElementById('mail-bar2');
+
+    if(!toolbar)
+        return;
         
     if(toolbar &&
        toolbar.currentSet.indexOf('xmpp-button') == -1 &&
        toolbar.getAttribute('customizable') == 'true') {
 
         toolbar.currentSet = toolbar.currentSet.replace(
-            /urlbar-container/,
-            'xmpp-button,urlbar-container');
+            /(urlbar-container|separator)/,
+            'xmpp-button,$1');
         toolbar.setAttribute('currentset', toolbar.currentSet);
-        toolbox.ownerDocument.persist(toolbar.id, 'currentset');
+        toolbar.ownerDocument.persist(toolbar.id, 'currentset');
     }
 }
 
@@ -212,9 +217,7 @@ function changeStatus(type) {
 window.addEventListener(
     'load', function(event) {
         if(prefBranch.getBoolPref('xmpp.firstInstall')) {
-            if(document.getElementById('navigator-toolbox')) 
-                addToolbarButton();
-
+            addToolbarButton();
             prefBranch.setBoolPref('xmpp.firstInstall', false);
         }
     }, false);

@@ -96,7 +96,7 @@
  
   <toolbox id="mail-toolbox"/>
 
-  <toolbar id="mail-bar">
+  <toolbarpalette id="MailToolbarPalette">
     <toolbarbutton id="xmpp-button"
                    class="toolbarbutton-1 chromeclass-toolbar-additional"
                    type="menu-button"
@@ -119,7 +119,7 @@
         <menuitem class="menuitem-iconic" command="xmpp-command-open-preferences"/>
       </menupopup>
     </toolbarbutton>
-  </toolbar>
+  </toolbarpalette>
 
   <!-- STATUS BAR -->
 
