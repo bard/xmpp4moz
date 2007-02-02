@@ -41,7 +41,7 @@
 
   <prefwindow id="MailPreferences">
 
-    <script type="application/x-javascript" src="../xmpp.js"/>
+    <script type="application/x-javascript" src="xmpp.js"/>
     <script type="application/x-javascript" src="preferences.js"/>
     
     <prefpane id="xmpp-pane" label="Jabber"
