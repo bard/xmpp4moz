@@ -100,7 +100,7 @@ function showAccount(accountKey) {
     var account = XMPP.getAccountByKey(accountKey);
 
     for each(var accountField in
-             ['address', 'password', 'resource',
+             ['address', 'password', 'resource', 'autoLogin',
               'connectionHost', 'connectionPort', 'connectionSecurity']) {
         var prefName = account.key + '.' + accountField;
         var elementId = 'xmpp-' + uncamelize(accountField);
@@ -112,11 +112,18 @@ function showAccount(accountKey) {
             try {
                 prefValue = pref.getIntPref(prefName);
             } catch(e) {
-                prefValue = '';
+                try {
+                    prefValue = pref.getBoolPref(prefName);
+                } catch(e) {
+                    prefValue = '';
+                }
             }
         }
 
-        _(elementId).value = prefValue;
+        if(typeof(prefValue) == 'boolean')
+            _(elementId).checked = prefValue;
+        else
+            _(elementId).value = prefValue;
     }
 }
 
@@ -126,6 +133,7 @@ function createAccount() {
     pref.setCharPref(newAccountKey + '.address', 'new.user@sameplace.cc');
     pref.setCharPref(newAccountKey + '.resource', appInfo.name);
     pref.setCharPref(newAccountKey + '.password', '');
+    pref.setBoolPref(newAccountKey + '.autoLogin', true);
     pref.setCharPref(newAccountKey + '.connectionHost', '');
     pref.setIntPref(newAccountKey + '.connectionPort', 5223);
     pref.setIntPref(newAccountKey + '.connectionSecurity', 1);
@@ -215,10 +223,19 @@ function changedField(field) {
     }
 
     var prefName = selectedAccountKey + '.' + camelize(field.id.replace(/^xmpp-/, ''));
-    try {
+
+    switch(typeof(field.value || field.checked)) {
+    case 'string':
         pref.setCharPref(prefName, field.value);
-    } catch(e) {
-        pref.setIntPref(prefName, field.value);
+        break;
+    case 'boolean':
+        pref.setBoolPref(prefName, field.checked);
+        break;
+    case 'number':
+        pref.setIntPref(prefName, fieldValue);
+        break;
+    default:
+        throw new Error('Unexpected. (' + typeof(field.value || field.checked) + ')');
     }
 
     // XXX hackish

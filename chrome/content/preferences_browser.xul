@@ -102,6 +102,12 @@
                         <textbox id="xmpp-password" type="password"
                                  onchange="xmppPrefs.changedField(this);"/>
                       </row>
+
+                      <row align="center">
+                        <spacer/>
+                        <checkbox id="xmpp-auto-login" label="Login automatically at startup"
+                                  oncommand="xmppPrefs.changedField(this);"/>
+                      </row>
                     </rows>
                   </grid>
 

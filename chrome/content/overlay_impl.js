@@ -150,6 +150,12 @@ function initOverlay() {
                 _('button').setAttribute('show', '');
             }
         });
+
+    // Bring up accounts configured as autoconnect
+    
+    for each(var account in XMPP.accounts) 
+        if(account.autoLogin && !XMPP.isUp(account))
+            XMPP.up(account);
 }
 
 
