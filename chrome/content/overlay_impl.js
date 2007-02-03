@@ -68,6 +68,13 @@ function _(id) {
 // ----------------------------------------------------------------------
 
 function initOverlay() {
+    if(prefBranch.getBoolPref('xmpp.firstInstall')) {
+        addToolbarButton();
+        prefBranch.setBoolPref('xmpp.firstInstall', false);
+    }
+
+    // Start watching XMPP traffic
+
     channel = XMPP.createChannel();
 
     // Show progress bar when waiting for connection
@@ -209,18 +216,6 @@ function changeStatus(type) {
         }
     }
 }
-
-
-// GUI REACTIONS
-// ----------------------------------------------------------------------
-
-window.addEventListener(
-    'load', function(event) {
-        if(prefBranch.getBoolPref('xmpp.firstInstall')) {
-            addToolbarButton();
-            prefBranch.setBoolPref('xmpp.firstInstall', false);
-        }
-    }, false);
 
 
 // GUI HOOKS
