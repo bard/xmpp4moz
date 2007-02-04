@@ -657,21 +657,25 @@ this.__defineGetter__(
         var accountTable = {};
         for each(var accountInfo in
                  pref.getChildList('account.', {})) {
-            var infoParts    = accountInfo.split('.');
-            var accountKey = infoParts[1];
-            var propertyName = infoParts[2];
-            if(!accountTable[accountKey])
-                accountTable[accountKey] = {};
+            try {
+                var infoParts    = accountInfo.split('.');
+                var accountKey = infoParts[1];
+                var propertyName = infoParts[2];
+                if(!accountTable[accountKey])
+                    accountTable[accountKey] = {};
 
-            var prefReaders = ['getCharPref', 'getIntPref', 'getBoolPref'];
-            var propertyValue;
-            for each(var reader in prefReaders) 
-                try {
-                    propertyValue = pref[reader](accountInfo);
-                    break;
-                } catch(e) {}
+                var prefReaders = ['getCharPref', 'getIntPref', 'getBoolPref'];
+                var propertyValue;
+                for each(var reader in prefReaders) 
+                    try {
+                        propertyValue = pref[reader](accountInfo);
+                        break;
+                    } catch(e) {}
 
-            accountTable[accountKey][propertyName] = propertyValue;
+                accountTable[accountKey][propertyName] = propertyValue;
+            } catch(e) {
+                Cu.reportError(e);
+            }
         }
         
         var accountList = [];
