@@ -224,19 +224,14 @@ function changedField(field) {
 
     var prefName = selectedAccountKey + '.' + camelize(field.id.replace(/^xmpp-/, ''));
 
-    switch(typeof(field.value || field.checked)) {
-    case 'string':
-        pref.setCharPref(prefName, field.value);
-        break;
-    case 'boolean':
+    if('checked' in field) 
         pref.setBoolPref(prefName, field.checked);
-        break;
-    case 'number':
-        pref.setIntPref(prefName, fieldValue);
-        break;
-    default:
+    else if(parseInt(field.value) != NaN)
+        pref.setIntPref(prefName, field.value);
+    else if(typeof(field.value) == 'string')
+        pref.setCharPref(prefName, field.value);
+    else
         throw new Error('Unexpected. (' + typeof(field.value || field.checked) + ')');
-    }
 
     // XXX hackish
     if(field.id == 'xmpp-address') 
