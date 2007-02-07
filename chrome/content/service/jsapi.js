@@ -431,9 +431,13 @@ function presenceSummary(account, address) {
 // ----------------------------------------------------------------------
 
 function enableContentDocument(panel, account, address, type, createSocket) {
+    if(panel.hasAttribute('account') &&
+       panel.getAttribute('account') != account)
+        throw new Error('Content panel already attached to different account. (' + account + ')');
+
     if(panel.hasAttribute('address') &&
-       panel.hasAttribute('account'))
-        return;
+       panel.getAttribute('address') != address)
+        throw new Error('Contact panel already attached to different address. (' + address + ')');
 
     var appDoc = panel.contentDocument;
     if(createSocket) 
