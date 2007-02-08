@@ -226,8 +226,8 @@ function changedField(field) {
 
     if('checked' in field) 
         pref.setBoolPref(prefName, field.checked);
-    else if(parseInt(field.value) != NaN)
-        pref.setIntPref(prefName, field.value);
+    else if(!isNaN(parseInt(field.value)) )
+        pref.setIntPref(prefName, parseInt(field.value));
     else if(typeof(field.value) == 'string')
         pref.setCharPref(prefName, field.value);
     else
