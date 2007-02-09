@@ -79,6 +79,9 @@ const pref = Cc['@mozilla.org/preferences-service;1']
 const serializer = Cc['@mozilla.org/xmlextras/xmlserializer;1']
     .getService(Ci.nsIDOMSerializer);
 
+const srvPrompt = Cc["@mozilla.org/embedcomp/prompt-service;1"]
+    .getService(Ci.nsIPromptService);
+
 const ns_muc        = 'http://jabber.org/protocol/muc';
 const ns_roster     = 'jabber:iq:roster';
 const ns_disco_info = 'http://jabber.org/protocol/disco#info';    
@@ -405,6 +408,7 @@ function presenceSummary(account, address) {
         for each(var item in array)
             if(criteria(item))
                 return item;
+        return undefined;
     }
 
     var summary;
@@ -452,22 +456,6 @@ function enableContentDocument(panel, account, address, type, createSocket) {
     if(!(appDoc.getElementById('xmpp-incoming') &&
          appDoc.getElementById('xmpp-outgoing')))
         return;
-    
-    // BOOKKEEPING
-
-    panel.setAttribute('account', account);
-    panel.setAttribute('address', address);
-
-    panel.addEventListener(
-        'unload', function(event) {
-            if(event.target == panel.contentDocument) {
-                channel.release();
-                panel.removeAttribute('account');
-                panel.removeAttribute('address');
-            }
-        }, true);
-
-    // CONTENT
 
     function gotDataFromPage(text) {
         var settings = XML.settings();
@@ -485,21 +473,59 @@ function enableContentDocument(panel, account, address, type, createSocket) {
         XML.setSettings(settings);
     }
 
+    function gotDataFromXMPP(stanza) {
+        appDoc.getElementById('xmpp-incoming').textContent =
+            stanza.toXMLString();
+    }
+
+    // Assign the panel to the {account, address} pair.
+
+    panel.setAttribute('account', account);
+    panel.setAttribute('address', address);
+    panel.addEventListener(
+        'unload', function(event) {
+            if(event.target == panel.contentDocument) 
+                disableContentDocument(panel);
+        }, true);
+
+    // The contact sub-roster is a roster where the only entry is the
+    // contact we are connecting to.
+
+    var contactSubRoster;
+    for each(var roster in cache.roster)
+        if(roster.session.name == account)
+            contactSubRoster = extractSubRoster(roster.stanza, address);
+
+    // Latest presence seen from contact.
+
+    var contactPresence;
+    for each(var presence in cache.presenceIn)
+        if(presence.session.name == account &&
+           JID(presence.stanza.@from).address == address)
+            contactPresence = presence.stanza;
+
+    // MUC presence is the presence stanza we used to join the room
+    // (if we are joining a room).
+
+    var mucPresence;
+    if(type == 'groupchat') 
+        for each(var presence in cache.presenceOut) 
+            if(presence.session.name == account &&
+               presence.stanza.@to != undefined &&
+               JID(presence.stanza.@to).address == address)
+                mucPresence = presence.stanza;
+
+    // Wire data coming from application to XMPP
 
     appDoc.getElementById('xmpp-outgoing').addEventListener(
         'DOMNodeInserted', function(event) {
             gotDataFromPage(event.target.textContent);
         }, false);
 
-    // NETWORK
-
+    // Select subset of XMPP traffic to listen to
+    
     var channel = createChannel();
     panel.xmppChannel = channel;
-
-    function gotDataFromXMPP(stanza) {
-        appDoc.getElementById('xmpp-incoming').textContent =
-            stanza.toXMLString();
-    }
 
     channel.on({
         direction: 'in',
@@ -533,25 +559,24 @@ function enableContentDocument(panel, account, address, type, createSocket) {
             stanza: function(s) {
                     return JID(s.@to).address == address;
                 }
-            }, function(message) {
-                       gotDataFromXMPP(message.stanza);
-                   });
+            },
+            function(message) {
+                gotDataFromXMPP(message.stanza);
+            });
 
-    for each(var roster in cache.roster)
-        if(roster.session.name == account)
-            gotDataFromXMPP(extractSubRoster(roster.stanza, address));
+    if(contactSubRoster)
+        gotDataFromXMPP(contactSubRoster);
+    else
+        srvPrompt.alert(
+            null, 'XMPP Warning',
+            'No roster information available for ' +
+            address + ' (via ' + account + ').\n' +
+            'Connected application might not work correctly');
 
-    for each(var presence in cache.presenceIn)
-        if(presence.session.name == account &&
-           JID(presence.stanza.@from).address == address)
-            gotDataFromXMPP(presence.stanza);
-
-    if(type == 'groupchat') 
-        for each(var presence in cache.presenceOut) 
-            if(presence.session.name == account &&
-               presence.stanza.@to != undefined &&
-               JID(presence.stanza.@to).address == address) 
-                gotDataFromXMPP(presence.stanza);
+    if(contactPresence)
+        gotDataFromXMPP(contactPresence);    
+    if(mucPresence)
+        gotDataFromXMPP(mucPresence);
 }
 
 function disableContentDocument(panel) {
