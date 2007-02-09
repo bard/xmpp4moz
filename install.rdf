@@ -39,7 +39,7 @@
     </em:targetApplication>
     
     <em:name>XMPP4Moz</em:name>
-    <em:description>XMPP integration layer for Mozilla (unstable branch)</em:description>
+    <em:description>XMPP integration layer for Mozilla</em:description>
     <em:creator>Massimiliano Mirra</em:creator>
     <em:updateURL>http://repo.hyperstruct.net/xmpp4moz/unstable/update.rdf</em:updateURL>
     <em:homepageURL>http://dev.hyperstruct.net/xmpp4moz</em:homepageURL>
