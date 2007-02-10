@@ -79,7 +79,7 @@
   <menubar id="main-menubar">
     <menu label="Jabber" accesskey="J" position="1" insertbefore="helpMenu">
       <menupopup id="xmpp-menu-main">
-        <menu label="Accounts" accesskey="A">
+        <menu label="Accounts" accesskey="A" oncommand="xmpp4moz.selectedAccount(event);">
           <menupopup id="xmpp-popup-accounts">
             <menuseparator/>
             <menuitem class="menuitem-iconic" command="xmpp-command-open-preferences"/>
@@ -101,7 +101,8 @@
                    class="toolbarbutton-1 chromeclass-toolbar-additional"
                    type="menu-button"
                    label="Jabber"
-                   availability="unavailable">
+                   availability="unavailable"
+                   oncommand="xmpp4moz.selectedAccount(event);">
       <menupopup id="xmpp-popup-accounts-secondary">
         <menuseparator/>
         

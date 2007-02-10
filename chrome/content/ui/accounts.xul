@@ -44,12 +44,8 @@
   <script type="application/x-javascript" src="accounts.js"/>
 
   <menupopup id="xmpp-popup-accounts"
-             onpopupshowing="xmpp.ui.refreshAccounts(this);"
-             oncommand="if(typeof(xmpp.ui.selectedAccount) == 'function')
-                        xmpp.ui.selectedAccount(event.target.value);"/>
+             onpopupshowing="xmpp.ui.refreshAccounts(this);"/>
 
   <menupopup id="xmpp-popup-accounts-secondary"
-             onpopupshowing="xmpp.ui.refreshAccounts(this);"
-             oncommand="if(typeof(xmpp.ui.selectedAccount) == 'function')
-                        xmpp.ui.selectedAccount(event.target.value);"/>
+             onpopupshowing="xmpp.ui.refreshAccounts(this);"/>
 </overlay>

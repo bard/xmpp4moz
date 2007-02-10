@@ -224,10 +224,11 @@ function changeStatus(type) {
 }
 
 
-// GUI HOOKS
+// GUI REACTIONS
 // ----------------------------------------------------------------------
 
-xmpp.ui.selectedAccount = function(accountJid) {
+function selectedAccount(event) {
+    var accountJid = event.target.value;
     if(XMPP.isUp(accountJid))
         XMPP.down(accountJid);
     else
