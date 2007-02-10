@@ -86,6 +86,16 @@ function init(event) {
             }, false);
 
     _('disco-target').focus();
+
+
+    xmpp.ui.refreshAccounts(_('xmpp-popup-accounts'));
+    
+    for each(var account in XMPP.accounts) {
+        if(XMPP.isUp(account.jid)) {
+            _('accounts').value = account.jid;
+            break;
+        }
+    }
 }
 
 function finish() {
@@ -248,17 +258,4 @@ function receivedItems(iq) {
 
     xulItems.setAttributeNS(ns_xulx, 'loaded', 'true');
     xulItems.hidden = false;
-}
-
-
-// HOOKS
-// ----------------------------------------------------------------------
-
-xmpp.ui.loadedAccounts = function() {
-    for each(var account in XMPP.accounts) {
-        if(XMPP.isUp(account.jid)) {
-            _('accounts').value = account.jid;
-            break;
-        }
-    }
 }

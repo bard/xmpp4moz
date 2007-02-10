@@ -124,6 +124,16 @@ function init(event) {
 
     fillTemplateMenu();
 
+    xmpp.ui.refreshAccounts(_('xmpp-popup-accounts'));
+
+    for each(var account in XMPP.accounts) {
+        if(XMPP.isUp(account.jid)) {
+            _('accounts').value = account.jid;
+            break;
+        }
+    }
+
+
     _('input').focus();
 }
 
@@ -316,15 +326,3 @@ function sendStanza(account, xml) {
     inputHistory.push(xml.toXMLString());
 }
 
-
-// ----------------------------------------------------------------------
-// HOOKS
-
-xmpp.ui.loadedAccounts = function(accountJid) {
-    for each(var account in XMPP.accounts) {
-        if(XMPP.isUp(account.jid)) {
-            _('accounts').value = account.jid;
-            break;
-        }
-    }
-}

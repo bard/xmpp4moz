@@ -65,6 +65,31 @@ function init() {
         'command', configureAccounts, false);
 
     prefBranch.addObserver('', prefObserver, false);
+
+    xmpp.ui.refreshAccounts(_('xmpp-popup-accounts'));
+    
+    var accounts = XMPP.accounts;
+    if(request.jid) {
+        for each(var account in accounts) {
+            if(request.jid == account.jid) {
+                _('account-name').hidden = false;
+                _('account-name').value = request.jid;
+                selectedAccount(account.jid);
+                break;
+            }
+        }
+    } else {
+        _('accounts').hidden = false;
+        for each(var account in accounts) {
+            if(XMPP.isUp(account.jid)) {
+                _('accounts').value = account.jid;
+                break;
+            }
+        }
+        if(!_('accounts').value)
+            _('accounts').value = accounts[0].jid;
+        selectedAccount(_('accounts').value);
+    }
 }
 
 function finish() {
@@ -133,31 +158,3 @@ function deleteChildren(container) {
     }
 }
 
-
-// ----------------------------------------------------------------------
-// HOOKS
-
-xmpp.ui.loadedAccounts = function() {
-    var accounts = XMPP.accounts;
-    if(request.jid) {
-        for each(var account in accounts) {
-            if(request.jid == account.jid) {
-                _('account-name').hidden = false;
-                _('account-name').value = request.jid;
-                selectedAccount(account.jid);
-                break;
-            }
-        }
-    } else {
-        _('accounts').hidden = false;
-        for each(var account in accounts) {
-            if(XMPP.isUp(account.jid)) {
-                _('accounts').value = account.jid;
-                break;
-            }
-        }
-        if(!_('accounts').value)
-            _('accounts').value = accounts[0].jid;
-        selectedAccount(_('accounts').value);
-    }
-}

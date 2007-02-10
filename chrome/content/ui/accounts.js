@@ -42,18 +42,6 @@ var xmpp = xmpp || {};
 xmpp.ui = xmpp.ui || {};
 
 
-// GUI REACTIONS
-// ----------------------------------------------------------------------
-
-window.addEventListener(
-    'load', function(event) {
-        xmpp.ui.refreshAccounts(
-            document.getElementById('xmpp-popup-accounts'));
-        if(typeof(xmpp.ui.loadedAccounts) == 'function')
-            xmpp.ui.loadedAccounts();
-    }, false);
-
-
 // GUI ACTIONS
 // ----------------------------------------------------------------------
 
@@ -84,5 +72,4 @@ xmpp.ui.refreshAccounts = function(menuPopup) {
 
         menuPopup.insertBefore(menuItem, menuPopup.firstChild);
     }
-}
-
+};
