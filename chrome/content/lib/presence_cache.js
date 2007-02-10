@@ -36,33 +36,38 @@
 
 
 function constructor() {
-    this._store = [];    
+    this._store = [];
 }
 
-function receive(newObject) {
-    if(newObject.stanza.hasAttribute('type') &&
-       newObject.stanza.getAttribute('type') != 'unavailable')
+function presenceIndexOf(account, from, to) {
+    var cachedPresence;
+    for(var i=0, l=this._store.length; i<l; i++) {
+        cachedPresence = this._store[i];
+        if(cachedPresence.session.name == account &&
+           cachedPresence.stanza.getAttribute('from') == from &&
+           cachedPresence.stanza.getAttribute('to') == to)
+            return i;
+    }
+    return -1;
+}
+
+function receive(newPresence) {
+    if(newPresence.stanza.hasAttribute('type') &&
+       newPresence.stanza.getAttribute('type') != 'unavailable')
         return;
 
-    var found, cachedObject;
-    for(var i=0, l=this._store.length; i<l; i++) {
-        cachedObject = this._store[i];
-        if(cachedObject.session.name == newObject.session.name &&
-           cachedObject.stanza.getAttribute('from') == newObject.stanza.getAttribute('from')
-           && cachedObject.stanza.getAttribute('to') == newObject.stanza.getAttribute('to')) {
-            found = true;
-            break;
-        }
-    }
+    var index = this.presenceIndexOf(
+        newPresence.session.name,
+        newPresence.stanza.getAttribute('from'),
+        newPresence.stanza.getAttribute('to'));
 
-    if(found) 
-        if(newObject.stanza.getAttribute('type') == 'unavailable')
-            this._store.splice(i, 1);
+    if(index != -1)
+        if(newPresence.stanza.getAttribute('type') == 'unavailable')
+            this._store.splice(index, 1);
         else
-            this._store[i] = newObject;
-    else 
-        this._store.push(newObject);
-        
+            this._store[index] = newPresence;
+    else
+        this._store.push(newPresence);
 }
 
 function copy() {
