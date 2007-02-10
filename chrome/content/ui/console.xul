@@ -91,6 +91,7 @@
           <textbox id="cache-presence-out" flex="1"
                    multiline="true" readonly="true" style="font-family: monospace;"/>
         </vbox>
+        <splitter/>
         <vbox flex="1">
           <label class="header" value="Roster"/>
           <textbox id="cache-roster" flex="1"

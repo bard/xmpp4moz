@@ -168,10 +168,22 @@ function getDescendantByAttribute(element, attrName, attrValue) {
 function refreshPresenceInCache() {
     _('cache-presence-in').value = '';
 
+    var presencesByAccount = {};
     XMPP.cache.presenceIn.forEach(
         function(presence) {
-            _('cache-presence-in').value += presence.stanza.toXMLString() + '\n';
+            if(!presencesByAccount[presence.session.name])
+                presencesByAccount[presence.session.name] = [];
+            presencesByAccount[presence.session.name].push(presence);
         });
+
+    var lines = [];
+    for(var account in presencesByAccount) {
+        lines.push('**** ACCOUNT: ' + account + ' ****');
+        for each(var presence in presencesByAccount[account])
+            lines.push(presence.stanza.toXMLString());
+    }
+
+    _('cache-presence-in').value = lines.join('\n');
 }
 
 function refreshPresenceOutCache() {
