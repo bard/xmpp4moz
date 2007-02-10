@@ -67,7 +67,8 @@ function receive(newPresence) {
         else
             this._store[index] = newPresence;
     else
-        this._store.push(newPresence);
+        if(!newPresence.stanza.hasAttribute('type'))
+            this._store.push(newPresence);
 }
 
 function copy() {
