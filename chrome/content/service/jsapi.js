@@ -387,6 +387,18 @@ function close(jid) {
 // UTILITIES
 // ----------------------------------------------------------------------
 
+function uniq(array) {
+    var encountered = [];
+
+    return array.filter(
+        function(item) {
+            if(encountered.indexOf(item) == -1) {
+                encountered.push(item);
+                return true;
+            }
+        });
+}
+
 function extractSubRoster(roster, jid) {
     var subRoster = <iq type="result"><query xmlns="jabber:iq:roster"></query></iq>;
     subRoster.@to = roster.@to;
@@ -685,44 +697,83 @@ function _send(jid, stanza, handler) {
     XML.setSettings(settings);
 }
 
+function AccountWrapper(key) {
+    this.key = key;
+}
+
+AccountWrapper.prototype = {
+    _read: function(preference) {
+        var prefReaders = ['getCharPref', 'getIntPref', 'getBoolPref'];
+        for each(var reader in prefReaders) {
+            try {
+                return pref[reader]('account.' + this.key + '.' + preference);
+            } catch(e) {}
+        }
+    },
+
+    get jid() {
+        return this.address + '/' + this.resource;
+    }
+};
+
+(function setupAccountWrapper() {
+    var properties =
+        uniq(pref
+             .getChildList('account.', {})
+             .map(
+                 function(item) {
+                     try {
+                         return item.split('.')[2];
+                     } catch(e) {
+                         // Cases where item.split() would result in
+                         // an error and prevent accounts from being
+                         // read were reported.  No additional
+                         // information is available, though, so we
+                         // just catch the exception and report the
+                         // error to the console.
+                         Cu.reportError(e);
+                     }})
+             .filter(
+                 function(item) {
+                     return item != undefined
+                 }));
+    
+    properties.forEach(
+        function(property) {
+            AccountWrapper.prototype.__defineGetter__(
+                property, function() {
+                    return this._read(property);
+                });
+        });
+})();
+
 this.__defineGetter__(
     'accounts', function() {
-        var accountTable = {};
-        for each(var accountInfo in
-                 pref.getChildList('account.', {})) {
-            try {
-                var infoParts    = accountInfo.split('.');
-                var accountKey = infoParts[1];
-                var propertyName = infoParts[2];
-                if(!accountTable[accountKey])
-                    accountTable[accountKey] = {};
-
-                var prefReaders = ['getCharPref', 'getIntPref', 'getBoolPref'];
-                var propertyValue;
-                for each(var reader in prefReaders) 
+        var keys = uniq(
+            pref
+            .getChildList('account.', {})
+            .map(
+                function(item) {
                     try {
-                        propertyValue = pref[reader](accountInfo);
-                        break;
-                    } catch(e) {}
+                        return item.split('.')[1];
+                    } catch(e) {
+                        // Cases where item.split() would result in
+                        // an error and prevent accounts from being
+                        // read were reported.  No additional
+                        // information is available, though, so we
+                        // just catch the exception and report the
+                        // error to the console.
+                        Cu.reportError(e);
+                    }})
+            .filter(
+                function(key) {
+                    return key != undefined;
+                }));
 
-                accountTable[accountKey][propertyName] = propertyValue;
-            } catch(e) {
-                Cu.reportError(e);
-            }
-        }
-        
-        var accountList = [];
-        for(var accountKey in accountTable) {
-            var account = accountTable[accountKey];
-            account.key = accountKey;
-            account.__defineGetter__(
-                'jid', function() {
-                    return this.address + '/' + this.resource;
-                });
-            accountList.push(account);
-        }
-        
-        return accountList;
+        return keys.map(
+            function(key) {
+                return new AccountWrapper(key);
+            });
     });
 
 function getAccountByJid(jid) {
@@ -740,6 +791,7 @@ function getAccountByKey(key) {
     }   
     return null;    
 }
+
 
 // DEVELOPER UTILITIES
 // ----------------------------------------------------------------------
