@@ -61,11 +61,20 @@ function receive(newPresence) {
         newPresence.stanza.getAttribute('from'),
         newPresence.stanza.getAttribute('to'));
 
-    if(index != -1)
-        if(newPresence.stanza.getAttribute('type') == 'unavailable')
+    if(index != -1) {
+        // The muc#user payload of the presence stanza should not be
+        // checked this way, as there could be many <x> payloads.  But
+        // getElementsByTagNameNS seems not to work.
+
+        var cachedPresencePayload = this._store[index].stanza.getElementsByTagName('x')[0];
+
+        if(newPresence.stanza.getAttribute('type') == 'unavailable' &&
+           cachedPresencePayload &&
+           cachedPresencePayload.getAttribute('xmlns') == 'http://jabber.org/protocol/muc#user')
             this._store.splice(index, 1);
         else
             this._store[index] = newPresence;
+    }
     else
         if(!newPresence.stanza.hasAttribute('type'))
             this._store.push(newPresence);
