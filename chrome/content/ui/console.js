@@ -65,7 +65,37 @@ const stanzaTemplates = {
 
         'vCard': <iq to="" type="get"><vCard xmlns="vcard-temp"/></iq>,
 
-        'Roster': <iq type="get"><query xmlns="jabber:iq:roster"/></iq>
+        'Roster': <iq type="get"><query xmlns="jabber:iq:roster"/></iq>,
+
+        'Password Change':
+        <iq type="set">
+        <query xmlns="jabber:iq:register">
+        <username>USERNAME</username>
+        <password>NEW PASSWORD</password>
+        </query>
+        </iq>,
+
+        'Time':
+        <iq type="get" to=""><query xmlns="jabber:iq:time"/></iq>,
+
+        'Set Bookmarks':
+        <iq type="set">
+        <query xmlns="jabber:iq:private">
+        <storage xmlns="storage:bookmarks">
+        <conference name="ROOM NAME" autojoin="true OR false" jid="ROOM JID">
+        <nick>NICK TO USE IN ROOM (OPTIONAL)</nick>
+        <password>PASSWORD (OPTIONAL)</password>
+        </conference>
+        </storage>
+        </query>
+        </iq>,
+
+        'Get Bookmarks':
+        <iq type="get">
+        <query xmlns="jabber:iq:private">
+        <storage xmlns="storage:bookmarks"/>
+        </query>
+        </iq>
     },
 
     presence: {
