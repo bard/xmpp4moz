@@ -165,6 +165,8 @@ function nickFor(account, address) {
 }
 
 function JID(string) {
+    if(string in arguments.callee.memo)
+        return arguments.callee.memo[string];
     var m = string.match(/^(.+?@)?(.+?)(?:\/|$)(.*$)/);
 
     var jid = {};
@@ -180,8 +182,10 @@ function JID(string) {
         jid.username + '@' + jid.hostname :
         jid.hostname;
 
+    arguments.callee.memo[string] = jid;
     return jid;    
 }
+JID.memo = {};
 
 function up(account, opts) {
     opts = opts || {};
