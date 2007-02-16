@@ -70,7 +70,7 @@
   <script type="application/x-javascript" src="../xmpp.js"/>
   <script type="application/x-javascript" src="console.js"/>
 
-  <tabbox id="panel" flex="1">
+  <tabbox id="panel" flex="4">
     <tabs>
       <tab label="Log"/>
       <tab label="Cache"/>
@@ -101,52 +101,56 @@
     </tabpanels>
   </tabbox>
 
-  <toolbox>
-    <menubar>
-      <menu label="Message" accesskey="M"
-            oncommand="requestedTemplateInsertion('message', event);">
-        <menupopup id="templates-message"/>
-      </menu>
+  <splitter/>
 
-      <menu label="Iq" accesskey="I"
-            oncommand="requestedTemplateInsertion('iq', event);">
-        <menupopup id="templates-iq"/>
-      </menu>
+  <vbox flex="1">
+    <toolbox>
+      <menubar>
+        <menu label="Message" accesskey="M"
+              oncommand="requestedTemplateInsertion('message', event);">
+          <menupopup id="templates-message"/>
+        </menu>
 
-      <menu label="Presence" accesskey="P"
-            oncommand="requestedTemplateInsertion('presence', event);">
-        <menupopup id="templates-presence"/>
-      </menu>
+        <menu label="Iq" accesskey="I"
+              oncommand="requestedTemplateInsertion('iq', event);">
+          <menupopup id="templates-iq"/>
+        </menu>
 
-      <menu label="View" accesskey="V">
-        <menupopup>
-          <menuitem label="Clear" accesskey="C" oncommand="clearLog();"/>
-        </menupopup>
-      </menu>
+        <menu label="Presence" accesskey="P"
+              oncommand="requestedTemplateInsertion('presence', event);">
+          <menupopup id="templates-presence"/>
+        </menu>
 
-      <menu label="History" accesskey="H">
-        <menupopup>
-          <menuitem command="history-prev" key="key-history-prev"/>
-          <menuitem command="history-next" key="key-history-next"/>
-        </menupopup>
-      </menu>
-    </menubar>
-  </toolbox>
+        <menu label="View" accesskey="V">
+          <menupopup>
+            <menuitem label="Clear" accesskey="C" oncommand="clearLog();"/>
+          </menupopup>
+        </menu>
 
-  <textbox id="input" rows="5" multiline="true" onkeypress="pressedKeyInInputArea(event);"/>
+        <menu label="History" accesskey="H">
+          <menupopup>
+            <menuitem command="history-prev" key="key-history-prev"/>
+            <menuitem command="history-next" key="key-history-next"/>
+          </menupopup>
+        </menu>
+      </menubar>
+    </toolbox>
 
-  <toolbox>
-    <toolbar>
-      <toolbarbutton command="send"/>
-      <toolbarspring/>
-      <toolbaritem align="center">
-        <label value="Sending as:" accesskey="a" control="accounts"/>
-        <menulist id="accounts" flex="1" label="" sizetopopup="none">
-          <menupopup id="xmpp-popup-accounts"/>
-        </menulist>        
-      </toolbaritem>
-    </toolbar>
-  </toolbox>
+    <textbox id="input"  multiline="true" flex="1" onkeypress="pressedKeyInInputArea(event);"/>
+
+    <toolbox>
+      <toolbar>
+        <toolbarbutton command="send"/>
+        <toolbarspring/>
+        <toolbaritem align="center">
+          <label value="Sending as:" accesskey="a" control="accounts"/>
+          <menulist id="accounts" flex="1" label="" sizetopopup="none">
+            <menupopup id="xmpp-popup-accounts"/>
+          </menulist>
+        </toolbaritem>
+      </toolbar>
+    </toolbox>
+  </vbox>
 
   <box hidden="true" id="blueprints"/>
 </window>
