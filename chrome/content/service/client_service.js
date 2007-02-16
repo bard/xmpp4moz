@@ -194,6 +194,25 @@ function _openUserSession(jid, transport, streamObserver) {
                 if(session.isOpen()) 
                     session.close();
 
+            // When user sends a presence stanza of type "unavailable"
+            // with a "to" attribute, it is assumed to be directed to
+            // a room with the purpose of exiting it.  (This is not
+            // entirely accurate and needs to be better specified.
+            // There might be cases where user wishes to send a
+            // directed unavailable presence to a non-room entity.)
+            //
+            // Since the server will not send unavailable presences
+            // from all room occupants, we need to synthesize them in
+            // order to keep the cache clean.
+            //
+            // This might be better done when receiving an unavailable
+            // presence from a room occupant (identified as such by
+            // the namespaced payload), and checking whether there is
+            // a corresponding presence in the cache of outbound
+            // presences.
+            //
+            // C: <presence to="room@conference.server.org/nick" type="unavailable"/>
+
             if(topic == 'stanza-out' && subject.nodeName == 'presence' &&
                subject.hasAttribute('to') && 
                subject.getAttribute('type') == 'unavailable') {
