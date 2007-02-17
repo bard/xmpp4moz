@@ -194,45 +194,11 @@ function _openUserSession(jid, transport, streamObserver) {
                 if(session.isOpen()) 
                     session.close();
 
-            // When user sends a presence stanza of type "unavailable"
-            // with a "to" attribute, it is assumed to be directed to
-            // a room with the purpose of exiting it.  (This is not
-            // entirely accurate and needs to be better specified.
-            // There might be cases where user wishes to send a
-            // directed unavailable presence to a non-room entity.)
-            //
-            // Since the server will not send unavailable presences
-            // from all room occupants, we need to synthesize them in
-            // order to keep the cache clean.
-            //
-            // This might be better done when receiving an unavailable
-            // presence from a room occupant (identified as such by
-            // the namespaced payload), and checking whether there is
-            // a corresponding presence in the cache of outbound
-            // presences.
-            //
-            // C: <presence to="room@conference.server.org/nick" type="unavailable"/>
-
-            if(topic == 'stanza-out' && subject.nodeName == 'presence' &&
-               subject.hasAttribute('to') && 
-               subject.getAttribute('type') == 'unavailable') {
-                
-                for each(var presence in cache.presenceIn.copy()) {
-                    if(JID(subject.getAttribute('to')).address ==
-                       JID(presence.stanza.getAttribute('from')).address) {
-                        var syntheticPresence = presence.stanza.cloneNode(true);
-                        syntheticPresence.setAttribute('type', 'unavailable');
-                        session.receive(serializer.serializeToString(syntheticPresence));
-                    }
-                }
-            }
-
             if(topic == 'stanza-in' && subject.nodeName == 'presence')
                 cache.presenceIn.receive({session: sessions.get(data),
                                          stanza: subject});
 
-            if(topic == 'stanza-out' && subject.
-               nodeName == 'presence' &&
+            if(topic == 'stanza-out' && subject.nodeName == 'presence' &&
                (subject.getAttribute('type') == undefined ||
                 subject.getAttribute('type') == 'unavailable'))
                 cache.presenceOut.receive({session: sessions.get(data), 
@@ -245,6 +211,30 @@ function _openUserSession(jid, transport, streamObserver) {
             }
 
             service.notifyObservers(subject, topic, data);
+
+            // When an unavailable presence with a muc#user payload
+            // comes in, that might be due to us exiting a room.  So
+            // we check if there is a corresponding outgoing presence
+            // that means that we joined the room.
+            //
+            // Since the server will not send unavailable presences
+            // from all room occupants, we need to synthesize them in
+            // order to keep the cache clean.
+            //
+            // S: <presence from="room@conference.server.org/ournick" type="unavailable"/>
+
+            if(topic == 'stanza-in' && subject.nodeName == 'presence' &&
+               subject.hasAttribute('to') && 
+               subject.getAttribute('type') == 'unavailable' &&
+               isMUCUserPresence(subject))
+                for each(var presence in cache.presenceIn.copy()) {
+                    if(JID(subject.getAttribute('from')).address ==
+                       JID(presence.stanza.getAttribute('from')).address) {
+                        var syntheticPresence = presence.stanza.cloneNode(true);
+                        syntheticPresence.setAttribute('type', 'unavailable');
+                        session.receive(serializer.serializeToString(syntheticPresence));
+                    }
+                }
 
             if(topic == 'stanza-in' && subject.nodeName == 'iq' &&
                subject.getAttribute('type') == 'get') {
@@ -445,5 +435,13 @@ function isMUCPresence(domStanza) {
        domStanza.hasAttribute('to')) {
         var x = domStanza.getElementsByTagName('x')[0];
         return (x && x.getAttribute('xmlns') == 'http://jabber.org/protocol/muc');
+    }
+}
+
+function isMUCUserPresence(domStanza) {
+    if(domStanza.nodeName == 'presence' &&
+       domStanza.hasAttribute('to')) {
+        var x = domStanza.getElementsByTagName('x')[0];
+        return (x && x.getAttribute('xmlns') == 'http://jabber.org/protocol/muc#user');
     }
 }
