@@ -226,7 +226,11 @@ function _openUserSession(jid, transport, streamObserver) {
             if(topic == 'stanza-in' && subject.nodeName == 'presence' &&
                subject.hasAttribute('to') && 
                subject.getAttribute('type') == 'unavailable' &&
-               isMUCUserPresence(subject))
+               isMUCUserPresence(subject) &&
+               cache.presenceOut.copy().some(
+                   function(presenceOut) {
+                       return presenceOut.stanza.getAttribute('to') == subject.getAttribute('from');
+                   }))
                 for each(var presence in cache.presenceIn.copy()) {
                     if(JID(subject.getAttribute('from')).address ==
                        JID(presence.stanza.getAttribute('from')).address) {
