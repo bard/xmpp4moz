@@ -63,10 +63,6 @@ const serializer = Cc['@mozilla.org/xmlextras/xmlserializer;1']
 const domParser = Cc['@mozilla.org/xmlextras/domparser;1']
     .getService(Ci.nsIDOMParser);
 
-loader.loadSubScript('chrome://xmpp4moz/content/lib/module_manager.js');
-const module = new ModuleManager(['chrome://xmpp4moz/content']);
-const Parser = module.require('class', 'service/parser');
-
 
 // INITIALIZATION
 // ----------------------------------------------------------------------
@@ -74,21 +70,8 @@ const Parser = module.require('class', 'service/parser');
 function init() {
     this._isOpen = false;
     this._idCounter = 1000;
-    this._parser = new Parser();
     this._pending = {};
     this._observers = [];
-
-    var session = this;
-    this._parser.setObserver({
-        onStart: function(id) {
-                session._stream('in', 'open');
-            },
-        onStop: function() {
-                session._stream('in', 'close');
-            },
-        onStanza: function(domElement) {
-                session._stanza('in', domElement);
-            }});
 
     this.__defineGetter__(
         'name', function() {
@@ -193,6 +176,8 @@ function removeObserver(observer) {
 // ----------------------------------------------------------------------
 
 function _stream(direction, state) {
+    // XXX bard: Not totally accurate, incoming and outgoing stream
+    // states will overlap.
     if(state == 'open')
         this._isOpen = true;
     else if(state == 'close')
@@ -204,8 +189,33 @@ function _stream(direction, state) {
 function _data(direction, data) {
     this.notifyObservers(data, 'data-' + direction, this.name);
 
-    if(direction == 'in')
-        this._parser.parse(data);
+    if(direction == 'in') {
+        if(!this._doc) {
+            try {
+                new XML(data);
+            } catch(e if e.name == 'SyntaxError' &&
+                    e.message == 'XML tag name mismatch (expected stream:stream)') {
+                // XXX bard: Redundant with _isOpen, but might be
+                // useful to keep around (and even have _isOpen be a
+                // wrapper to the presence of _doc)
+                this._doc = domParser.parseFromString(data + '</stream:stream>', 'text/xml');
+                this._stream('in', 'open');
+            } 
+        } else if(data.indexOf('<stream:stream/>') != -1) {
+            this._stream('in', 'close');
+        } else {
+            var domElement = domParser
+                .parseFromString('<stream:stream xmlns:stream="http://etherx.jabber.org/streams">' +
+                                 data +
+                                 '</stream:stream>', 'text/xml')
+                .documentElement
+                .firstChild;
+            while(domElement) {
+                this._stanza('in', domElement);
+                domElement = domElement.nextSibling;
+            }
+        }
+    }
 }
 
 function _stanza(direction, domStanza, handler) {
