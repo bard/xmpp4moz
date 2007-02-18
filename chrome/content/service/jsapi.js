@@ -580,14 +580,7 @@ function enableContentDocument(panel, account, address, type, createSocket) {
                 gotDataFromXMPP(message.stanza);
             });
 
-    if(contactSubRoster)
-        gotDataFromXMPP(contactSubRoster);
-    else
-        srvPrompt.alert(
-            null, 'XMPP Warning',
-            'No roster information available for ' +
-            address + ' (via ' + account + ').\n' +
-            'Connected application might not work correctly');
+    gotDataFromXMPP(contactSubRoster);
 
     if(contactPresence)
         gotDataFromXMPP(contactPresence);    
@@ -665,11 +658,12 @@ function _up(jid, opts) {
                              send(jid,
                                   <iq type="get">
                                   <query xmlns="jabber:iq:roster"/>
-                                  </iq>);
-                             send(jid, <presence/>);
-                             if(continuation)
-                                 continuation(jid);
-                         } 
+                                  </iq>, function() {
+                                      send(jid, <presence/>);
+                                      if(continuation)
+                                          continuation(jid);
+                                  })
+                         }
                      });
              });        
     }

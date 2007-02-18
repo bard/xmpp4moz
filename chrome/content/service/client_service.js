@@ -46,6 +46,8 @@ const loader = Cc['@mozilla.org/moz/jssubscript-loader;1']
     .getService(Ci.mozIJSSubScriptLoader);
 const serializer = Cc['@mozilla.org/xmlextras/xmlserializer;1']
     .getService(Ci.nsIDOMSerializer);
+const domParser = Cc['@mozilla.org/xmlextras/domparser;1']
+    .getService(Ci.nsIDOMParser);
 
 loader.loadSubScript('chrome://xmpp4moz/content/lib/module_manager.js');
 const module = new ModuleManager(['chrome://xmpp4moz/content']);
@@ -206,7 +208,7 @@ function _openUserSession(jid, transport, streamObserver) {
 
             if(topic == 'stanza-in' && subject.nodeName == 'iq') {
                 var query = subject.getElementsByTagName('query')[0];
-                if(query && query.getAttribute('xmlns') == 'jabber:iq:roster') 
+                if(query && query.getAttribute('xmlns') == 'jabber:iq:roster')
                     cache.roster.receive({session: sessions.get(data), stanza: subject});
             }
 
@@ -283,6 +285,19 @@ function _openUserSession(jid, transport, streamObserver) {
     session.addObserver(sessionObserver, null, false);
     transport.addObserver(transportObserver, null, false);
 
+    // Initializing roster cache for session, so that it will be
+    // available for hybrid applications even before we receive the
+    // roster (or if we don't receive it at all).
+
+    cache.roster.receive({
+        session: session,
+        stanza: domParser.parseFromString(
+            '<iq from="' + jid + '" to="' + jid + '" type="result">' +
+            '<query xmlns="jabber:iq:roster"/>' +
+            '</iq>',
+            'text/xml').documentElement
+        });
+    
     if(transport.isConnected()) 
         session.open(JID(jid).hostname);
     else

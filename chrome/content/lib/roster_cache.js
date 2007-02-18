@@ -57,7 +57,9 @@ function receive(newObject) {
                 return items[i];
     }
 
-    if(!found) 
+    if(found && cachedObject && cachedObject.stanza.getElementsByTagName('query')[0].childNodes.length == 0)
+        this._store[i] = newObject;
+    else if(!found) 
         this._store.push(newObject);
     else {
         var newQuery = newObject.stanza.getElementsByTagName('query')[0];
