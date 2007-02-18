@@ -407,6 +407,22 @@ function extractSubRoster(roster, jid) {
 }
 
 function presenceSummary(account, address) {
+    function presenceDegree(stanza) {
+        if(stanza.@type == undefined && stanza.show == undefined)
+            return 4;
+        else if(stanza.@type == 'unavailable')
+            return 0;
+        else
+            switch(stanza.show.toString()) {
+            case 'chat': return 5; break;
+            case 'dnd':  return 3; break;
+            case 'away': return 2; break;
+            case 'xa':   return 1; break;
+            default:
+                throw new Error('Unexpected. (' + stanza.toXMLString() + ')');
+            }
+    }
+
     var presences;
     if(account && address) 
         presences = cache.presenceIn.filter(
@@ -420,30 +436,12 @@ function presenceSummary(account, address) {
                 return presence.stanza.ns_muc::x == undefined;
             });
 
-    function find(array, criteria) {
-        for each(var item in array)
-            if(criteria(item))
-                return item;
-        return undefined;
-    }
+    presences.sort(
+        function(a, b) {
+            return presenceDegree(b.stanza) - presenceDegree(a.stanza);
+        });
 
-    var summary;
-    for each(var show in [undefined, 'chat', 'away', 'xa', 'dnd']) {
-        summary = find(presences, function(presence) {
-                           return presence.stanza.show == show;
-                       });
-        if(summary)
-            break;
-    }
-
-    if(summary) {
-        if(summary.stanza.show == 'chat')
-            delete summary.stanza.show;
-        else if(summary.stanza.show == 'xa')
-            summary.stanza.show = 'away';
-        return summary;
-    } else 
-        return { stanza: <presence type="unavailable"/> };
+    return presences[0] || { stanza: <presence type="unavailable"/> };
 }
 
 
