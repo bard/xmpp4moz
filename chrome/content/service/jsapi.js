@@ -445,6 +445,15 @@ function presenceSummary(account, address) {
     return presences[0] || { stanza: <presence type="unavailable"/> };
 }
 
+function presenceOf(account, jid) {
+    if(JID(jid).resource) {
+        for each(var presence in cache.presenceIn)
+            if(presence.stanza.@from == jid)
+                return presence;
+    } else
+        return presenceSummary(account, jid);
+}
+
 
 // HYBRID-APP SUPPORT
 // ----------------------------------------------------------------------
