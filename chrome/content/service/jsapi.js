@@ -402,6 +402,7 @@ function uniq(array) {
 function extractSubRoster(roster, jid) {
     var subRoster = <iq type="result"><query xmlns="jabber:iq:roster"></query></iq>;
     subRoster.@to = roster.@to;
+    subRoster.@from = roster.@from;
     subRoster.ns_roster::query.item = roster..ns_roster::item.(@jid == jid);
     return subRoster;
 }
