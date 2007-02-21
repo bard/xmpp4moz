@@ -102,7 +102,8 @@
                    type="menu-button"
                    label="Jabber"
                    availability="unavailable"
-                   oncommand="xmpp4moz.selectedAccount(event);">
+                   oncommand="if(event.target != this)
+                              xmpp4moz.selectedAccount(event);">
       <menupopup id="xmpp-popup-accounts-secondary">
         <menuseparator/>
         
