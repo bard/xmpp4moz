@@ -531,13 +531,19 @@ function enableContentDocument(panel, account, address, type, createSocket) {
     // MUC presence is the presence stanza we used to join the room
     // (if we are joining a room).
 
-    var mucPresence;
-    if(type == 'groupchat') 
+    var mucPresences = [];
+    if(type == 'groupchat') {
         for each(var presence in cache.presenceOut) 
             if(presence.session.name == account &&
                presence.stanza.@to != undefined &&
                JID(presence.stanza.@to).address == address)
-                mucPresence = presence.stanza;
+                mucPresences.push(presence.stanza);
+        for each(var presence in cache.presenceIn)
+            if(presence.session.name == account &&
+               presence.stanza.@from != undefined &&
+               JID(presence.stanza.@from).address == address)
+                mucPresences.push(presence.stanza);
+    }
 
     // Wire data coming from application to XMPP
 
@@ -592,8 +598,7 @@ function enableContentDocument(panel, account, address, type, createSocket) {
 
     if(contactPresence)
         gotDataFromXMPP(contactPresence);    
-    if(mucPresence)
-        gotDataFromXMPP(mucPresence);
+    mucPresences.forEach(gotDataFromXMPP);
 }
 
 function disableContentDocument(panel) {
