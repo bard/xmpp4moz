@@ -239,7 +239,7 @@ function selectedAccount(event) {
 // BROWSER HANDLING
 // ----------------------------------------------------------------------
 
-if(typeof(getBrowser) == 'function') {
+if(typeof(getBrowser) == 'function' && getBrowser().selectedBrowser) {
 
     // GUI REACTIONS
     // ----------------------------------------------------------------------
