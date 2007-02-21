@@ -723,36 +723,14 @@ AccountWrapper.prototype = {
     }
 };
 
-(function setupAccountWrapper() {
-    var properties =
-        uniq(pref
-             .getChildList('account.', {})
-             .map(
-                 function(item) {
-                     try {
-                         return item.split('.')[2];
-                     } catch(e) {
-                         // Cases where item.split() would result in
-                         // an error and prevent accounts from being
-                         // read were reported.  No additional
-                         // information is available, though, so we
-                         // just catch the exception and report the
-                         // error to the console.
-                         Cu.reportError(e);
-                     }})
-             .filter(
-                 function(item) {
-                     return item != undefined
-                 }));
-    
-    properties.forEach(
-        function(property) {
-            AccountWrapper.prototype.__defineGetter__(
-                property, function() {
-                    return this._read(property);
-                });
-        });
-})();
+['address', 'password', 'resource',
+ 'autoLogin', 'connectionHost', 'connectionPort', 'connectionSecurity'
+    ].forEach(function(property) {
+                  AccountWrapper.prototype.__defineGetter__(
+                      property, function() {
+                          return this._read(property);
+                      });
+              });
 
 this.__defineGetter__(
     'accounts', function() {
