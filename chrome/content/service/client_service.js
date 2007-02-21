@@ -48,6 +48,9 @@ const serializer = Cc['@mozilla.org/xmlextras/xmlserializer;1']
     .getService(Ci.nsIDOMSerializer);
 const domParser = Cc['@mozilla.org/xmlextras/domparser;1']
     .getService(Ci.nsIDOMParser);
+const pref = Cc['@mozilla.org/preferences-service;1']
+    .getService(Ci.nsIPrefService)
+    .getBranch('xmpp.');
 
 loader.loadSubScript('chrome://xmpp4moz/content/lib/module_manager.js');
 const module = new ModuleManager(['chrome://xmpp4moz/content']);
@@ -444,9 +447,15 @@ function getStackTrace() {
 }
 
 function log(msg) {
-    Cc[ "@mozilla.org/consoleservice;1" ]
-        .getService(Ci.nsIConsoleService)
-        .logStringMessage(msg);
+    for each(var target in pref.getCharPref('logTargets').split(',')) {
+        switch(target) {
+        case 'console':
+            Cc[ "@mozilla.org/consoleservice;1" ]
+                .getService(Ci.nsIConsoleService)
+                .logStringMessage(msg);
+            break;
+        }
+    }
 }
 
 function isMUCPresence(domStanza) {
