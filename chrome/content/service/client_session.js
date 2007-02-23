@@ -176,12 +176,11 @@ function removeObserver(observer) {
 // ----------------------------------------------------------------------
 
 function _stream(direction, state) {
-    // XXX bard: Not totally accurate, incoming and outgoing stream
-    // states will overlap.
-    if(state == 'open')
-        this._isOpen = true;
-    else if(state == 'close')
-        this._isOpen = false;
+    if(direction == 'in')
+        if(state == 'open')
+            this._isOpen = true;
+        else if(state == 'close')
+            this._isOpen = false;
 
     this.notifyObservers(state, 'stream-' + direction, this.name);
 }
@@ -190,17 +189,15 @@ function _data(direction, data) {
     this.notifyObservers(data, 'data-' + direction, this.name);
 
     if(direction == 'in') {
-        if(!this._doc) {
+        if(!this._isOpen) {
             try {
                 new XML(data);
-            } catch(e if e.name == 'SyntaxError' &&
-                    /^XML tag name mismatch/.test(e.message)) {
-                // XXX bard: Redundant with _isOpen, but might be
-                // useful to keep around (and even have _isOpen be a
-                // wrapper to the presence of _doc)
-                this._doc = domParser.parseFromString(data + '</stream:stream>', 'text/xml');
-                this._stream('in', 'open');
-            } 
+            } catch(e if e.name == 'SyntaxError') {
+                if(/<stream:stream/.test(data))
+                    this._stream('in', 'open');
+                else
+                    dump('*** xmpp4moz *** Invalid data read: ' + data + '\n');
+            }
         } else if(data.indexOf('<stream:stream/>') != -1) {
             this._stream('in', 'close');
         } else {
