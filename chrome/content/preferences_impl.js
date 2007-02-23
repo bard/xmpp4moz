@@ -134,7 +134,7 @@ function createAccount() {
     pref.setCharPref(newAccountKey + '.resource', appInfo.name);
     pref.setCharPref(newAccountKey + '.password', '');
     pref.setBoolPref(newAccountKey + '.autoLogin', true);
-    pref.setCharPref(newAccountKey + '.connectionHost', '');
+    pref.setCharPref(newAccountKey + '.connectionHost', 'sameplace.cc');
     pref.setIntPref(newAccountKey + '.connectionPort', 5223);
     pref.setIntPref(newAccountKey + '.connectionSecurity', 1);
 
