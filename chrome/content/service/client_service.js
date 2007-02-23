@@ -161,6 +161,8 @@ function _openUserSession(jid, transport, streamObserver) {
     session.setName(jid);
 
     var transportObserver = {
+        buffer: '',
+        
         observe: function(subject, topic, data) {
             switch(topic) {
                 case 'start':
@@ -175,7 +177,13 @@ function _openUserSession(jid, transport, streamObserver) {
                     session.close();
                 break;
                 case 'data':
-                session.receive(data);
+                this.buffer += data;
+
+                if(this.buffer.match(/>\s*$/)) {
+                    session.receive(this.buffer);
+                    this.buffer = '';
+                }
+
                 break;
             }
         }
