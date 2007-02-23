@@ -226,13 +226,13 @@ function changedField(field) {
 
     if('checked' in field) 
         pref.setBoolPref(prefName, field.checked);
-    else if(!isNaN(parseInt(field.value)) )
-        pref.setIntPref(prefName, parseInt(field.value));
-    else if(typeof(field.value) == 'string')
-        pref.setCharPref(prefName, field.value);
     else
-        throw new Error('Unexpected. (' + typeof(field.value || field.checked) + ')');
-
+        try {
+            pref.setCharPref(prefName, field.value);
+        } catch(e) {
+            pref.setIntPref(prefName, parseInt(field.value));
+        }
+    
     // XXX hackish
     if(field.id == 'xmpp-address') 
         changedField(_('xmpp-connection-host'));
