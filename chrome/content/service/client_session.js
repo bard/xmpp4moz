@@ -204,15 +204,17 @@ function _data(direction, data) {
         } else if(data.indexOf('<stream:stream/>') != -1) {
             this._stream('in', 'close');
         } else {
-            var domElement = domParser
+            var node = domParser
                 .parseFromString('<stream:stream xmlns:stream="http://etherx.jabber.org/streams">' +
                                  data +
                                  '</stream:stream>', 'text/xml')
                 .documentElement
                 .firstChild;
-            while(domElement) {
-                this._stanza('in', domElement);
-                domElement = domElement.nextSibling;
+            while(node) {
+                if(node.nodeType == Ci.nsIDOMNode.ELEMENT_NODE)
+                    this._stanza('in', node);
+
+                node = node.nextSibling;
             }
         }
     }
