@@ -194,7 +194,7 @@ function _data(direction, data) {
             try {
                 new XML(data);
             } catch(e if e.name == 'SyntaxError' &&
-                    e.message == 'XML tag name mismatch (expected stream:stream)') {
+                    /^XML tag name mismatch/.test(e.message)) {
                 // XXX bard: Redundant with _isOpen, but might be
                 // useful to keep around (and even have _isOpen be a
                 // wrapper to the presence of _doc)
