@@ -35,51 +35,155 @@
  * ***** END LICENSE BLOCK ***** */
 
 
-function constructor() {
-    this._store = [];
-}
+// GLOBAL DEFINITIONS
+// ----------------------------------------------------------------------
 
-function presenceIndexOf(account, from, to) {
-    var cachedPresence;
-    for(var i=0, l=this._store.length; i<l; i++) {
-        cachedPresence = this._store[i];
-        if(cachedPresence.session.name == account &&
-           cachedPresence.stanza.getAttribute('from') == from &&
-           cachedPresence.stanza.getAttribute('to') == to)
-            return i;
-    }
-    return -1;
-}
+const ns_muc_user = 'http://jabber.org/protocol/muc#user';
+
+
+// PUBLIC FUNCTIONALITY
+// ----------------------------------------------------------------------
 
 function receive(newPresence) {
     if(newPresence.stanza.hasAttribute('type') &&
        newPresence.stanza.getAttribute('type') != 'unavailable')
         return;
 
-    var index = this.presenceIndexOf(
-        newPresence.session.name,
-        newPresence.stanza.getAttribute('from'),
-        newPresence.stanza.getAttribute('to'));
-
-    if(index != -1) {
-        // The muc#user payload of the presence stanza should not be
-        // checked this way, as there could be many <x> payloads.  But
-        // getElementsByTagNameNS seems not to work.
-
-        var cachedPresencePayload = this._store[index].stanza.getElementsByTagName('x')[0];
-
-        if(newPresence.stanza.getAttribute('type') == 'unavailable' &&
-           cachedPresencePayload &&
-           cachedPresencePayload.getAttribute('xmlns') == 'http://jabber.org/protocol/muc#user')
-            this._store.splice(index, 1);
+    var cachedPresence = this.fetch(newPresence.session.name,
+                                    newPresence.stanza.getAttribute('from'),
+                                    newPresence.stanza.getAttribute('to'));
+    if(cachedPresence) {
+        var cachedPayload = cachedPresence.stanza.getElementsByTagName('x')[0];
+        if(cachedPayload &&
+           cachedPayload.getAttribute('xmlns') == 'http://jabber.org/protocol/muc#user' &&
+           newPresence.stanza.getAttribute('type') == 'unavailable')
+            this.delete(cachedPresence);
         else
-            this._store[index] = newPresence;
+            this.store(newPresence);
     }
     else
         if(!newPresence.stanza.hasAttribute('type'))
-            this._store.push(newPresence);
+            this.store(newPresence);
 }
 
 function copy() {
-    return this._store.slice(0);
+    var seq = [];
+    treeLeafIter(this._storeIn, 2,
+                 function(presence) { seq.push(presence); });
+    treeLeafIter(this._storeOut, 1,
+                 function(presence) { seq.push(presence); });
+    return seq;
 }
+
+
+// INTERNALS
+// ----------------------------------------------------------------------
+
+function constructor() {
+    this._store = [];
+    this._storeIn = {};
+    this._storeOut = {};
+}
+
+function fetch(account, from, to) {
+    return from ? 
+        treeFetch(this._storeIn, [account, JID(from).address, JID(from).resource]) :
+        treeFetch(this._storeOut, [account, to]);
+}
+
+function delete(presence) {
+    if(presence.stanza.hasAttribute('from')) {
+        var from = presence.stanza.getAttribute('from');
+        var to = presence.stanza.getAttribute('to');
+
+        treeDelete(this._storeIn,
+                   [presence.session.name, JID(from).address, JID(from).resource]);
+    } else
+        dump('***** Not implemented.\n');
+}
+
+function store(presence) {
+    if(presence.stanza.hasAttribute('from')) {
+        var from = presence.stanza.getAttribute('from');
+        var to = presence.stanza.getAttribute('to');
+
+        treeStore(this._storeIn,
+                  [presence.session.name, JID(from).address, JID(from).resource],
+                  presence);
+    } else {
+        var to = presence.stanza.getAttribute('to');
+        treeStore(this._storeOut, [presence.session.name, to], presence);
+    }
+}
+
+
+// UTILITIES
+// ----------------------------------------------------------------------
+
+function JID(string) {
+    if(string in arguments.callee.memo)
+        return arguments.callee.memo[string];
+    var m = string.match(/^(.+?@)?(.+?)(?:\/|$)(.*$)/);
+
+    var jid = {};
+
+    if(m[1])
+        jid.username = m[1].slice(0, -1);
+
+    jid.hostname = m[2];
+    jid.resource = m[3];
+    jid.nick     = m[3];
+    jid.full     = m[3] ? string : null;
+    jid.address  = jid.username ?
+        jid.username + '@' + jid.hostname :
+        jid.hostname;
+
+    arguments.callee.memo[string] = jid;
+    return jid;    
+}
+JID.memo = {};
+
+function treeStore(tree, path, value) {
+    var node = tree;
+    for each(var childName in path.slice(0, -1)) {
+        if(!node[childName])
+            node[childName] = {};
+        node = node[childName];
+    }
+    node[path.slice(-1)] = value;
+}
+
+function treeFetch(tree, path) {
+    var node = tree;
+    for each(var childName in path) {
+        node = node[childName];
+        if(!node)
+            return;
+    }
+
+    return node;
+}
+
+function treeDelete(tree, path) {
+    var node = tree;
+    for each(var childName in path.slice(0, -1)) {
+        if(!node[childName])
+            return;
+        node = node[childName];
+    }
+    delete node[path.slice(-1)];
+}
+
+function treeLeafIter(tree, levels, leafFn) {
+    function descend(tree, levelsLeft) {
+        if(levelsLeft == 0)
+            for(var childName in tree)
+                leafFn(tree[childName]);
+        else
+            for(var childName in tree)
+                descend(tree[childName], levelsLeft - 1);
+    }
+
+    descend(tree, levels);
+}
+
