@@ -633,7 +633,7 @@ function enableContentDocument(panel, account, address, type, createSocket) {
 
     gotDataFromXMPP(contactSubRoster);
 
-    if(contactPresence.stanza)
+    if(contactPresence)
         gotDataFromXMPP(contactPresence.stanza);
     if(mucPresences)
         mucPresences.forEach(
