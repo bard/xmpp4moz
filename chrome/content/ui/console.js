@@ -209,7 +209,7 @@ function refreshPresenceInCache() {
     _('cache-presence-in').value = '';
 
     var presencesByAccount = {};
-    XMPP.cache.presenceIn.forEach(
+    XMPP.cache.presence.filter({direction: 'in'}).forEach(
         function(presence) {
             if(!presencesByAccount[presence.session.name])
                 presencesByAccount[presence.session.name] = [];

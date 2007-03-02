@@ -124,12 +124,19 @@ var cache = {
     _directRead: function(cacheName) {
         var internalCache = service.wrappedJSObject.cache[cacheName].copy();
         return internalCache.map(
-            function(object) {
-                return {
-                stanza: new XML(serializer.serializeToString(object.stanza)),
-                        session: object.session,
-                        direction: object.direction
-                        }
+            function(internalObject) {
+                var object = {
+                    stanza: new XML(serializer.serializeToString(internalObject.stanza)),
+                    session: internalObject.session,
+                    direction: internalObject.direction 
+                };
+                if(!object.direction) {
+                    if(object.stanza.@from == undefined)
+                        object.direction = 'out';
+                    else
+                        object.direction = 'in';
+                }
+                return object;
             });
     },
     
@@ -143,6 +150,37 @@ var cache = {
 
     get presenceOut() {
         return this._directRead('presenceOut');
+    },
+
+    get presence() {
+        var _this = this;
+        function presenceCache(direction) {
+            return direction == 'in' ? _this.presenceIn : _this.presenceOut;
+        }
+        
+        var wrapper = {
+            find: function(pattern) {
+                for each(var presence in presenceCache(pattern.direction)) {
+                    if(match(presence, pattern))
+                        return presence;
+                }
+            },            
+
+            filter: function(pattern) {
+                return presenceCache(pattern.direction).filter(
+                    function(presence) {
+                        return match(presence, pattern);
+                    });
+            },
+
+            forEach: function(action) {
+                presenceCache(pattern.direction).forEach(
+                    function(presence) {
+                        action(presence);
+                    });
+            }
+        };
+        return wrapper;
     }
 };
 
@@ -255,7 +293,7 @@ function createChannel(features) {
         },
 
         receive: function(event) {
-            this._handle1(event, this._watchers, this._match1);
+            this._handle1(event, this._watchers, match);
         },
 
         observe: function(subject, topic, data) {
@@ -308,46 +346,6 @@ function createChannel(features) {
                 } catch(e) {
                     Cu.reportError(e);
                 }
-        },
-
-        // not relying on non-local state
-
-        _match1: function(object, template) {
-            var pattern, value;
-            for(var member in template) {
-                value = object[member];
-                pattern = template[member];
-        
-                if(pattern === undefined)
-                    ;
-                else if(pattern && typeof(pattern) == 'function') {
-                    if(!pattern(value))
-                        return false;
-                }
-                else if(pattern && typeof(pattern.test) == 'function') {
-                    if(!pattern.test(value))
-                        return false;
-                }
-                else if(pattern && pattern.id) {
-                    if(pattern.id != value.id)
-                        return false;
-                }
-                else if(pattern != value)
-                    return false;
-            } 
-
-            return true;
-        },
-
-        // not relying on non-local state
-
-        _union: function(x, y) {
-            var u = {};
-            for(var name in x)
-                u[name] = x[name];
-            for(var name in y)
-                u[name] = y[name];
-            return u;    
         }
     };
 
@@ -387,6 +385,38 @@ function close(jid) {
 // UTILITIES
 // ----------------------------------------------------------------------
 
+/**
+ * Pattern matcher as used in channel.on().
+ *
+ */
+
+function match(object, template) {
+    var pattern, value;
+    for(var member in template) {
+        value = object[member];
+        pattern = template[member];
+        
+        if(pattern === undefined)
+            ;
+        else if(pattern && typeof(pattern) == 'function') {
+            if(!pattern(value))
+                return false;
+        }
+        else if(pattern && typeof(pattern.test) == 'function') {
+            if(!pattern.test(value))
+                return false;
+        }
+        else if(pattern && pattern.id) {
+            if(pattern.id != value.id)
+                return false;
+        }
+        else if(pattern != value)
+            return false;
+    } 
+
+    return true;
+}
+
 function uniq(array) {
     var encountered = [];
 
@@ -425,17 +455,21 @@ function presenceSummary(account, address) {
     }
 
     var presences;
-    if(account && address) 
-        presences = cache.presenceIn.filter(
-            function(presence) {
-                return (presence.session.name == account &&
-                        JID(presence.stanza.@from).address == address);
-            });
+    if(account && address)
+        presences = cache.presence.filter({
+            direction: 'in',
+            session: function(s) {
+                    return s.name == account;
+                },
+            stanza: function(s) {
+                    return JID(s.@from).address == address;
+                }});
     else 
-        presences = cache.presenceOut.filter(
-            function(presence) {
-                return presence.stanza.ns_muc::x == undefined;
-            });
+        presences = cache.presence.filter({
+            direction: 'out',
+            stanza: function(s) {
+                    return s.ns_muc::x == undefined;
+                }});
 
     presences.sort(
         function(a, b) {
@@ -443,15 +477,6 @@ function presenceSummary(account, address) {
         });
 
     return presences[0] || { stanza: <presence type="unavailable"/> };
-}
-
-function presenceOf(account, jid) {
-    if(JID(jid).resource) {
-        for each(var presence in cache.presenceIn)
-            if(presence.stanza.@from == jid)
-                return presence;
-    } else
-        return presenceSummary(account, jid);
 }
 
 
@@ -522,27 +547,39 @@ function enableContentDocument(panel, account, address, type, createSocket) {
 
     // Latest presence seen from contact.
 
-    var contactPresence;
-    for each(var presence in cache.presenceIn)
-        if(presence.session.name == account &&
-           JID(presence.stanza.@from).address == address)
-            contactPresence = presence.stanza;
+    var contactPresence = cache.presence.find({
+        direction: 'in',
+        session: function(s) {
+                return s.name == account;
+            },
+        stanza: function(s) {
+                return JID(s.@from).address == address;
+            }});
 
     // MUC presence is the presence stanza we used to join the room
     // (if we are joining a room).
 
-    var mucPresences = [];
+    var mucPresences;
     if(type == 'groupchat') {
-        for each(var presence in cache.presenceOut) 
-            if(presence.session.name == account &&
-               presence.stanza.@to != undefined &&
-               JID(presence.stanza.@to).address == address)
-                mucPresences.push(presence.stanza);
-        for each(var presence in cache.presenceIn)
-            if(presence.session.name == account &&
-               presence.stanza.@from != undefined &&
-               JID(presence.stanza.@from).address == address)
-                mucPresences.push(presence.stanza);
+        var mucPresencesOut = 
+            cache.presence.filter({
+                direction: 'out',
+                session: function(s) {
+                        return s.name == account;
+                    },
+                stanza: function(s) {
+                        return s.@to != undefined && JID(s.@to).address == address;
+                    }});
+        var mucPresencesIn = 
+            cache.presence.filter({
+                direction: 'in',
+                session: function(s) {
+                        return s.name == account;
+                    },
+                stanza: function(s) {
+                        return JID(s.@from).address == address;
+                    }});
+        mucPresences = mucPresencesIn.concat(mucPresencesOut);
     }
 
     // Wire data coming from application to XMPP
@@ -596,9 +633,13 @@ function enableContentDocument(panel, account, address, type, createSocket) {
 
     gotDataFromXMPP(contactSubRoster);
 
-    if(contactPresence)
-        gotDataFromXMPP(contactPresence);    
-    mucPresences.forEach(gotDataFromXMPP);
+    if(contactPresence.stanza)
+        gotDataFromXMPP(contactPresence.stanza);
+    if(mucPresences)
+        mucPresences.forEach(
+            function(mucPresence) {
+                gotDataFromXMPP(mucPresence.stanza);
+            });
 }
 
 function disableContentDocument(panel) {
