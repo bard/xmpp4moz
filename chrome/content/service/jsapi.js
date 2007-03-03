@@ -187,7 +187,7 @@ var cache = {
 function nickFor(account, address) {
     var roster;
     for each(var r in cache.roster) 
-        if(r.session.name == account) {
+        if(r.account == account) {
             roster = r;
             break;
         }
@@ -298,35 +298,34 @@ function createChannel(features) {
 
         observe: function(subject, topic, data) {
             var match = topic.match(/^(stream|data|stanza|transport)-(in|out)$/);
-            
-            var pattern = {
+
+            var eventObject = wrapEvent({
                 event: match[1],
                 direction: match[2],
-                account: data.toString(),
-                session: _this.service.getSession(data.toString()) || { name: data.toString() }
-            }
+                session: _this.service.getSession(data.toString()) || { name: data.toString() },
+                });
 
-            switch(pattern.event) {
+            switch(eventObject.event) {
                 case 'transport':
                 subject.QueryInterface(Ci.nsISupportsString).toString();
-                pattern.state = subject.toString();
+                eventObject.state = subject.toString();
                 break;
                 case 'stream':
                 subject.QueryInterface(Ci.nsISupportsString).toString();
-                pattern.state = subject.toString();
+                eventObject.state = subject.toString();
                 break;
                 case 'data':
                 subject.QueryInterface(Ci.nsISupportsString).toString();
-                pattern.content = subject.toString();
+                eventObject.content = subject.toString();
                 break;
                 case 'stanza':
                 subject.QueryInterface(Ci.nsIDOMElement);
                 var stanza = new XML(serializer.serializeToString(subject));
-                pattern.event = stanza.name();
-                pattern.stanza = stanza;
+                eventObject.event = stanza.name();
+                eventObject.stanza = stanza;
                 break;
             }
-            this.receive(pattern)
+            this.receive(eventObject)
         },
 
         release: function() {
@@ -415,6 +414,37 @@ function match(object, template) {
     } 
 
     return true;
+}
+
+/**
+ * Add convenience methods to an event object.  Fill in direction if
+ * necessary (and possible).
+ *
+ */
+
+function wrapEvent(eventObject) {
+    eventObject.__defineGetter__(
+        'account', function() {
+            return this.session.name;
+        });
+
+    if(!eventObject.direction)
+        eventObject.__defineGetter__(
+            'direction', function() {
+                if(this.stanza)
+                    if(this.stanza.@from == undefined)
+                        return 'out';
+                    else
+                        return 'in';
+            });
+    if(!eventObject.event)
+        eventObject.__defineGetter__(
+            'event', function() {
+                if(this.stanza)
+                    return this.stanza.localName();
+            });
+    
+    return eventObject;
 }
 
 function uniq(array) {
@@ -542,7 +572,7 @@ function enableContentDocument(panel, account, address, type, createSocket) {
 
     var contactSubRoster;
     for each(var roster in cache.roster)
-        if(roster.session.name == account)
+        if(roster.account == account)
             contactSubRoster = extractSubRoster(roster.stanza, address);
 
     // Latest presence seen from contact.
