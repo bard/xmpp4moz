@@ -125,18 +125,11 @@ var cache = {
         var internalCache = service.wrappedJSObject.cache[cacheName].copy();
         return internalCache.map(
             function(internalObject) {
-                var object = {
+                return wrapEvent({
                     stanza: new XML(serializer.serializeToString(internalObject.stanza)),
                     session: internalObject.session,
                     direction: internalObject.direction 
-                };
-                if(!object.direction) {
-                    if(object.stanza.@from == undefined)
-                        object.direction = 'out';
-                    else
-                        object.direction = 'in';
-                }
-                return object;
+                    });
             });
     },
     
@@ -152,35 +145,37 @@ var cache = {
         return this._directRead('presenceOut');
     },
 
-    get presence() {
-        var _this = this;
-        function presenceCache(direction) {
-            return direction == 'in' ? _this.presenceIn : _this.presenceOut;
+    _subCacheFor: function(pattern) {
+        if(pattern.event == 'presence')
+            if(pattern.direction == 'in')
+                return this.presenceIn;
+            else
+                return this.presenceOut;
+        else
+            throw new Error('event not cached yet');
+
+        // XXX create a copy of pattern without the already-matched
+        // properties
+    },
+
+    filter: function(pattern) {
+        return this._subCacheFor(pattern).filter(
+            function(event) { return match(event, pattern); });
+    },
+
+    find: function(pattern) {
+        for each(event in this._subCacheFor(pattern)) {
+            if(match(event, pattern))
+                return event;
         }
-        
-        var wrapper = {
-            find: function(pattern) {
-                for each(var presence in presenceCache(pattern.direction)) {
-                    if(match(presence, pattern))
-                        return presence;
-                }
-            },            
+    },
 
-            filter: function(pattern) {
-                return presenceCache(pattern.direction).filter(
-                    function(presence) {
-                        return match(presence, pattern);
-                    });
-            },
+    forEach: function(pattern, action) {
+        this._subCacheFor(pattern).forEach(action);
+    },
 
-            forEach: function(action) {
-                presenceCache(pattern.direction).forEach(
-                    function(presence) {
-                        action(presence);
-                    });
-            }
-        };
-        return wrapper;
+    map: function(pattern, action) {
+        return this.filter(pattern).map(action);
     }
 };
 
@@ -486,7 +481,8 @@ function presenceSummary(account, address) {
 
     var presences;
     if(account && address)
-        presences = cache.presence.filter({
+        presences = cache.filter({
+            event: 'presence',
             direction: 'in',
             session: function(s) {
                     return s.name == account;
@@ -495,7 +491,8 @@ function presenceSummary(account, address) {
                     return JID(s.@from).address == address;
                 }});
     else 
-        presences = cache.presence.filter({
+        presences = cache.filter({
+            event: 'presence',
             direction: 'out',
             stanza: function(s) {
                     return s.ns_muc::x == undefined;
@@ -577,7 +574,8 @@ function enableContentDocument(panel, account, address, type, createSocket) {
 
     // Latest presence seen from contact.
 
-    var contactPresence = cache.presence.find({
+    var contactPresence = cache.find({
+        event: 'presence',
         direction: 'in',
         session: function(s) {
                 return s.name == account;
@@ -592,7 +590,8 @@ function enableContentDocument(panel, account, address, type, createSocket) {
     var mucPresences;
     if(type == 'groupchat') {
         var mucPresencesOut = 
-            cache.presence.filter({
+            cache.filter({
+                event: 'presence',
                 direction: 'out',
                 session: function(s) {
                         return s.name == account;
@@ -601,7 +600,8 @@ function enableContentDocument(panel, account, address, type, createSocket) {
                         return s.@to != undefined && JID(s.@to).address == address;
                     }});
         var mucPresencesIn = 
-            cache.presence.filter({
+            cache.filter({
+                event: 'presence',
                 direction: 'in',
                 session: function(s) {
                         return s.name == account;

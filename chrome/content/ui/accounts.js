@@ -56,12 +56,12 @@ xmpp.ui.refreshAccounts = function(menuPopup) {
         menuItem.setAttribute('value', account.jid);
         menuItem.setAttribute('class', 'menuitem-iconic');
 
-        var accountPresence = { stanza: <presence type="unavailable"/> };
-        for each(var presence in XMPP.cache.presenceOut) 
-            if(presence.session.name == account.jid) {
-                accountPresence = presence;
-                break;
-            }
+        accountPresence =
+            XMPP.cache.find({
+                event: 'presence',
+                direction: 'out',
+                account: account.jid}) ||
+            { stanza: <presence type="unavailable"/> };
 
         menuItem.setAttribute('availability',
                               accountPresence.stanza.@type == undefined ?

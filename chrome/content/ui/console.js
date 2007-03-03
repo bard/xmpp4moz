@@ -209,7 +209,7 @@ function refreshPresenceInCache() {
     _('cache-presence-in').value = '';
 
     var presencesByAccount = {};
-    XMPP.cache.presence.filter({direction: 'in'}).forEach(
+    XMPP.cache.filter({event: 'presence', direction: 'in'}).forEach(
         function(presence) {
             if(!presencesByAccount[presence.session.name])
                 presencesByAccount[presence.session.name] = [];
@@ -227,12 +227,13 @@ function refreshPresenceInCache() {
 }
 
 function refreshPresenceOutCache() {
-    _('cache-presence-out').value = '';
-
-    XMPP.cache.presenceOut.forEach(
-        function(presence) {
-            _('cache-presence-out').value += presence.stanza.toXMLString() + '\n';
-        });
+    _('cache-presence-out').value =
+        XMPP.cache.map(
+            {event: 'presence', direction: 'out'},
+            function(presence) {
+                return presence.stanza.toXMLString();
+            })
+        .join('\n');
 }
 
 function refreshRosterCache() {

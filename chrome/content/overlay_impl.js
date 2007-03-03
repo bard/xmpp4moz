@@ -197,14 +197,13 @@ function changeStatus(type) {
             if(type == 'unavailable')
                 XMPP.down(account);
             else {
-                var stanza;
-                for each(var presence in XMPP.cache.presenceOut) 
-                    if(presence.session.name == account.jid) {
-                        stanza = presence.stanza.copy();
-                        break;
-                    }
-
-                stanza = stanza || <presence/>;
+                var presence =
+                    XMPP.cache.find({
+                        event: 'presence',
+                        direction: 'out',
+                        account: account.jid
+                        });
+                stanza = presence ? presence.stanza.copy() : <presence/>;
 
                 switch(type) {
                 case 'available':
