@@ -241,7 +241,7 @@ function refreshRosterCache() {
         XMPP.cache.map({
             event: 'iq', direction: 'in',
             stanza: function(s) {
-                    s.ns_roster::query != undefined;
+                    return s.ns_roster::query != undefined;
                 }},
             function(iq) {
                 return iq.stanza.toXMLString();
