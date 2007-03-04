@@ -146,14 +146,26 @@ var cache = {
     },
 
     _subCacheFor: function(pattern) {
-        if(pattern.event == 'presence')
+        switch(pattern.event) {
+            case 'presence':
             if(pattern.direction == 'in')
                 return this.presenceIn;
             else
                 return this.presenceOut;
-        else
+            break;
+            
+            case 'iq':
+            if(pattern.direction == 'in' &&
+               match({stanza: <iq><query xmlns={ns_roster}/></iq>}, {stanza: pattern.stanza}))
+                return this.roster;
+            else
+                throw new Error('event not cached yet');
+            break;
+            
+            default:
             throw new Error('event not cached yet');
-
+        }
+        
         // XXX create a copy of pattern without the already-matched
         // properties
     },
@@ -180,13 +192,12 @@ var cache = {
 };
 
 function nickFor(account, address) {
-    var roster;
-    for each(var r in cache.roster) 
-        if(r.account == account) {
-            roster = r;
-            break;
-        }
-
+    var roster = cache.find({
+        event     : 'iq',
+        direction : 'in',
+        account   : account,
+        stanza    : function(s) { return s.ns_roster::query != undefined; }});
+        
     var name;
     if(roster) {
         var item = roster.stanza..ns_roster::item
@@ -565,12 +576,15 @@ function enableContentDocument(panel, account, address, type, createSocket) {
         }, true);
 
     // The contact sub-roster is a roster where the only entry is the
-    // contact we are connecting to.
+    // contact we are connecting to (if in roster, otherwise it's
+    // empty').
 
-    var contactSubRoster;
-    for each(var roster in cache.roster)
-        if(roster.account == account)
-            contactSubRoster = extractSubRoster(roster.stanza, address);
+    var roster = cache.find({
+        event     : 'iq',
+        direction : 'in',
+        account   : account,
+        stanza    : function(s) { return s.ns_roster::query != undefined; }});
+    var contactSubRoster = extractSubRoster(roster.stanza, address);
 
     // Latest presence seen from contact.
 

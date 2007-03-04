@@ -237,12 +237,16 @@ function refreshPresenceOutCache() {
 }
 
 function refreshRosterCache() {
-    _('cache-roster').value = '';
-
-    XMPP.cache.roster.forEach(
-        function(iq) {
-            _('cache-roster').value += iq.stanza.toXMLString() + '\n';
-        });
+    _('cache-roster').value =
+        XMPP.cache.map({
+            event: 'iq', direction: 'in',
+            stanza: function(s) {
+                    s.ns_roster::query != undefined;
+                }},
+            function(iq) {
+                return iq.stanza.toXMLString();
+            })
+        .join('\n');
 }
 
 function fillTemplateMenu() {
