@@ -572,7 +572,7 @@ function enableContentDocument(panel, account, address, type, createSocket) {
 
     panel.setAttribute('account', account);
     panel.setAttribute('address', address);
-    panel.addEventListener(
+    panel.contentWindow.addEventListener(
         'unload', function(event) {
             if(event.target == panel.contentDocument) 
                 disableContentDocument(panel);
