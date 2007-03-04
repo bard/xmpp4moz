@@ -438,9 +438,12 @@ function wrapEvent(eventObject) {
         eventObject.__defineGetter__(
             'direction', function() {
                 if(this.stanza)
-                    if(this.stanza.@from == undefined)
-                        return 'out';
-                    else
+                    if(this.stanza.localName() == 'presence')
+                        if(this.stanza.@from == undefined)
+                            return 'out';
+                        else
+                            return 'in';
+                    else(this.stanza.localName() == 'iq' && this.stanza.ns_roster::query != undefined)
                         return 'in';
             });
     if(!eventObject.event)
