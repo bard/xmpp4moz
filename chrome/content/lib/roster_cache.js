@@ -36,49 +36,66 @@
 
 
 function constructor() {
-    this._store = [];
+    this._store = {};
 }
 
 function receive(newObject) {
+    var account = newObject.session.name;
+    var cachedObject = this._store[account];
 
-    var cachedObject, found;
-    for(var i=0, l=this._store.length; i<l; i++) {
-        cachedObject = this._store[i];
-        if(cachedObject.session.name == newObject.session.name) {
-            found = true;
-            break;
+    if(cachedObject) {
+        if(cachedObject.stanza.getElementsByTagName('query')[0].childNodes.length == 0)
+            this._store[account] = newObject;
+        else {
+            var itemChange = newObject.stanza.getElementsByTagName('query')[0].firstChild;
+            var iq = cachedObject.stanza;
+            while(itemChange) {
+                iq = applyRosterPush(iq, itemChange);
+                itemChange = itemChange.nextSibling;
+            }
+            cachedObject.stanza = iq;
         }
     }
-
-    function getRosterItem(query, jid) {
-        var items = query.childNodes;
-        for(var i=0, l=items.length; i<l; i++)
-            if(items[i].getAttribute('jid') == jid)
-                return items[i];
-    }
-
-    if(found && cachedObject && cachedObject.stanza.getElementsByTagName('query')[0].childNodes.length == 0)
-        this._store[i] = newObject;
-    else if(!found) 
-        this._store.push(newObject);
-    else {
-        var newQuery = newObject.stanza.getElementsByTagName('query')[0];
-        var cachedQuery = cachedObject.stanza.getElementsByTagName('query')[0];
-        var newItem;
-        for(var i=0, l=newQuery.childNodes.length; i<l; i++) {
-            newItem = newQuery.childNodes[i];
-            cachedItem = getRosterItem(cachedQuery, newItem.getAttribute('jid'));
-            if(cachedItem)
-                if(newItem.getAttribute('subscription') == 'remove')
-                    cachedQuery.removeChild(cachedItem);
-                else
-                    cachedQuery.replaceChild(newItem.cloneNode(true), cachedItem);
-            else
-                cachedQuery.appendChild(newItem);
-        }
-    }
+    else
+        this._store[account] = newObject;
 }
 
 function copy() {
-    return this._store.slice(0);
+    var seq = [];
+    for each(var roster in this._store)
+        seq.push(roster);
+    return seq;
+}
+
+
+// UTILITIES
+// ------------------------------------------------------------
+
+function findItemForJID(jid, query) {
+    var item = query.firstChild;
+    while(item) {
+        if(item.getAttribute('jid') == jid)
+            return item;
+        item = item.nextSibling;
+    }
+    return undefined;
+}
+
+function applyRosterPush(iqIn, rosterItemChange) {
+    var iqOut = iqIn.cloneNode(true);
+    var change = rosterItemChange.cloneNode(true);
+    
+    var query = iqOut.getElementsByTagName('query')[0];
+    var item = findItemForJID(change.getAttribute('jid'), query);
+
+    if(item)
+        if(change.getAttribute('subscription') == 'remove')
+            query.removeChild(item);
+        else
+            query.replaceChild(change, item);
+    else
+        if(change.getAttribute('subscription') != 'remove')
+            query.appendChild(change);
+
+    return iqOut;
 }
