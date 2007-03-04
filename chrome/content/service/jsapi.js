@@ -533,6 +533,9 @@ function enableContentDocument(panel, account, address, type, createSocket) {
        panel.getAttribute('address') != address)
         throw new Error('Contact panel already attached to different address. (' + address + ')');
 
+    if(panel.xmppChannel)
+        return;
+
     var appDoc = panel.contentDocument;
     if(createSocket) 
         for each(var socketPartId in ['xmpp-incoming', 'xmpp-outgoing'])
@@ -541,7 +544,7 @@ function enableContentDocument(panel, account, address, type, createSocket) {
                 socketPart.setAttribute('style', 'display: none;');
                 socketPart.setAttribute('id', socketPartId);
                 appDoc.documentElement.appendChild(socketPart);
-        }
+            }
     
     if(!(appDoc.getElementById('xmpp-incoming') &&
          appDoc.getElementById('xmpp-outgoing')))
