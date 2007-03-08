@@ -696,6 +696,7 @@ function disableContentDocument(panel) {
     panel.removeAttribute('address');
     panel.removeAttribute('account');
     panel.xmppChannel.release();
+    delete panel.xmppChannel;
 }
 
 
