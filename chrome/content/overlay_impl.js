@@ -180,6 +180,7 @@ function addToolbarButton() {
             'xmpp-button,$1');
         toolbar.setAttribute('currentset', toolbar.currentSet);
         toolbar.ownerDocument.persist(toolbar.id, 'currentset');
+        try { BrowserToolboxCustomizeDone(true); } catch (e) {}
     }
 }
 
