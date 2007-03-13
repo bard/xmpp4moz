@@ -198,13 +198,13 @@ function _data(direction, data) {
                 else
                     dump('*** xmpp4moz *** Invalid data read: ' + data + '\n');
             }
-        } else if(data.indexOf('<stream:stream/>') != -1) {
-            this._stream('in', 'close');
         } else {
             var node = domParser
                 .parseFromString('<stream:stream xmlns:stream="http://etherx.jabber.org/streams">' +
                                  data +
-                                 '</stream:stream>', 'text/xml')
+                                 (/<\/stream:stream>\s*$/.test(data) ?
+                                  '' : '</stream:stream>'),
+                                 'text/xml')
                 .documentElement
                 .firstChild;
             while(node) {
@@ -214,6 +214,8 @@ function _data(direction, data) {
                 node = node.nextSibling;
             }
         }
+        if(data.indexOf('</stream:stream>') != -1)
+            this._stream('in', 'close');
     }
 }
 
