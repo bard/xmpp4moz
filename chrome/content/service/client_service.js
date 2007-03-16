@@ -208,7 +208,7 @@ function _openUserSession(jid, transport, streamObserver) {
                     session.close();
 
             if(topic == 'stanza-in' && subject.nodeName == 'presence')
-                cache.presenceIn.receive({session: sessions.get(data),
+                cache.presenceIn.receive({session: { name: data },
                                          stanza: subject});
 
             if(topic == 'stanza-out' && subject.nodeName == 'presence' &&
@@ -283,7 +283,7 @@ function _openUserSession(jid, transport, streamObserver) {
                         var syntheticPresence = presence.stanza.cloneNode(true);
                         syntheticPresence.removeAttribute('id');
                         syntheticPresence.setAttribute('type', 'unavailable');
-                        cache.presenceOut.receive({session: sessions.get(data),
+                        cache.presenceOut.receive({session: { name: data },
                                                   stanza: syntheticPresence});
                     }
 
