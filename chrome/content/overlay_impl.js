@@ -230,29 +230,31 @@ function changeStatus(type) {
             if(type == 'unavailable')
                 XMPP.down(account);
             else {
-                var presence =
-                    XMPP.cache.find({
-                        event: 'presence',
-                        direction: 'out',
-                        account: account.jid
-                        });
-                stanza = presence ? presence.stanza.copy() : <presence/>;
+                var stanza;
+                for each(var presence in XMPP.cache.presenceOut) 
+                    if(presence.session.name == account.jid) {
+                        stanza = presence.stanza.copy();
+                        break;
+                    }
 
-                switch(type) {
-                case 'available':
-                    delete stanza.show;
-                    break;
-                case 'away':
-                    stanza.show = <show>away</show>;
-                    break;
-                case 'dnd':
-                    stanza.show = <show>dnd</show>;
-                    break;
+                stanza = stanza || <presence/>;
+
+                    stanza = stanza || <presence/>;
+
+                    switch(type) {
+                    case 'available':
+                        delete stanza.show;
+                        break;
+                    case 'away':
+                        stanza.show = <show>away</show>;
+                        break;
+                    case 'dnd':
+                        stanza.show = <show>dnd</show>;
+                        break;
+                    }
+                    XMPP.send(account, stanza);
                 }
-                XMPP.send(account, stanza);
-            }
-        }
-    }
+            });
 }
 
 
