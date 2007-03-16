@@ -72,7 +72,7 @@ const KEEPALIVE_INTERVAL = 30000;
 var observers = [], cache, features = [];
 
 var sessions = {
-    _list: [],
+    _list: {},
 
     activated: function(session) {
         var existingSession;
@@ -83,32 +83,28 @@ var sessions = {
                 break;
             }
 
-        if(existingSession) {
-            if(existingSession.isOpen())
-                existingSession.close();
+        if(this._list[session.name] &&
+           this._list[session.name].isOpen())
+            this._list[session.name].close();
             
-            this._list[i] = session;
-        } else
-            this._list.push(session);
+        this._list[session.name] = session;
     },
 
     closed: function(thing) {
         var session = (typeof(thing) == 'string' ?
                        this.get(thing) : thing);
 
-        this._list.splice(
-            this._list.indexOf(session), 1);
+        delete this._list[session.name];
     },
 
     get: function(jid) {
-        for each(var session in this._list) {
-            if(session.name == jid)
-                return session;
-        }
+        return this._list[jid];
     },
 
     forEach: function(action) {
-        this._list.forEach(action);
+        for each(var session in this._list) {
+            action(session);
+        }
     }
 };
 
