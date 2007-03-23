@@ -156,11 +156,7 @@ function initOverlay() {
             }
         });
 
-    // Bring up accounts configured as autoconnect
-    
-    for each(var account in XMPP.accounts) 
-        if(account.autoLogin && !XMPP.isUp(account))
-            XMPP.up(account);
+    connectAutologinAccounts();
     updateStatusIndicator();
 }
 
@@ -210,6 +206,18 @@ function requestedChangeStatus(event) {
 
 // NETWORK ACTIONS
 // ----------------------------------------------------------------------
+
+/**
+ * Bring up accounts configured as "autoLogin".
+ *
+ */
+
+function connectAutologinAccounts() {
+    for each(var account in XMPP.accounts) 
+        if(account.autoLogin && !XMPP.isUp(account))
+            XMPP.up(account);
+
+}
 
 function changeStatus(type) {
     for each(var account in XMPP.accounts) {
