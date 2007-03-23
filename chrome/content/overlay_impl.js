@@ -88,6 +88,15 @@ function initOverlay() {
                 .getElementById('xmpp-status').hidden = false;
         });
 
+    // Hiding progress bar when transport is stopped for any reason
+
+    channel.on(
+        { event: 'transport', state: 'stop' },
+        function(transport) {
+            if(document)
+                document.getElementById('xmpp-status').hidden = true;
+        });
+    
     // Hiding progress bar when stream is closed
 
     channel.on(
