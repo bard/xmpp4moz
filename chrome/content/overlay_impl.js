@@ -152,16 +152,14 @@ function initOverlay() {
         { event: 'presence', direction: 'out', stanza: function(s) {
                 return s.@type == undefined && s.ns_muc::x == undefined;
             }},
-        function(presence) { changedPresence(); });
+        function(presence) { updateStatusIndicator(); });
+
+    // Reset main button to unavailable icon when every account is
+    // offline.
 
     channel.on(
         { event: 'stream', direction: 'out', state: 'close' },
-        function(stream) {
-            if(XMPP.accounts.every(XMPP.isDown)) {
-                _('button').setAttribute('availability', 'unavailable');
-                _('button').setAttribute('show', '');
-            }
-        });
+        function(stream) { updateStatusIndicator(); });
 
     connectAutologinAccounts();
     updateStatusIndicator();
@@ -255,14 +253,6 @@ function changeStatus(type) {
             }
         }
     }
-}
-
-
-// NETWORK REACTIONS
-// ----------------------------------------------------------------------
-
-function changedPresence(presence) {
-    updateStatusIndicator();
 }
 
 
