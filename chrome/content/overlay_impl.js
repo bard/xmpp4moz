@@ -145,11 +145,7 @@ function initOverlay() {
         { event: 'presence', direction: 'out', stanza: function(s) {
                 return s.@type == undefined && s.ns_muc::x == undefined;
             }},
-        function(presence) {
-            var summary = XMPP.presenceSummary();
-            _('button').setAttribute('availability', summary.stanza.@type.toString() || 'available');
-            _('button').setAttribute('show', summary.stanza.show.toString());
-        });
+        function(presence) { changedPresence(); });
 
     channel.on(
         { event: 'stream', direction: 'out', state: 'close' },
@@ -165,11 +161,25 @@ function initOverlay() {
     for each(var account in XMPP.accounts) 
         if(account.autoLogin && !XMPP.isUp(account))
             XMPP.up(account);
+    updateStatusIndicator();
 }
 
 
 // GUI ACTIONS
 // ----------------------------------------------------------------------
+
+/**
+ * Update the status indicator in the toolbar.  Status is determined
+ * by querying the presence cache.
+ *
+ */
+
+function updateStatusIndicator() {
+    var summary = XMPP.presenceSummary();
+    _('button').setAttribute('availability',
+                             summary.stanza.@type.toString() || 'available');
+    _('button').setAttribute('show', summary.stanza.show.toString());    
+}
 
 function addToolbarButton() {
     var toolbar =
@@ -230,6 +240,14 @@ function changeStatus(type) {
             }
         }
     }
+}
+
+
+// NETWORK REACTIONS
+// ----------------------------------------------------------------------
+
+function changedPresence(presence) {
+    updateStatusIndicator();
 }
 
 
