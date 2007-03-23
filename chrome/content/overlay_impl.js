@@ -48,6 +48,7 @@ var prompts = Cc["@mozilla.org/embedcomp/prompt-service;1"]
     .getService(Ci.nsIPromptService); 
 
 var ns_muc      = 'http://jabber.org/protocol/muc';
+var ns_auth     = 'jabber:iq:auth';
 
 
 // GLOBAL STATE
@@ -111,29 +112,35 @@ function initOverlay() {
 
     channel.on(
         { event: 'iq', direction: 'out', stanza: function(s) {
-                return (s.@type == 'set' &&
-                        s.*::query.length() > 0 &&
-                        s.*::query.name().uri == 'jabber:iq:auth') }},
-        function(iq) {
-            var reaction = channel.on({
-                event: 'iq', direction: 'in', session: iq.session,
-                stanza: function(s) { return s.@id == iq.stanza.@id; }},                
-                function(reply) {
-                    channel.forget(reaction);
+                return s.@type == 'set' && s.ns_auth::query != undefined; }},
+        function(request) {
+
+            // To know whether authentication was successful or not,
+            // we must track the response iq.  However, we cannot
+            // track by means of a <query xmlns="jabber:iq:auth"/>
+            // because it has none, so we catch the outgoing auth
+            // request instead, note its "id", and register a one-time
+            // reaction to handle the response to it.
+
+            var authReaction = channel.on({
+                event: 'iq', direction: 'in', session: request.session,
+                stanza: function(s) { return s.@id == request.stanza.@id; }},
+                function(response) {
+                    channel.forget(authReaction);
 
                     document.
                         getElementById('xmpp-status').hidden = true;
 
-                    if(reply.stanza.@type == 'error' &&
+                    if(response.stanza.@type == 'error' &&
                        window == Cc["@mozilla.org/appshell/window-mediator;1"]
                        .getService(Ci.nsIWindowMediator)
                        .getMostRecentWindow('navigator:browser')) {
                         var message =
                             'Error during Jabber authentication: ' +
-                            reply.stanza.error.*[0].name().localName.replace(/-/g, ' ') +
-                            ' (' + reply.stanza.error.@code + ')';
+                            response.stanza.error.*[0].name().localName.replace(/-/g, ' ') +
+                            ' (' + response.stanza.error.@code + ')';
                         prompts.alert(null, 'Error', message);
-                        reply.session.close();
+                        response.session.close();
                     }
                 });
         });
