@@ -33,10 +33,4 @@ interface nsIXMPPClientService: nsISupports
     void addFeature(in string discoInfoFeature);
 
     void removeFeature(in string discoInfoFeature);
-
-    nsISimpleEnumerator rosterCache();
-
-    nsISimpleEnumerator presenceInCache();
-
-    nsISimpleEnumerator presenceOutCache();
 };  
