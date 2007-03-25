@@ -55,7 +55,6 @@ const pref = Cc['@mozilla.org/preferences-service;1']
 loader.loadSubScript('chrome://xmpp4moz/content/lib/module_manager.js');
 const module = new ModuleManager(['chrome://xmpp4moz/content']);
 
-const PresenceCache = module.require('class', 'lib/presence_cache');
 const RosterCache = module.require('class', 'lib/roster_cache');
 
 const ns_disco_info = 'http://jabber.org/protocol/disco#info';    
@@ -69,7 +68,7 @@ const KEEPALIVE_INTERVAL = 30000;
 // GLOBAL STATE
 // ----------------------------------------------------------------------
 
-var observers = [], cache, features = [];
+var observers = [], features = [], cache, cache2;
 
 var sessions = {
     _list: {},
@@ -204,14 +203,18 @@ function _openUserSession(jid, transport, streamObserver) {
                     session.close();
 
             if(topic == 'stanza-in' && subject.nodeName == 'presence')
-                cache.presenceIn.receive({session: { name: data },
-                                         stanza: subject});
+                cache2.receive({
+                    session : { name: data },
+                    stanza  : subject
+                    });
 
             if(topic == 'stanza-out' && subject.nodeName == 'presence' &&
                (subject.getAttribute('type') == undefined ||
                 subject.getAttribute('type') == 'unavailable'))
-                cache.presenceOut.receive({session: sessions.get(data), 
-                                          stanza: subject});
+                cache2.receive({
+                    session : { name: data },
+                    stanza  : subject
+                    });
 
             if(topic == 'stanza-in' && subject.nodeName == 'iq') {
                 var query = subject.getElementsByTagName('query')[0];
@@ -236,19 +239,27 @@ function _openUserSession(jid, transport, streamObserver) {
                subject.hasAttribute('to') && 
                subject.getAttribute('type') == 'unavailable' &&
                isMUCUserPresence(subject) &&
-               cache.presenceOut.copy().some(
-                   function(presenceOut) {
-                       return presenceOut.stanza.getAttribute('to') == subject.getAttribute('from');
-                   }))
-                for each(var presence in cache.presenceIn.copy()) {
-                    if(JID(subject.getAttribute('from')).address ==
-                       JID(presence.stanza.getAttribute('from')).address) {
-                        var syntheticPresence = presence.stanza.cloneNode(true);
-                        syntheticPresence.setAttribute('type', 'unavailable');
-                        session.receive(serializer.serializeToString(syntheticPresence));
-                    }
-                }
-
+               cache2.fetch({
+                   event     : 'presence',
+                   direction : 'out',
+                   session   : { name: data },
+                   stanza    : function(s) {
+                           return s.getAttribute('to') == subject.getAttribute('from');
+                       }}).length > 0)
+                cache2.fetch({
+                    session: { name: data },
+                    from: { address: JID(subject.getAttribute('from')).address },
+                    direction: 'in',
+                    }).forEach(
+                        function(presence) {
+                            var synthStanza = presence.stanza.cloneNode(true);
+                            synthStanza.setAttribute('type', 'unavailable');
+                            var synthPayload = presence.stanza.ownerDocument.createElement('x');
+                            synthPayload.setAttribute('xmlns', 'http://dev.hyperstruct.net/xmpp4moz#synthetic');
+                            synthStanza.appendChild(synthPayload);
+                            session.receive(serializer.serializeToString(syntheticPresence));
+                        });
+                
             if(topic == 'stanza-in' && subject.nodeName == 'iq' &&
                subject.getAttribute('type') == 'get') {
                 var query = subject.getElementsByTagName('query')[0];
@@ -267,21 +278,38 @@ function _openUserSession(jid, transport, streamObserver) {
             }
 
             if(topic == 'stream-out' && asString(subject) == 'close') {
-                for each(var presence in cache.presenceIn.copy()) {
-                    var syntheticPresence = presence.stanza.cloneNode(true);
-                    syntheticPresence.removeAttribute('id');
-                    syntheticPresence.setAttribute('type', 'unavailable');
-                    session.receive(serializer.serializeToString(syntheticPresence));
-                }
+                cache2.fetch({
+                    event     : 'presence',
+                    session   : { name: data },
+                    direction : 'in',
+                    }).forEach(
+                        function(presence) {
+                            var synthStanza = presence.stanza.cloneNode(true);
+                            synthStanza.removeAttribute('id');
+                            synthStanza.setAttribute('type', 'unavailable');
+                            var synthPayload = presence.stanza.ownerDocument.createElement('x');
+                            synthPayload.setAttribute('xmlns', 'http://dev.hyperstruct.net/xmpp4moz#synthetic');
+                            synthStanza.appendChild(synthPayload);
+                            session.receive(serializer.serializeToString(synthStanza));
+                        });
 
-                for each(var presence in cache.presenceOut.copy()) 
-                    if(presence.session == session) {
-                        var syntheticPresence = presence.stanza.cloneNode(true);
-                        syntheticPresence.removeAttribute('id');
-                        syntheticPresence.setAttribute('type', 'unavailable');
-                        cache.presenceOut.receive({session: { name: data },
-                                                  stanza: syntheticPresence});
-                    }
+                cache2.fetch({
+                    event     : 'presence',
+                    direction : 'out',
+                    session   : { name: data },                    
+                    }).forEach(
+                        function(presence) {
+                            var synthStanza = presence.stanza.cloneNode(true);
+                            synthStanza.removeAttribute('id');
+                            synthStanza.setAttribute('type', 'unavailable');
+                            var synthPayload = presence.stanza.ownerDocument.createElement('x');
+                            synthPayload.setAttribute('xmlns', 'http://dev.hyperstruct.net/xmpp4moz#synthetic');
+                            synthStanza.appendChild(synthPayload);
+                            cache2.receive({
+                                session : { name: data },
+                                stanza  : synthStanza
+                                });
+                        });
 
                 transport.disconnect();
                 sessions.closed(session);
@@ -391,12 +419,14 @@ function arrayOfObjectsToEnumerator(array) {
 }
 
 cache = {
-    presenceIn: new PresenceCache(),
-
-    presenceOut: new PresenceCache(),
-
     roster: new RosterCache(),
 };
+
+cache2 = (function() {
+                    var pkg = {};
+                    loader.loadSubScript('chrome://xmpp4moz/content/lib/cache.js', pkg);
+                    return new pkg.Cache({indices: ['from.full', 'from.address', 'account']});
+                })();
 
 
 // UTILITIES

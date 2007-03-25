@@ -91,39 +91,8 @@ const ns_disco_info = 'http://jabber.org/protocol/disco#info';
 // ----------------------------------------------------------------------
 
 var cache = {
-
-    // Accesses cache via XPCOM, as usual.
-    
-    _cleanRead: function(cacheName) {
-        var enumeration = service[cacheName + 'Cache']();
-        var objects = [];
-        var cachedObject, outputObject;
-        
-        while(enumeration.hasMoreElements()) {
-            cachedObject = enumeration.getNext().QueryInterface(Ci.nsIProperties);
-
-            outputObject = {
-                session: cachedObject.get('session', Ci.nsIXMPPClientSession),
-                stanza: new XML(serializer.serializeToString(
-                                    cachedObject.get('stanza', Ci.nsIDOMElement))),
-                direction: (cachedObject.has('direction') ?
-                            cachedObject.get('direction', Ci.nsISupportsString).toString() :
-                            undefined)
-            };
-
-            objects.push(outputObject);
-        }
-        return objects;
-    },
-
-    // Accesses cache via wrappedJSObject, bypassing XPCOM. Will only
-    // work as long as nsIXMPPClientService is implemented in
-    // Javascript, revert to _cleanRead if/when it is implemented in
-    // C++.
-
-    _directRead: function(cacheName) {
-        var internalCache = service.wrappedJSObject.cache[cacheName].copy();
-        return internalCache.map(
+    get roster() {
+        return service.wrappedJSObject.cache.roster.copy().map(
             function(internalObject) {
                 return wrapEvent({
                     stanza: new XML(serializer.serializeToString(internalObject.stanza)),
@@ -132,17 +101,33 @@ var cache = {
                     });
             });
     },
-    
-    get roster() {
-        return this._directRead('roster');
-    },
 
     get presenceIn() {
-        return this._directRead('presenceIn');
+        return service.wrappedJSObject.cache2.fetch({
+            event     : 'presence',
+            direction : 'in'
+            }).map(
+                function(internalObject) {
+                    return wrapEvent({
+                        stanza: dom2xml(internalObject.stanza),
+                        session: internalObject.session,
+                        direction: internalObject.direction 
+                        });
+                });
     },
 
     get presenceOut() {
-        return this._directRead('presenceOut');
+        return service.wrappedJSObject.cache2.fetch({
+            event     : 'presence',
+            direction : 'out'
+            }).map(
+                function(internalObject) {
+                    return wrapEvent({
+                        stanza: dom2xml(internalObject.stanza),
+                        session: internalObject.session,
+                        direction: internalObject.direction 
+                        });
+                });
     },
 
     _subCacheFor: function(pattern) {
@@ -183,7 +168,10 @@ var cache = {
     },
 
     forEach: function(pattern, action) {
-        this._subCacheFor(pattern).forEach(action);
+        for each(event in this._subCacheFor(pattern)) {
+            if(match(event, pattern))
+                action(event);
+        }
     },
 
     map: function(pattern, action) {

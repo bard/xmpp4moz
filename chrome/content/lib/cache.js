@@ -1,0 +1,522 @@
+/* ***** BEGIN LICENSE BLOCK *****
+ * Version: MPL 1.1/GPL 2.0/LGPL 2.1
+ *
+ * The contents of this file are subject to the Mozilla Public License Version
+ * 1.1 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ * http://www.mozilla.org/MPL/
+ *
+ * Software distributed under the License is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+ * for the specific language governing rights and limitations under the
+ * License.
+ *
+ * The Original Code is xmpp4moz.
+ *
+ * The Initial Developer of the Original Code is
+ * Massimiliano Mirra <bard [at] hyperstruct [dot] net>.
+ * Portions created by the Initial Developer are Copyright (C) 2006
+ * the Initial Developer. All Rights Reserved.
+ *
+ * Contributor(s):
+ *
+ * Alternatively, the contents of this file may be used under the terms of
+ * either the GNU General Public License Version 2 or later (the "GPL"), or
+ * the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
+ * in which case the provisions of the GPL or the LGPL are applicable instead
+ * of those above. If you wish to allow use of your version of this file only
+ * under the terms of either the GPL or the LGPL, and not to allow others to
+ * use your version of this file under the terms of the MPL, indicate your
+ * decision by deleting the provisions above and replace them with the notice
+ * and other provisions required by the GPL or the LGPL. If you do not delete
+ * the provisions above, a recipient may use your version of this file under
+ * the terms of any one of the MPL, the GPL or the LGPL.
+ *
+ * ***** END LICENSE BLOCK ***** */
+
+
+// DEFINITIONS
+// ----------------------------------------------------------------------
+
+var Cc = Components.classes;
+var Ci = Components.interfaces;
+var Cu = Components.utils;
+
+var loader = Cc['@mozilla.org/moz/jssubscript-loader;1']
+    .getService(Ci.mozIJSSubScriptLoader);
+
+var db = {};
+loader.loadSubScript('chrome://xmpp4moz/content/lib/db.js', db);
+var DB = db.DB;
+
+
+// PUBLIC FUNCTIONALITY
+// ----------------------------------------------------------------------
+
+function Cache() {
+    this._db = new DB({indices: ['from.full', 'from.address', 'account']});
+
+    var presence = {
+        manages: function(object) {
+            return object.event == 'presence';
+        },
+
+        apply: function(db, object) {
+            var previous = db.get({
+                session : object.session,
+                from    : { full: object.from.full }
+                });
+
+            if(object.stanza.getAttribute('type') == 'unavailable') {
+                if(previous && previous[0])
+                    if(isMUCUserPresence(previous[0].stanza))
+                        db.put(null, previous[0].id);
+                    else
+                        db.put(object, previous[0].id);
+            } else {
+                if(previous && previous[0])
+                    db.put(object, previous[0].id);
+                else
+                    db.put(object);
+            }
+        }
+    };
+
+    this._policies = [ presence ];
+}
+
+Cache.prototype = {
+    fetch: function(pattern) {
+        return this._db.get(pattern);
+    },
+    
+    receive: function(object) {
+        function enrich(object) {
+            object.__defineGetter__(
+                'event', function() {
+                    return this.stanza.nodeName;
+                });
+            
+            object.__defineGetter__(
+                'account', function() {
+                    return this.session.name;
+                });
+
+            object.__defineGetter__(
+                'direction', function() {
+                    return (this.stanza.hasAttribute('from') ?
+                            'in' : 'out');
+                });
+            
+            object.__defineGetter__(
+                'from', function() {
+                    return this.stanza.hasAttribute('from') ?
+                        JID(this.stanza.getAttribute('from')) :
+                        { full: undefined, username: undefined, hostname: undefined}
+                });
+            return object;
+        }
+
+        enrich(object);
+
+        for each(var policy in this._policies) {
+            if(policy.manages(object))
+                policy.apply(this._db, object)
+        }
+    }
+};
+
+
+// UTILITIES
+// ----------------------------------------------------------------------
+
+function JID(string) {
+    if(string in arguments.callee.memo)
+        return arguments.callee.memo[string];
+    var m = string.match(/^(.+?@)?(.+?)(?:\/|$)(.*$)/);
+
+    var jid = {};
+
+    if(m[1])
+        jid.username = m[1].slice(0, -1);
+
+    jid.hostname = m[2];
+    jid.resource = m[3];
+    jid.nick     = m[3];
+    jid.full     = m[3] ? string : null;
+    jid.address  = jid.username ?
+        jid.username + '@' + jid.hostname :
+        jid.hostname;
+
+    arguments.callee.memo[string] = jid;
+    return jid;    
+}
+JID.memo = {};
+
+function isMUCUserPresence(presenceStanza) {
+    var ns_muc_user = 'http://jabber.org/protocol/muc#user';
+    var x = presenceStanza.getElementsByTagName('x')[0];
+    return (x && x.getAttribute('xmlns') == ns_muc_user);
+}
+
+function verify() {
+    function asDOM(xml) {
+        return Cc['@mozilla.org/xmlextras/domparser;1']
+            .getService(Ci.nsIDOMParser)
+            .parseFromString(xml.toXMLString(), 'text/xml')
+            .documentElement;
+    }
+
+    function asStanzas(presences) {
+        return presences.map(function(presence) { return asXML(presence.stanza); });
+    }
+
+    function asXML(dom) {
+        return new XML(Cc['@mozilla.org/xmlextras/xmlserializer;1']
+                       .getService(Ci.nsIDOMSerializer)
+                       .serializeToString(dom));
+    }
+
+    var assert = {
+        equals: function(array1, array2) {
+            if(array1.length != array2.length) {
+                throw new Error('FAIL: ' + Components.stack.caller.lineNumber);
+                return;
+            } else {
+                for(var i=0; i<array1.length; i++)
+                    if(array1[i] != array2[i]) {
+                        throw new Error('FAIL: ' + Components.stack.caller.lineNumber +
+                                        ' (' + array1[i] + ' vs ' + array2[i] + ')');
+                        return;
+                    }
+            }
+        }
+    };
+
+    var tests = {
+        'start: cache is empty': function() {
+            var cache = new Cache();
+            assert.equals([], cache._db._store);
+        },
+
+        'contact sends user available presence, cache is empty: add': function() {
+            var cache = new Cache();
+            cache.receive({
+                session: { name: 'arthur@earth.org/Test' },
+                stanza: asDOM(<presence from="ford@betelgeuse.org/Test"/>)
+                });
+
+            assert.equals([<presence from="ford@betelgeuse.org/Test"/>],
+                          asStanzas(cache._db._store));
+        },
+
+        'contact sends user available presence, presence from contact is not in cache: add': function() {
+            var cache = new Cache();
+            cache.receive({
+                session: { name: 'arthur@earth.org/Test' },
+                stanza: asDOM(<presence from="ford@betelgeuse.org/Test"/>)
+                });
+
+            cache.receive({
+                session: { name: 'arthur@earth.org/Test' },
+                stanza: asDOM(<presence from="marvin@spaceship.org/Test"/>)
+                });
+
+            assert.equals([<presence from="ford@betelgeuse.org/Test"/>,
+                           <presence from="marvin@spaceship.org/Test"/>],
+                          asStanzas(cache._db._store));
+        },
+
+        'contact sends user available presence, presence from contact is already in cache: replace': function() {
+            var cache = new Cache();
+            cache.receive({
+                session: { name: 'arthur@earth.org/Test' },
+                stanza: asDOM(<presence from="ford@betelgeuse.org/Test" to="arthur@earth.org/Test"/>)
+                });
+
+            cache.receive({
+                session: { name: 'arthur@earth.org/Test' },
+                stanza: asDOM(<presence from="ford@betelgeuse.org/Test" to="arthur@earth.org/Test">
+                              <show>away</show>
+                              </presence>)
+                });
+
+            assert.equals([<presence from="ford@betelgeuse.org/Test" to="arthur@earth.org/Test">
+                           <show>away</show>
+                           </presence>],
+                          asStanzas(cache._db._store));
+        },
+
+        'contact sends user unavailable presence, presence from contact is not in cache: ignore': function() {
+            var cache = new Cache();
+            cache.receive({
+                session: { name: 'arthur@earth.org/Test' },
+                stanza: asDOM(<presence from="ford@betelgeuse.org/Test" to="arthur@earth.org/Test" type="unavailable"/>)
+                });
+
+            assert.equals([], asStanzas(cache._db._store));
+        },
+        
+        'contact sends user unavailable presence, presence from contact is in cache: replace': function() {
+            var cache = new Cache();
+            cache.receive({
+                session: { name: 'arthur@earth.org/Test' },
+                stanza: asDOM(<presence from="ford@betelgeuse.org/Test" to="arthur@earth.org/Test"/>)
+                });
+
+            cache.receive({
+                session: { name: 'arthur@earth.org/Test' },
+                stanza: asDOM(<presence from="ford@betelgeuse.org/Test" to="arthur@earth.org/Test" type="unavailable"/>)
+                });
+
+            assert.equals([<presence from="ford@betelgeuse.org/Test" to="arthur@earth.org/Test" type="unavailable"/>],
+                          asStanzas(cache._db._store));
+        },
+
+        'occupant sends user available presence, presence from occupant is not in cache: add': function() {
+            var cache = new Cache();
+            cache.receive({
+                session: { name: 'arthur@earth.org/Test' },
+                stanza: asDOM(<presence from="room@server/foo" to="arthur@earth.org/Test">
+                              <x xmlns="http://jabber.org/protocol/muc#user"/>
+                              </presence>)
+                });
+
+            assert.equals([<presence from="room@server/foo" to="arthur@earth.org/Test">
+                           <x xmlns="http://jabber.org/protocol/muc#user"/>
+                           </presence>],
+                          asStanzas(cache._db._store));
+        },
+
+        'occupant sends user available presence, presence from occupant is in cache: replace': function() {
+            var cache = new Cache();
+            cache.receive({
+                session: { name: 'arthur@earth.org/Test' },
+                stanza: asDOM(<presence from="room@server/foo" to="arthur@earth.org/Test">
+                              <x xmlns="http://jabber.org/protocol/muc#user"/>
+                              </presence>)
+                });
+
+            cache.receive({
+                session: { name: 'arthur@earth.org/Test' },
+                stanza: asDOM(<presence from="room@server/foo" to="arthur@earth.org/Test">
+                              <x xmlns="http://jabber.org/protocol/muc#user"/>
+                              <show>away</show>
+                              </presence>)
+                });
+
+            assert.equals([<presence from="room@server/foo" to="arthur@earth.org/Test">
+                           <x xmlns="http://jabber.org/protocol/muc#user"/>
+                           <show>away</show>
+                           </presence>],
+                          asStanzas(cache._db._store));
+        },
+        
+        'occupant sends user unavailable presence, presence from occupant is not in cache: ignore': function() {
+            var cache = new Cache();
+            cache.receive({
+                session: { name: 'arthur@earth.org/Test' },
+                stanza: asDOM(<presence to="room@server/arthur">
+                              <x xmlns="http://jabber.org/protocol/muc"/>
+                              </presence>)
+                });
+
+            cache.receive({
+                session: { name: 'arthur@earth.org/Test' },
+                stanza: asDOM(<presence from="room@server/foo" to="arthur@earth.org/Test" type="unavailable">
+                              <x xmlns="http://jabber.org/protocol/muc#user"/>
+                              </presence>)
+                });
+
+            assert.equals([<presence to="room@server/arthur">
+                           <x xmlns="http://jabber.org/protocol/muc"/>
+                           </presence>],
+                          asStanzas(cache._db._store));
+        },
+
+        'occupant sends user unavailable presence, presence from occupant is in cache: remove': function() {
+            var cache = new Cache();
+            cache.receive({
+                session: { name: 'arthur@earth.org/Test' },
+                stanza: asDOM(<presence to="room@server/arthur">
+                              <x xmlns="http://jabber.org/protocol/muc"/>
+                              </presence>)
+                });
+
+            cache.receive({
+                session: { name: 'arthur@earth.org/Test' },
+                stanza: asDOM(<presence from="room@server/foo" to="arthur@earth.org/Test">
+                              <x xmlns="http://jabber.org/protocol/muc#user"/>
+                              </presence>)
+                });
+
+            cache.receive({
+                session: { name: 'arthur@earth.org/Test' },
+                stanza: asDOM(<presence from="room@server/foo" to="arthur@earth.org/Test" type="unavailable">
+                              <x xmlns="http://jabber.org/protocol/muc#user"/>
+                              </presence>)
+                });
+
+            assert.equals([<presence to="room@server/arthur">
+                           <x xmlns="http://jabber.org/protocol/muc"/>
+                           </presence>, undefined],
+                          asStanzas(cache._db._store));
+        },
+
+        'user sends contacts available presence, no user presence is in cache: add': function() {
+            var cache = new Cache();
+            cache.receive({
+                session: { name: 'arthur@earth.org/Test' },
+                stanza: asDOM(<presence/>)
+                });
+
+            assert.equals([<presence/>], asStanzas(cache._db._store));
+        },
+
+        'user sends contacts available presence, user presence is in cache: replace': function() {
+            var cache = new Cache();
+            cache.receive({
+                session: { name: 'arthur@earth.org/Test' },
+                stanza: asDOM(<presence/>)
+                });
+
+            cache.receive({
+                session: { name: 'arthur@earth.org/Test' },
+                stanza: asDOM(<presence><show>away</show></presence>)
+                });
+
+            assert.equals([<presence><show>away</show></presence>],
+                          asStanzas(cache._db._store));
+        },
+
+        'user sends contacts available presences through multiple accounts: do not mix': function() {
+            var cache = new Cache();
+
+            cache.receive({
+                session: { name: 'arthur@earth.org/Test' },
+                stanza: asDOM(<presence/>)
+                });
+
+            cache.receive({
+                session: { name: 'marvin@spaceship.org/Test' },
+                stanza: asDOM(<presence/>)
+                });
+
+            assert.equals([<presence/>, <presence/>],
+                          asStanzas(cache._db._store));
+        },
+
+        'fetch presences from a given session and contact address': function() {
+            var cache = new Cache();
+            cache.receive({
+                session: { name: 'arthur@earth.org/Test' },
+                stanza: asDOM(<presence from="ford@betelgeuse.org/Test"><show>dnd</show></presence>)
+                });
+
+            cache.receive({
+                session: { name: 'arthur@earth.org/Test' },
+                stanza: asDOM(<presence from="ford@betelgeuse.org/Toast"/>)
+                });
+
+            cache.receive({
+                session: { name: 'arthur@earth.org/Test' },
+                stanza: asDOM(<presence from="marvin@spaceship.org/Test"/>)
+                });
+
+            assert.equals(
+                [<presence from="ford@betelgeuse.org/Test"><show>dnd</show></presence>,
+                 <presence from="ford@betelgeuse.org/Toast"/>],
+                asStanzas(cache.fetch({
+                              session: { name: 'arthur@earth.org/Test' },
+                              from: { address: 'ford@betelgeuse.org' }})));
+        }        
+    };
+
+    var report = [];
+    for(var testName in tests)
+        try {
+            tests[testName].call();
+        } catch(e) {
+            report.push('**********************************************************************');
+            report.push('FAILURE: ' + testName + '\n' + e.message);
+            report.push(e.stack);
+        }
+    report.push('\nTests completed.');
+        
+    return report.join('\n');
+}
+
+function profile() {
+    function createDataset(n) {
+        function asDOM(xml) {
+            return Cc['@mozilla.org/xmlextras/domparser;1']
+                .getService(Ci.nsIDOMParser)
+                .parseFromString(xml.toXMLString(), 'text/xml')
+                .documentElement;
+        }
+
+        function makeRandomInt(min, max) {
+            return Math.floor(Math.random() * (max - min + 1) + min);
+        }
+
+        function makeRandomCharacter() {
+            return String.fromCharCode(makeRandomInt(97, 122));
+        }
+
+        function makeRandomString(length) {
+            var chars = [];
+            for(var i=0; i<length; i++)
+                chars.push(makeRandomCharacter());
+            return chars.join('');
+        }
+    
+        function makeRandomJid() {
+            return makeRandomString(7) + '@' + makeRandomString(7) +
+                '.' + makeRandomString(3) + '/' + makeRandomString(8);
+        }
+
+        function makeRandomPresence() {
+            return <presence from={makeRandomJid()}/>;
+        }
+
+        var presences = [];
+        for(var i=0; i<n; i++)
+            presences.push({
+                session : { name: 'foo@bar.org/Test' },
+                stanza  : asDOM(makeRandomPresence()),
+                opaque  : makeRandomString(10)
+                });
+        return presences;
+    }
+
+    function benchmark(operation, times) {
+        times = times || 1;
+
+        var start = new Date();
+        for(var i=0; i<times; i++)
+            operation();
+
+        repl.print('\n' +
+                   ' ________________________________________\n' +
+                   '/                                         ' + times + ' TIMES\n' +
+                   operation.toString().replace(/^/mg, '| ') + '\n' +
+                   '\\________________________________________ TOOK: ' + (new Date() - start));
+    }
+
+    var dataset = createDataset(100);
+    var cache = new Cache();
+
+    benchmark(
+        function() {
+            dataset.forEach(function(presence) { cache.receive(presence); });
+        });
+
+    benchmark(
+        function() {
+            cache.fetch({
+                account : 'foo@bar.org/Test',
+                from: { full: dataset[5].stanza.getAttribute('from') }
+                })
+        }, 500);
+}
+
