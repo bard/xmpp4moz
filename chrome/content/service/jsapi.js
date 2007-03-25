@@ -319,7 +319,7 @@ function createChannel(features) {
                 break;
                 case 'stanza':
                 subject.QueryInterface(Ci.nsIDOMElement);
-                var stanza = new XML(serializer.serializeToString(subject));
+                var stanza = dom2xml(subject);
                 eventObject.event = stanza.name();
                 eventObject.stanza = stanza;
                 break;
@@ -447,6 +447,24 @@ function wrapEvent(eventObject) {
             });
     
     return eventObject;
+}
+
+/**
+ * Convert a DOM element to an E4X XML object.
+ *
+ * Assign converted object to DOM element behind the scenes, so that
+ * if it requested to be converted again, there is no need to go
+ * through serialization/deserialization again.
+ *
+ * (This assumes that the element is immutable.)
+ *
+ */
+
+function dom2xml(element) {
+    if(!element.__dom2xml_memo)
+        element.__dom2xml_memo = new XML(serializer.serializeToString(element));
+    
+    return element.__dom2xml_memo;
 }
 
 function uniq(array) {
@@ -774,7 +792,7 @@ function _send(jid, stanza, handler) {
             observe: function(replyStanza, topic, sessionName) {
                 handler({
                     session: { name: sessionName }, // XXX hack
-                    stanza: new XML(serializer.serializeToString(replyStanza))
+                    stanza: dom2xml(replyStanza)
                     });
             }
         };
