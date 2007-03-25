@@ -52,11 +52,6 @@ const pref = Cc['@mozilla.org/preferences-service;1']
     .getService(Ci.nsIPrefService)
     .getBranch('xmpp.');
 
-loader.loadSubScript('chrome://xmpp4moz/content/lib/module_manager.js');
-const module = new ModuleManager(['chrome://xmpp4moz/content']);
-
-const RosterCache = module.require('class', 'lib/roster_cache');
-
 const ns_disco_info = 'http://jabber.org/protocol/disco#info';    
 
 const keepAliveTimer = Cc['@mozilla.org/timer;1']
@@ -68,7 +63,7 @@ const KEEPALIVE_INTERVAL = 30000;
 // GLOBAL STATE
 // ----------------------------------------------------------------------
 
-var observers = [], features = [], cache, cache2;
+var observers = [], features = [], cache;
 
 var sessions = {
     _list: {},
@@ -203,7 +198,7 @@ function _openUserSession(jid, transport, streamObserver) {
                     session.close();
 
             if(topic == 'stanza-in' && subject.nodeName == 'presence')
-                cache2.receive({
+                cache.receive({
                     session : { name: data },
                     stanza  : subject
                     });
@@ -211,7 +206,7 @@ function _openUserSession(jid, transport, streamObserver) {
             if(topic == 'stanza-out' && subject.nodeName == 'presence' &&
                (subject.getAttribute('type') == undefined ||
                 subject.getAttribute('type') == 'unavailable'))
-                cache2.receive({
+                cache.receive({
                     session : { name: data },
                     stanza  : subject
                     });
@@ -219,7 +214,9 @@ function _openUserSession(jid, transport, streamObserver) {
             if(topic == 'stanza-in' && subject.nodeName == 'iq') {
                 var query = subject.getElementsByTagName('query')[0];
                 if(query && query.getAttribute('xmlns') == 'jabber:iq:roster')
-                    cache.roster.receive({session: sessions.get(data), stanza: subject});
+                    cache.receive({
+                        session: { name: data },
+                        stanza: subject });
             }
 
             service.notifyObservers(subject, topic, data);
@@ -239,14 +236,14 @@ function _openUserSession(jid, transport, streamObserver) {
                subject.hasAttribute('to') && 
                subject.getAttribute('type') == 'unavailable' &&
                isMUCUserPresence(subject) &&
-               cache2.fetch({
+               cache.fetch({
                    event     : 'presence',
                    direction : 'out',
                    session   : { name: data },
                    stanza    : function(s) {
                            return s.getAttribute('to') == subject.getAttribute('from');
                        }}).length > 0)
-                cache2.fetch({
+                cache.fetch({
                     session: { name: data },
                     from: { address: JID(subject.getAttribute('from')).address },
                     direction: 'in',
@@ -278,7 +275,7 @@ function _openUserSession(jid, transport, streamObserver) {
             }
 
             if(topic == 'stream-out' && asString(subject) == 'close') {
-                cache2.fetch({
+                cache.fetch({
                     event     : 'presence',
                     session   : { name: data },
                     direction : 'in',
@@ -293,7 +290,7 @@ function _openUserSession(jid, transport, streamObserver) {
                             session.receive(serializer.serializeToString(synthStanza));
                         });
 
-                cache2.fetch({
+                cache.fetch({
                     event     : 'presence',
                     direction : 'out',
                     session   : { name: data },                    
@@ -305,7 +302,7 @@ function _openUserSession(jid, transport, streamObserver) {
                             var synthPayload = presence.stanza.ownerDocument.createElement('x');
                             synthPayload.setAttribute('xmlns', 'http://dev.hyperstruct.net/xmpp4moz#synthetic');
                             synthStanza.appendChild(synthPayload);
-                            cache2.receive({
+                            cache.receive({
                                 session : { name: data },
                                 stanza  : synthStanza
                                 });
@@ -324,8 +321,8 @@ function _openUserSession(jid, transport, streamObserver) {
     // available for hybrid applications even before we receive the
     // roster (or if we don't receive it at all).
 
-    cache.roster.receive({
-        session: session,
+    cache.receive({
+        session: { name: session.name },
         stanza: domParser.parseFromString(
             '<iq from="' + jid + '" to="' + jid + '" type="result">' +
             '<query xmlns="jabber:iq:roster"/>' +
@@ -371,18 +368,6 @@ function removeObserver(observer) {
         observers.splice(index, 1);
 }
 
-function presenceInCache() {
-    return arrayOfObjectsToEnumerator(cache.presenceIn.copy());
-}
-
-function presenceOutCache() {
-    return arrayOfObjectsToEnumerator(cache.presenceOut.copy());
-}
-
-function rosterCache() {
-    return arrayOfObjectsToEnumerator(cache.roster.copy());
-}
-
 function getSession(jid) {
     return sessions.get(jid);
 }
@@ -418,15 +403,11 @@ function arrayOfObjectsToEnumerator(array) {
     return enumerator;
 }
 
-cache = {
-    roster: new RosterCache(),
-};
-
-cache2 = (function() {
-                    var pkg = {};
-                    loader.loadSubScript('chrome://xmpp4moz/content/lib/cache.js', pkg);
-                    return new pkg.Cache({indices: ['from.full', 'from.address', 'account']});
-                })();
+cache = (function() {
+             var pkg = {};
+             loader.loadSubScript('chrome://xmpp4moz/content/lib/cache.js', pkg);
+             return new pkg.Cache({indices: ['from.full', 'from.address', 'account']});
+         })();
 
 
 // UTILITIES

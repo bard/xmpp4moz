@@ -92,18 +92,23 @@ const ns_disco_info = 'http://jabber.org/protocol/disco#info';
 
 var cache = {
     get roster() {
-        return service.wrappedJSObject.cache.roster.copy().map(
-            function(internalObject) {
-                return wrapEvent({
-                    stanza: new XML(serializer.serializeToString(internalObject.stanza)),
-                    session: internalObject.session,
-                    direction: internalObject.direction 
-                    });
-            });
+        return service.wrappedJSObject.cache.fetch({
+            event  : 'iq',
+            stanza : function(s) {
+                    return s.getElementsByTagNameNS(ns_roster, 'query').length == 1;
+                }   
+            }).map(
+                function(internalObject) {
+                    return wrapEvent({
+                        stanza: dom2xml(internalObject.stanza),
+                        session: internalObject.session,
+                        direction: internalObject.direction 
+                        });
+                });
     },
 
     get presenceIn() {
-        return service.wrappedJSObject.cache2.fetch({
+        return service.wrappedJSObject.cache.fetch({
             event     : 'presence',
             direction : 'in'
             }).map(
@@ -117,7 +122,7 @@ var cache = {
     },
 
     get presenceOut() {
-        return service.wrappedJSObject.cache2.fetch({
+        return service.wrappedJSObject.cache.fetch({
             event     : 'presence',
             direction : 'out'
             }).map(

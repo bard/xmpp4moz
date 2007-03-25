@@ -38,16 +38,20 @@
 // DEFINITIONS
 // ----------------------------------------------------------------------
 
-var Cc = Components.classes;
-var Ci = Components.interfaces;
-var Cu = Components.utils;
-
-var loader = Cc['@mozilla.org/moz/jssubscript-loader;1']
+var Cc          = Components.classes;
+var Ci          = Components.interfaces;
+var Cu          = Components.utils;
+var loader      = Cc['@mozilla.org/moz/jssubscript-loader;1']
     .getService(Ci.mozIJSSubScriptLoader);
+var DB          =
+    (function() {
+        var pkg = {};
+        loader.loadSubScript('chrome://xmpp4moz/content/lib/db.js', pkg);
+        return pkg.DB;
+    })();
 
-var db = {};
-loader.loadSubScript('chrome://xmpp4moz/content/lib/db.js', db);
-var DB = db.DB;
+var ns_roster   = 'jabber:iq:roster';
+var ns_muc_user = 'http://jabber.org/protocol/muc#user';
 
 
 // PUBLIC FUNCTIONALITY
@@ -63,6 +67,7 @@ function Cache() {
 
         apply: function(db, object) {
             var previous = db.get({
+                event   : 'presence',
                 session : object.session,
                 from    : { full: object.from.full }
                 });
@@ -82,7 +87,61 @@ function Cache() {
         }
     };
 
-    this._policies = [ presence ];
+    var roster = {
+        manages: function(object) {
+            return (object.event == 'iq' &&
+                    object.stanza.getElementsByTagNameNS(ns_roster, 'query').length > 0);
+        },
+
+        apply: function(db, object) {
+            function getItem(query, jid) {
+                var items = query.getElementsByTagName('item');
+                for(var i=0; i<items.length; i++)
+                    if(items[i].getAttribute('jid') == jid)
+                        return items[i];
+
+                return null;
+            }
+
+            var previous = db.get({
+                event   : 'iq',
+                session : object.session,
+                stanza  : function(s) {
+                        return (s.getElementsByTagNameNS(ns_roster, 'query').length > 0);
+                    }
+                });
+
+            if(!previous[0])
+                db.put(object);
+            else if(previous[0].stanza.getElementsByTagNameNS(ns_roster, 'query')[0].childNodes.length == 0)
+                previous[0].stanza = object.stanza;
+            else {
+                var pushedItem = object.stanza
+                    .getElementsByTagNameNS(ns_roster, 'query')[0]
+                    .getElementsByTagName('item')[0];
+                if(!pushedItem)
+                    return;
+
+                var updatedIq = previous[0].stanza.cloneNode(true);
+                var updatedQuery = updatedIq.getElementsByTagNameNS(ns_roster, 'query')[0];
+                var existingItem = getItem(updatedQuery, pushedItem.getAttribute('jid'));
+
+                if(pushedItem.getAttribute('subscription') == 'remove') {
+                    if(existingItem)
+                        updatedQuery.removeChild(existingItem);
+                } else {
+                    if(existingItem)
+                        updatedQuery.replaceChild(pushedItem, existingItem);
+                    else
+                        updatedQuery.appendChild(pushedItem);
+                }
+
+                previous[0].stanza = updatedIq;
+            }
+        }
+    }
+
+    this._policies = [ presence, roster ];
 }
 
 Cache.prototype = {
@@ -104,6 +163,7 @@ Cache.prototype = {
 
             object.__defineGetter__(
                 'direction', function() {
+                    // XXX won't return correct result for roster
                     return (this.stanza.hasAttribute('from') ?
                             'in' : 'out');
                 });
@@ -154,7 +214,6 @@ function JID(string) {
 JID.memo = {};
 
 function isMUCUserPresence(presenceStanza) {
-    var ns_muc_user = 'http://jabber.org/protocol/muc#user';
     var x = presenceStanza.getElementsByTagName('x')[0];
     return (x && x.getAttribute('xmlns') == ns_muc_user);
 }
@@ -429,7 +488,112 @@ function verify() {
                 asStanzas(cache.fetch({
                               session: { name: 'arthur@earth.org/Test' },
                               from: { address: 'ford@betelgeuse.org' }})));
-        }        
+        },
+
+        'receive iq roster': function() {
+            var cache = new Cache();
+            cache.receive({
+                session: { name: 'arthur@earth.org/Test' },
+                stanza: asDOM(
+                    <iq type="result" from="arthur@earth.org/Resource" to="arthur@earth.org/Resource">
+                    <query xmlns="jabber:iq:roster">
+                    <item jid="ford@betelgeuse.org"/>
+                    </query>
+                    </iq>)});
+
+            assert.equals(
+                [<iq type="result" from="arthur@earth.org/Resource" to="arthur@earth.org/Resource">
+                 <query xmlns="jabber:iq:roster">
+                 <item jid="ford@betelgeuse.org"/>
+                 </query>
+                 </iq>], asStanzas(cache.fetch({})));
+        },
+
+        'roster with update (addition) causes new roster to replace existing one': function() {
+            var cache = new Cache();
+            cache.receive({
+                session: { name: 'arthur@earth.org/Test' },
+                stanza: asDOM(
+                    <iq type="result" from="arthur@earth.org">
+                    <query xmlns="jabber:iq:roster">
+                    <item jid="ford@betelgeuse.org"/>
+                    </query>
+                    </iq>)});
+
+            cache.receive({
+                session: { name: 'arthur@earth.org/Test' },
+                stanza: asDOM(
+                    <iq type="set" from="arthur@earth.org">
+                    <query xmlns="jabber:iq:roster">
+                    <item jid="marvin@spaceship.org"/>
+                    </query>
+                    </iq>)});
+
+            assert.equals(
+                [<iq type="result" from="arthur@earth.org">
+                 <query xmlns="jabber:iq:roster">
+                 <item jid="ford@betelgeuse.org"/>
+                 <item jid="marvin@spaceship.org"/>
+                 </query>
+                 </iq>], asStanzas(cache.fetch({})));
+        },
+
+        'roster with update (removal) causes new roster to replace existing one': function() {
+            var cache = new Cache();
+            cache.receive({
+                session: { name: 'arthur@earth.org/Test' },
+                stanza: asDOM(
+                    <iq type="result" from="arthur@earth.org">
+                    <query xmlns="jabber:iq:roster">
+                    <item jid="ford@betelgeuse.org"/>
+                    <item jid="zaphod@betelgeuse.org"/>
+                    </query>
+                    </iq>)});
+
+            cache.receive({
+                session: { name: 'arthur@earth.org/Test' },
+                stanza: asDOM(
+                    <iq type="set" from="arthur@earth.org">
+                    <query xmlns="jabber:iq:roster">
+                    <item jid="ford@betelgeuse.org" subscription="remove"/>
+                    </query>
+                    </iq>)});
+
+            assert.equals(
+                [<iq type="result" from="arthur@earth.org">
+                 <query xmlns="jabber:iq:roster">
+                 <item jid="zaphod@betelgeuse.org"/>
+                 </query>
+                 </iq>], asStanzas(cache.fetch({})));
+        },
+
+        'roster with update (replacement) causes new roster to replace existing one': function() {
+            var cache = new Cache();
+            cache.receive({
+                session: { name: 'arthur@earth.org/Test' },
+                stanza: asDOM(
+                    <iq type="result" from="arthur@earth.org">
+                    <query xmlns="jabber:iq:roster">
+                    <item jid="ford@betelgeuse.org"/>
+                    </query>
+                    </iq>)});
+
+            cache.receive({
+                session: { name: 'arthur@earth.org/Test' },
+                stanza: asDOM(
+                    <iq type="set" from="arthur@earth.org">
+                    <query xmlns="jabber:iq:roster">
+                    <item jid="ford@betelgeuse.org" name="Ford"/>
+                    </query>
+                    </iq>)});
+
+            assert.equals(
+                [<iq type="result" from="arthur@earth.org">
+                 <query xmlns="jabber:iq:roster">
+                 <item jid="ford@betelgeuse.org" name="Ford"/>
+                 </query>
+                 </iq>], asStanzas(cache.fetch({})));
+        }
     };
 
     var report = [];
@@ -519,4 +683,3 @@ function profile() {
                 })
         }, 500);
 }
-
