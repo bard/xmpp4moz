@@ -202,8 +202,9 @@ Cache.prototype = {
 // ----------------------------------------------------------------------
 
 function JID(string) {
-    if(string in arguments.callee.memo)
-        return arguments.callee.memo[string];
+    var memo = arguments.callee.memo || (arguments.callee.memo = {});
+    if(string in memo)
+        return memo[string];
     var m = string.match(/^(.+?@)?(.+?)(?:\/|$)(.*$)/);
 
     var jid = {};
@@ -219,10 +220,9 @@ function JID(string) {
         jid.username + '@' + jid.hostname :
         jid.hostname;
 
-    arguments.callee.memo[string] = jid;
+    memo[string] = jid;
     return jid;    
 }
-JID.memo = {};
 
 function isMUCUserPresence(presenceStanza) {
     var x = presenceStanza.getElementsByTagName('x')[0];
