@@ -514,16 +514,43 @@ function enableContentDocument(panel, account, address, type, createSocket) {
     function gotDataFromPage(text) {
         XML.prettyPrinting = false;
         XML.ignoreWhitespace = false;
-        var message = new XML(text);
+        var stanza = new XML(text);
 
-        delete message.@from;
-        message.@to = /^\/.+$/.test(message.@to.toString()) ?
-            address + message.@to : address;
-        if(message.@type == undefined)
-            message.@type = type;
-        send(account, message);
+        // Fill in defaults and enforce security policy.  Rules are:
+        //
+        // - If stanza contains no "type" attribute, use the one
+        //   provided at connection time (this allows some apps to
+        //   work both 1-1 and in muc with minimal fuss).
+        //
+        // - If app is remote, remove "from" attribute (if provided).
+        //
+        // - If app is remote and "to" looks like "/Resource", set
+        //   address part of "to" attribute to address provided at
+        //   connection time plus "/Resource", otherwise just replace
+        //   it with the address provided at connection. (In other
+        //   words, hybrid app can at most decide what resource of the
+        //   connected contact to send a stanza to.)
+        //
+        // - If app is local and "to" is set, don't touch it,
+        //   otherwise fill it in as for remote apps.
 
-        XML.setSettings(settings);
+        if(stanza.@type == undefined)
+            stanza.@type = type;
+
+        if(/^(file|chrome):\/\//.test(panel.currentURI.spec)) {
+            if(/^\/.+$/.test(stanza.@to.toString()))
+                stanza.@to = address + stanza.@to;
+            else if(stanza.@to == undefined)
+                stanza.@to = address;
+        } else {
+            delete stanza.@from;
+            if(/^\/.+$/.test(stanza.@to.toString()))
+                stanza.@to = address + stanza.@to;
+            else
+                stanza.@to = address;
+        }
+
+        send(account, stanza);
     }
 
     function gotDataFromXMPP(stanza) {
