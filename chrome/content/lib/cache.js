@@ -51,6 +51,7 @@ var DB          =
     })();
 
 var ns_roster   = 'jabber:iq:roster';
+var ns_muc      = 'http://jabber.org/protocol/muc';
 var ns_muc_user = 'http://jabber.org/protocol/muc#user';
 
 
@@ -62,7 +63,17 @@ function Cache() {
 
     var presence = {
         manages: function(object) {
-            return object.event == 'presence';
+            if(object.event != 'presence')
+                return false;
+
+            // Directed presence of a type other than the one used to join a room?
+
+            if(object.stanza.hasAttribute('to') &&
+               !object.stanza.hasAttribute('from') &&
+               object.stanza.getElementsByTagNameNS(ns_muc, 'x').length == 0)
+                return false;
+
+            return true;
         },
 
         apply: function(db, object) {
@@ -463,6 +474,21 @@ function verify() {
 
             assert.equals([<presence/>, <presence/>],
                           asStanzas(cache._db._store));
+        },
+
+        'user sends contact directed presence: do not cache': function() {
+            var cache = new Cache();
+            cache.receive({
+                session: { name: 'arthur@earth.org/Test' },
+                stanza: asDOM(<presence/>)
+                });
+
+            cache.receive({
+                session: { name: 'arthur@earth.org/Test' },
+                stanza: asDOM(<presence to="ford@betelgeuse.org/Test"/>)
+                });
+
+            assert.equals([<presence/>], asStanzas(cache._db._store));
         },
 
         'fetch presences from a given session and contact address': function() {
