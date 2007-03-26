@@ -59,7 +59,7 @@ var ns_muc_user = 'http://jabber.org/protocol/muc#user';
 // ----------------------------------------------------------------------
 
 function Cache() {
-    this._db = new DB({indices: ['from.full', 'from.address', 'account']});
+    this._db = new DB({indices: ['from.full', 'from.address', 'account', 'event']});
 
     var presence = {
         manages: function(object) {

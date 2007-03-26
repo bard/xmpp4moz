@@ -406,7 +406,7 @@ function arrayOfObjectsToEnumerator(array) {
 cache = (function() {
              var pkg = {};
              loader.loadSubScript('chrome://xmpp4moz/content/lib/cache.js', pkg);
-             return new pkg.Cache({indices: ['from.full', 'from.address', 'account']});
+             return new pkg.Cache();
          })();
 
 
