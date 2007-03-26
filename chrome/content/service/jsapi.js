@@ -512,7 +512,6 @@ function enableContentDocument(panel, account, address, type, createSocket) {
         return;
 
     function gotDataFromPage(text) {
-        var settings = XML.settings();
         XML.prettyPrinting = false;
         XML.ignoreWhitespace = false;
         var message = new XML(text);
@@ -544,7 +543,7 @@ function enableContentDocument(panel, account, address, type, createSocket) {
 
     // The contact sub-roster is a roster where the only entry is the
     // contact we are connecting to (if in roster, otherwise it's
-    // empty').
+    // empty).
 
     var roster = cache.find({
         event     : 'iq',
@@ -556,14 +555,10 @@ function enableContentDocument(panel, account, address, type, createSocket) {
     // Latest presence seen from contact.
 
     var contactPresence = cache.find({
-        event: 'presence',
-        direction: 'in',
-        session: function(s) {
-                return s.name == account;
-            },
-        stanza: function(s) {
-                return JID(s.@from).address == address;
-            }});
+        event     : 'presence',
+        direction : 'in',
+        session   : function(s) { return s.name == account; },
+        stanza    : function(s) { return JID(s.@from).address == address; }});
 
     // MUC presence is the presence stanza we used to join the room
     // (if we are joining a room).
@@ -572,24 +567,16 @@ function enableContentDocument(panel, account, address, type, createSocket) {
     if(type == 'groupchat') {
         var mucPresencesOut = 
             cache.fetch({
-                event: 'presence',
-                direction: 'out',
-                session: function(s) {
-                        return s.name == account;
-                    },
-                stanza: function(s) {
-                        return s.@to != undefined && JID(s.@to).address == address;
-                    }});
+                event     : 'presence',
+                direction : 'out',
+                session   : function(s) { return s.name == account; },
+                stanza    : function(s) { return s.@to != undefined && JID(s.@to).address == address; }});
         var mucPresencesIn = 
             cache.fetch({
-                event: 'presence',
-                direction: 'in',
-                session: function(s) {
-                        return s.name == account;
-                    },
-                stanza: function(s) {
-                        return JID(s.@from).address == address;
-                    }});
+                event     : 'presence',
+                direction : 'in',
+                session   : function(s) { return s.name == account; },
+                stanza    : function(s) { return JID(s.@from).address == address; }});
         mucPresences = mucPresencesIn.concat(mucPresencesOut);
     }
 
@@ -606,41 +593,26 @@ function enableContentDocument(panel, account, address, type, createSocket) {
     panel.xmppChannel = channel;
 
     channel.on({
-        direction: 'in',
-        event: 'message',
-        session: function(s) {
-                return s.name == account;
-            },
-        stanza: function(s) {
-                return (JID(s.@from).address == address);
-            }
+        event     : 'message',
+        direction : 'in',
+        session   : function(s) { return s.name == account; },
+        stanza    : function(s) { return (JID(s.@from).address == address); }
         }, function(message) { gotDataFromXMPP(message.stanza); });
     
     channel.on({
-        event: 'presence',
-        direction: 'in',
-        session: function(s) {
-                return s.name == account;
-            },
-        stanza: function(s) {
-                return JID(s.@from).address == address;
-            }
+        event     : 'presence',
+        direction : 'in',
+        session   : function(s) { return s.name == account; },
+        stanza    : function(s) { return JID(s.@from).address == address; }
         }, function(presence) { gotDataFromXMPP(presence.stanza); });
 
     if(type != 'groupchat')
         channel.on({
-            direction: 'out',
-            event: 'message',
-            session: function(s) {
-                    return s.name == account;
-                },
-            stanza: function(s) {
-                    return JID(s.@to).address == address;
-                }
-            },
-            function(message) {
-                gotDataFromXMPP(message.stanza);
-            });
+            direction : 'out',
+            event     : 'message',
+            session   : function(s) { return s.name == account; },
+            stanza    : function(s) { return JID(s.@to).address == address; }
+            }, function(message) { gotDataFromXMPP(message.stanza); });
 
     gotDataFromXMPP(contactSubRoster);
 
@@ -648,9 +620,7 @@ function enableContentDocument(panel, account, address, type, createSocket) {
         gotDataFromXMPP(contactPresence.stanza);
     if(mucPresences)
         mucPresences.forEach(
-            function(mucPresence) {
-                gotDataFromXMPP(mucPresence.stanza);
-            });
+            function(mucPresence) { gotDataFromXMPP(mucPresence.stanza); });
 }
 
 function disableContentDocument(panel) {
