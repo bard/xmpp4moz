@@ -92,95 +92,49 @@ const ns_disco_info = 'http://jabber.org/protocol/disco#info';
 
 var cache = {
     get roster() {
-        return service.wrappedJSObject.cache.fetch({
+        return this.fetch({
             event  : 'iq',
             stanza : function(s) {
-                    return s.getElementsByTagNameNS(ns_roster, 'query').length == 1;
-                }   
-            }).map(
-                function(internalObject) {
-                    return wrapEvent({
-                        stanza: dom2xml(internalObject.stanza),
-                        session: internalObject.session,
-                        direction: internalObject.direction 
-                        });
-                });
+                    return s.ns_roster::query != undefined;
+                }});
     },
 
     get presenceIn() {
-        return service.wrappedJSObject.cache.fetch({
-            event     : 'presence',
-            direction : 'in'
-            }).map(
-                function(internalObject) {
-                    return wrapEvent({
-                        stanza: dom2xml(internalObject.stanza),
-                        session: internalObject.session,
-                        direction: internalObject.direction 
-                        });
-                });
+        return this.fetch({ event: 'presence', direction: 'in' });
     },
 
     get presenceOut() {
-        return service.wrappedJSObject.cache.fetch({
-            event     : 'presence',
-            direction : 'out'
-            }).map(
-                function(internalObject) {
-                    return wrapEvent({
-                        stanza: dom2xml(internalObject.stanza),
-                        session: internalObject.session,
-                        direction: internalObject.direction 
-                        });
+        return this.fetch({ event: 'presence', direction: 'out' });
+    },
+
+    fetch: function(pattern) {
+        // parts of the pattern may have to be evaluated locally
+        // (e.g. those that reason in E4X instead of DOM).  A better
+        // strategy has to be found for this.
+
+        var remotePattern = {}, localPattern = {};
+        for(var member in pattern)
+            if(typeof(pattern[member]) == 'function')
+                localPattern[member] = pattern[member];
+            else
+                remotePattern[member] = pattern[member];
+        
+        return service.wrappedJSObject.cache
+        .fetch(remotePattern)
+        .map(function(internalObject) {
+                 return wrapEvent({
+                     stanza: dom2xml(internalObject.stanza),
+                     session: internalObject.session,
+                     direction: internalObject.direction 
+                     });
+             })
+        .filter(function(event) {
+                    return match(event, localPattern);
                 });
     },
 
-    _subCacheFor: function(pattern) {
-        switch(pattern.event) {
-            case 'presence':
-            if(pattern.direction == 'in')
-                return this.presenceIn;
-            else
-                return this.presenceOut;
-            break;
-            
-            case 'iq':
-            if(pattern.direction == 'in' &&
-               match({stanza: <iq><query xmlns={ns_roster}/></iq>}, {stanza: pattern.stanza}))
-                return this.roster;
-            else
-                throw new Error('event not cached yet');
-            break;
-            
-            default:
-            throw new Error('event not cached yet');
-        }
-        
-        // XXX create a copy of pattern without the already-matched
-        // properties
-    },
-
-    filter: function(pattern) {
-        return this._subCacheFor(pattern).filter(
-            function(event) { return match(event, pattern); });
-    },
-
     find: function(pattern) {
-        for each(event in this._subCacheFor(pattern)) {
-            if(match(event, pattern))
-                return event;
-        }
-    },
-
-    forEach: function(pattern, action) {
-        for each(event in this._subCacheFor(pattern)) {
-            if(match(event, pattern))
-                action(event);
-        }
-    },
-
-    map: function(pattern, action) {
-        return this.filter(pattern).map(action);
+        return this.fetch(pattern)[0];
     }
 };
 
@@ -506,22 +460,18 @@ function presenceSummary(account, address) {
 
     var presences;
     if(account && address)
-        presences = cache.filter({
-            event: 'presence',
-            direction: 'in',
-            session: function(s) {
-                    return s.name == account;
-                },
-            stanza: function(s) {
-                    return JID(s.@from).address == address;
-                }});
+        presences = cache.fetch({
+            event     : 'presence',
+            direction : 'in',
+            session   : { name: account },
+            stanza    : function(s) { return JID(s.@from).address == address; }
+            });
     else 
-        presences = cache.filter({
-            event: 'presence',
-            direction: 'out',
-            stanza: function(s) {
-                    return s.ns_muc::x == undefined;
-                }});
+        presences = cache.fetch({
+            event     : 'presence',
+            direction : 'out',
+            stanza    : function(s) { return s.ns_muc::x == undefined && s.@to == undefined; }
+            });
 
     presences.sort(
         function(a, b) {
@@ -621,7 +571,7 @@ function enableContentDocument(panel, account, address, type, createSocket) {
     var mucPresences;
     if(type == 'groupchat') {
         var mucPresencesOut = 
-            cache.filter({
+            cache.fetch({
                 event: 'presence',
                 direction: 'out',
                 session: function(s) {
@@ -631,7 +581,7 @@ function enableContentDocument(panel, account, address, type, createSocket) {
                         return s.@to != undefined && JID(s.@to).address == address;
                     }});
         var mucPresencesIn = 
-            cache.filter({
+            cache.fetch({
                 event: 'presence',
                 direction: 'in',
                 session: function(s) {

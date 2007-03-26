@@ -209,7 +209,7 @@ function refreshPresenceInCache() {
     _('cache-presence-in').value = '';
 
     var presencesByAccount = {};
-    XMPP.cache.filter({event: 'presence', direction: 'in'}).forEach(
+    XMPP.cache.fetch({event: 'presence', direction: 'in'}).forEach(
         function(presence) {
             if(!presencesByAccount[presence.session.name])
                 presencesByAccount[presence.session.name] = [];
@@ -228,8 +228,10 @@ function refreshPresenceInCache() {
 
 function refreshPresenceOutCache() {
     _('cache-presence-out').value =
-        XMPP.cache.map(
-            {event: 'presence', direction: 'out'},
+        XMPP.cache.fetch({
+            event: 'presence',
+            direction: 'out'})
+        .map(
             function(presence) {
                 return presence.stanza.toXMLString();
             })
@@ -238,11 +240,12 @@ function refreshPresenceOutCache() {
 
 function refreshRosterCache() {
     _('cache-roster').value =
-        XMPP.cache.map({
+        XMPP.cache.fetch({
             event: 'iq', direction: 'in',
             stanza: function(s) {
                     return s.ns_roster::query != undefined;
-                }},
+                }})
+        .map(
             function(iq) {
                 return iq.stanza.toXMLString();
             })
