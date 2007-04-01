@@ -249,12 +249,9 @@ function _openUserSession(jid, transport, streamObserver) {
                     direction: 'in',
                     }).forEach(
                         function(presence) {
-                            var synthStanza = presence.stanza.cloneNode(true);
-                            synthStanza.setAttribute('type', 'unavailable');
-                            var synthPayload = presence.stanza.ownerDocument.createElement('x');
-                            synthPayload.setAttribute('xmlns', 'http://dev.hyperstruct.net/xmpp4moz#synthetic');
-                            synthStanza.appendChild(synthPayload);
-                            session.receive(serializer.serializeToString(syntheticPresence));
+                            var inverse = syntheticClone(presence.stanza);
+                            inverse.setAttribute('type', 'unavailable');
+                            session.receive(serializer.serializeToString(inverse));
                         });
                 
             if(topic == 'stanza-in' && subject.nodeName == 'iq' &&
@@ -281,13 +278,9 @@ function _openUserSession(jid, transport, streamObserver) {
                     direction : 'in',
                     }).forEach(
                         function(presence) {
-                            var synthStanza = presence.stanza.cloneNode(true);
-                            synthStanza.removeAttribute('id');
-                            synthStanza.setAttribute('type', 'unavailable');
-                            var synthPayload = presence.stanza.ownerDocument.createElement('x');
-                            synthPayload.setAttribute('xmlns', 'http://dev.hyperstruct.net/xmpp4moz#synthetic');
-                            synthStanza.appendChild(synthPayload);
-                            session.receive(serializer.serializeToString(synthStanza));
+                            var inverse = syntheticClone(presence.stanza);
+                            inverse.setAttribute('type', 'unavailable');
+                            session.receive(serializer.serializeToString(inverse));
                         });
 
                 cache.fetch({
@@ -296,15 +289,11 @@ function _openUserSession(jid, transport, streamObserver) {
                     session   : { name: data },                    
                     }).forEach(
                         function(presence) {
-                            var synthStanza = presence.stanza.cloneNode(true);
-                            synthStanza.removeAttribute('id');
-                            synthStanza.setAttribute('type', 'unavailable');
-                            var synthPayload = presence.stanza.ownerDocument.createElement('x');
-                            synthPayload.setAttribute('xmlns', 'http://dev.hyperstruct.net/xmpp4moz#synthetic');
-                            synthStanza.appendChild(synthPayload);
+                            var inverse = syntheticClone(presence.stanza);
+                            inverse.setAttribute('type', 'unavailable');
                             cache.receive({
                                 session : { name: data },
-                                stanza  : synthStanza
+                                stanza  : inverse
                                 });
                         });
 
@@ -487,4 +476,35 @@ function isMUCUserPresence(domStanza) {
         var x = domStanza.getElementsByTagName('x')[0];
         return (x && x.getAttribute('xmlns') == 'http://jabber.org/protocol/muc#user');
     }
+}
+
+/**
+ * Checks whether _stanza_ is marked as synthetic, i.e. has a
+ * <synthetic xmlns="http://dev.hyperstruct.net/xmpp4moz"/> child
+ * element.
+ *
+ */
+
+function isSynthetic(stanza) {
+    return stanza.getElementsByTagNameNS(
+        'http://dev.hyperstruct.net/xmpp4moz',
+        'synthetic').length > 0;
+}
+
+/**
+ * Returns a synthetic clone of the given _stanza_.
+ *
+ */
+
+function syntheticClone(stanza) {
+    var clone = stanza.cloneNode(true);
+
+    clone.removeAttribute('id');
+    if(!isSynthetic(clone))
+        clone.appendChild(
+            clone.ownerDocument.createElementNS(
+                'http://dev.hyperstruct.net/xmpp4moz',
+                'synthetic'));
+ 
+    return clone;
 }
