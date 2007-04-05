@@ -73,6 +73,10 @@ function Cache() {
                object.stanza.getElementsByTagNameNS(ns_muc, 'x').length == 0)
                 return false;
 
+            if(object.stanza.hasAttribute('type') &&
+               object.stanza.getAttribute('type') != 'unavailable')
+                return false;
+
             return true;
         },
 
@@ -130,7 +134,10 @@ function Cache() {
                 var pushedItem = object.stanza
                     .getElementsByTagNameNS(ns_roster, 'query')[0]
                     .getElementsByTagName('item')[0];
-                if(!pushedItem)
+                
+                if(pushedItem)
+                    pushedItem = pushedItem.cloneNode(true);
+                else
                     return;
 
                 var updatedIq = previous[0].stanza.cloneNode(true);
@@ -249,16 +256,24 @@ function verify() {
 
     var assert = {
         equals: function(array1, array2) {
-            if(array1.length != array2.length) {
-                throw new Error('FAIL: ' + Components.stack.caller.lineNumber);
-                return;
-            } else {
-                for(var i=0; i<array1.length; i++)
-                    if(array1[i] != array2[i]) {
-                        throw new Error('FAIL: ' + Components.stack.caller.lineNumber +
-                                        ' (' + array1[i] + ' vs ' + array2[i] + ')');
-                        return;
-                    }
+            if(typeof(array1) != typeof(array2)) {
+                throw new Error('FAIL: different object types - ' + Components.stack.caller.lineNumber);
+            }
+            else if(typeof(array1) == 'xml') {
+                if(array1 != array2)
+                    throw new Error('FAIL: ' + Components.stack.caller.lineNumber);
+            }
+            else if('length' in array1) {
+                if(array1.length != array2.length) {
+                    throw new Error('FAIL: different array lengths - ' + Components.stack.caller.lineNumber);
+                    return;
+                } else {
+                    for(var i=0; i<array1.length; i++)
+                        if(array1[i] != array2[i])
+                            throw new Error('FAIL: ' + Components.stack.caller.lineNumber +
+                                            ' (' + array1[i] + ' vs ' + array2[i] + ')');
+                    
+                }
             }
         }
     };
@@ -491,6 +506,26 @@ function verify() {
             assert.equals([<presence/>], asStanzas(cache._db._store));
         },
 
+        'user receives presence subscription: do not cache': function() {
+            var cache = new Cache();
+            cache.receive({
+                session: { name: 'arthur@earth.org/Test' },
+                stanza: asDOM(<presence from="arthur@earth.org/Test" type="subscribe"/>)
+                });
+
+            assert.equals([], asStanzas(cache._db._store));
+        },
+
+        'user sends presence subscription confirmation: do not cache': function() {
+            var cache = new Cache();
+            cache.receive({
+                session: { name: 'arthur@earth.org/Test' },
+                stanza: asDOM(<presence to="arthur@earth.org/Test" type="subscribed"/>)
+                });
+
+            assert.equals([], asStanzas(cache._db._store));
+        },
+
         'fetch presences from a given session and contact address': function() {
             var cache = new Cache();
             cache.receive({
@@ -619,6 +654,78 @@ function verify() {
                  <item jid="ford@betelgeuse.org" name="Ford"/>
                  </query>
                  </iq>], asStanzas(cache.fetch({})));
+        },
+
+        'cached roster stanzas remain unchanged': function() {
+            var cache = new Cache();
+
+            cache.receive({
+                session: { name: 'arthur@sameplace.cc/Firefox' },
+                stanza: asDOM(
+                    <iq from="arthur@sameplace.cc/Firefox" to="arthur@sameplace.cc/Firefox" type="result">
+                    <query xmlns="jabber:iq:roster">
+                    <item subscription="both" jid="marvin@sameplace.cc"/>
+                    </query>
+                    </iq>)
+                });
+
+            var rosterPush = asDOM(
+                <iq from="arthur@sameplace.cc/Firefox" to="arthur@sameplace.cc/Firefox" id="push" type="set">
+                <query xmlns="jabber:iq:roster">
+                <item subscription="both" name="Marvin" jid="marvin@sameplace.cc"/>
+                </query>
+                </iq>);
+
+            cache.receive({
+                session: { name: 'arthur@sameplace.cc/Firefox' },
+                stanza: rosterPush
+                });
+
+            assert.equals(
+                <iq from="arthur@sameplace.cc/Firefox" to="arthur@sameplace.cc/Firefox" id="push" type="set">
+                <query xmlns="jabber:iq:roster">
+                <item subscription="both" name="Marvin" jid="marvin@sameplace.cc"/>
+                </query>
+                </iq>,
+                asXML(rosterPush));
+        },
+
+        'empty roster result does not modify cache': function() {
+            var cache = new Cache();
+
+            cache.receive({
+                session: { name: 'arthur@sameplace.cc/Firefox' },
+                stanza: asDOM(
+                    <iq from="arthur@sameplace.cc/Firefox" to="arthur@sameplace.cc/Firefox" type="result">
+                    <query xmlns="jabber:iq:roster"/>
+                    </iq>)
+                });
+
+            cache.receive({
+                session: { name: 'arthur@sameplace.cc/Firefox' },
+                stanza: asDOM(
+                    <iq from="arthur@sameplace.cc/Firefox" to="arthur@sameplace.cc/Firefox" type="result">
+                    <query xmlns="jabber:iq:roster">
+                    <item subscription="both" jid="marvin@sameplace.cc"/>
+                    </query>
+                    </iq>)
+                });
+
+            cache.receive({
+                session: { name: 'arthur@sameplace.cc/Firefox' },
+                stanza: asDOM(
+                    <iq from="arthur@sameplace.cc/Firefox" to="arthur@sameplace.cc/Firefox" type="result">
+                    <query xmlns="jabber:iq:roster"/>
+                    </iq>)
+                });
+
+            assert.equals(
+                [<iq from="arthur@sameplace.cc/Firefox" to="arthur@sameplace.cc/Firefox" type="result">
+                 <query xmlns="jabber:iq:roster">
+                 <item subscription="both" jid="marvin@sameplace.cc"/>
+                 </query>
+                 </iq>],
+                asStanzas(cache.fetch({})));
         }
     };
 
