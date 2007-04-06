@@ -82,8 +82,10 @@ function refreshAccountList() {
     for(var i=_('xmpp-accounts').getRowCount()-1; i>=0; i--) 
         _('xmpp-accounts').removeItemAt(i);
 
-    for each(var account in XMPP.accounts) 
-        _('xmpp-accounts').appendItem(account.jid, account.key);
+    XMPP.accounts.forEach(
+        function(account) {
+            _('xmpp-accounts').appendItem(account.jid, account.key);    
+        });
 }
 
 function showAccount(accountKey) {

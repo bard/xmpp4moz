@@ -218,10 +218,13 @@ function requestedChangeStatus(event) {
  */
 
 function connectAutologinAccounts() {
-    for each(var account in XMPP.accounts) 
-        if(account.autoLogin && !XMPP.isUp(account))
-            XMPP.up(account);
-
+    XMPP.accounts
+        .filter(function(a) {
+                    return a.autoLogin && !XMPP.isUp(a);
+                })
+        .forEach(function(a) {
+                     XMPP.up(a);
+                 });
 }
 
 function changeStatus(type) {

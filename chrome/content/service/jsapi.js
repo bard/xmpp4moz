@@ -812,19 +812,27 @@ this.__defineGetter__(
     });
 
 function getAccountByJid(jid) {
-    for each(var account in this.accounts) {
-        if(account.jid == jid)
-            return account;
-    }
-    return null;
+    var result;
+    accounts.forEach(
+        function(account) {
+            if(result)
+                return;
+            if(account.jid == jid)
+                result = account;
+        });
+    return result;
 }
 
 function getAccountByKey(key) {
-    for each(var account in this.accounts) {
-        if(account.key == key)
-            return account;
-    }   
-    return null;    
+    var result;
+    accounts.forEach(
+        function(account) {
+            if(result)
+                return;
+            if(account.key == key)
+                result = account;
+        });
+    return result;
 }
 
 

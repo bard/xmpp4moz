@@ -180,12 +180,16 @@ function init(event) {
 
     xmpp.ui.refreshAccounts(_('xmpp-popup-accounts'));
 
-    for each(var account in XMPP.accounts) {
-        if(XMPP.isUp(account.jid)) {
-            _('accounts').value = account.jid;
-            break;
-        }
-    }
+    var result;
+    XMPP.accounts.forEach(
+        function(account) {
+            if(result)
+                return;
+            if(XMPP.isUp(account.jid))
+                result = account;
+        });
+    if(result)
+        _('accounts').value = result.jid;
 
 
     _('input').focus();

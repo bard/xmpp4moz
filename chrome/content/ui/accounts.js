@@ -49,27 +49,28 @@ xmpp.ui.refreshAccounts = function(menuPopup) {
     while(menuPopup.firstChild &&
           menuPopup.firstChild.nodeName != 'menuseparator')
         menuPopup.removeChild(menuPopup.firstChild);
-    
-    for each(var account in XMPP.accounts) {
-        var menuItem = document.createElement('menuitem');
-        menuItem.setAttribute('label', account.jid);
-        menuItem.setAttribute('value', account.jid);
-        menuItem.setAttribute('class', 'menuitem-iconic');
 
-        accountPresence =
-            XMPP.cache.find({
-                event: 'presence',
-                direction: 'out',
-                account: account.jid}) ||
-            { stanza: <presence type="unavailable"/> };
+    XMPP.accounts.forEach(
+        function(account) {
+            var menuItem = document.createElement('menuitem');
+            menuItem.setAttribute('label', account.jid);
+            menuItem.setAttribute('value', account.jid);
+            menuItem.setAttribute('class', 'menuitem-iconic');
 
-        menuItem.setAttribute('availability',
-                              accountPresence.stanza.@type == undefined ?
-                              'available' : 'unavailable')
+            accountPresence =
+                XMPP.cache.find({
+                    event: 'presence',
+                    direction: 'out',
+                    account: account.jid}) ||
+                { stanza: <presence type="unavailable"/> };
 
-        menuItem.setAttribute('show',
-                              accountPresence.stanza.show.toString());
+            menuItem.setAttribute('availability',
+                                  accountPresence.stanza.@type == undefined ?
+                                  'available' : 'unavailable')
 
-        menuPopup.insertBefore(menuItem, menuPopup.firstChild);
-    }
+                menuItem.setAttribute('show',
+                                      accountPresence.stanza.show.toString());
+
+            menuPopup.insertBefore(menuItem, menuPopup.firstChild);            
+        })
 };

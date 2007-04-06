@@ -67,27 +67,27 @@ function init() {
     prefBranch.addObserver('', prefObserver, false);
 
     xmpp.ui.refreshAccounts(_('xmpp-popup-accounts'));
-    
+
     var accounts = XMPP.accounts;
     if(request.jid) {
-        for each(var account in accounts) {
-            if(request.jid == account.jid) {
-                _('account-name').hidden = false;
-                _('account-name').value = request.jid;
-                selectedAccount(account.jid);
-                break;
-            }
+        var account = XMPP.getAccountByJid(request.jid);
+        if(account) {
+            _('account-name').hidden = false;
+            _('account-name').value = request.jid;
+            selectedAccount(account.jid);
         }
     } else {
         _('accounts').hidden = false;
-        for each(var account in accounts) {
-            if(XMPP.isUp(account.jid)) {
-                _('accounts').value = account.jid;
-                break;
-            }
-        }
-        if(!_('accounts').value)
-            _('accounts').value = accounts[0].jid;
+        var result;
+        XMPP.accounts.forEach(
+            function(account) {
+                if(result)
+                    return;
+                if(XMPP.isUp(account))
+                    result = account;
+            });
+        _('accounts').value = result ? result.jid : accounts[0].jid;
+
         selectedAccount(_('accounts').value);
     }
 }
