@@ -225,19 +225,28 @@ function connectAutologinAccounts() {
 }
 
 function changeStatus(type) {
-    for each(var account in XMPP.accounts) {
-        if(XMPP.isUp(account)) {
-            if(type == 'unavailable')
-                XMPP.down(account);
-            else {
-                var stanza;
-                for each(var presence in XMPP.cache.presenceOut) 
-                    if(presence.session.name == account.jid) {
-                        stanza = presence.stanza.copy();
-                        break;
-                    }
+    var accountsUp = XMPP.accounts.filter(
+        function(account) {
+            return XMPP.isUp(account);
+        });
 
-                stanza = stanza || <presence/>;
+    if(accountsUp.length == 0) {
+        if(type == 'available')
+            XMPP.accounts.forEach(
+                function(account) {
+                    XMPP.up(account); });
+    } else
+        accountsUp.forEach(
+            function(account) {
+                if(type == 'unavailable')
+                    XMPP.down(account);
+                else {
+                    var stanza;
+                    for each(var presence in XMPP.cache.presenceOut) 
+                        if(presence.session.name == account.jid) {
+                            stanza = presence.stanza.copy();
+                            break;
+                        }
 
                     stanza = stanza || <presence/>;
 
