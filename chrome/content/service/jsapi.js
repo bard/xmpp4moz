@@ -178,24 +178,91 @@ function JID(string) {
     return jid;    
 }
 
-function up(account, opts) {
-    opts = opts || {};
+/**
+ * Establishes a client session with an XMPP server.
+ *
+ * _account_ can be null, a string, or an object.
+ *
+ * Scenarios:
+ *
+ * _account_ is a null-equivalent.  User will be prompted to select an
+ * account.  Accounts come through the in-scope "accounts" object.
+ *
+ *     XMPP.up();
+ *     XMPP.up(null);
+ *
+ * _account_ is a string.  The corresponding account object is looked
+ * up in the in-scope "accounts" object.
+ *
+ *     XMPP.up('arthur@earth.org/Guide');
+ *     XMPP.up('ford@betelgeuse.org/Towel');
+ *
+ * _account_ is an empty object.  User will be prompted to select an
+ * account like when _account_ is a null-equivalent, but in this case
+ * _account_ will retain the JID selected by the user:
+ *
+ *     var account = {};
+ *     XMPP.up(account);
+ *     alert(account.jid); // will display "arthur@earth.org/Guide"
+ *
+ * _account_ is an object containing an account definition.
+ *
+ *     var account = {
+ *         jid                : 'arthur@earth.org/Guide',
+ *         password           : '42',
+ *         connectionSecurity : 1
+ *     }
+ *     XMPP.up(account);
+ *
+ * Following fields are available for the account object:
+ *
+ *     jid                : full JID, including resource
+ *     password           : password
+ *     connectionHost     : host, if different from the domain part of the JID
+ *     connectionPort     : port, if different from 5223
+ *     connectionSecurity : 0 = no SSL, 1 = SSL (default)
+ *
+ *
+ * The second parameter, _opts_, is deprecated.  Don't use it.
+ *
+ * (*) This will be soon deprecated in favour of the in-scope
+ * "accounts" object.
+ *
+ */
 
-    if(typeof(account) == 'object') {
-        if(account.jid)
-            this._up(account.jid, opts);
-        else {
-            var userContinuation = opts.continuation;                
-            opts.continuation = function(jid) {
-                account.jid = jid;
-                if(userContinuation)
-                    userContinuation(jid);
-            }
+function up(account, extra) {
+    // Normalize arguments (including deprecated ones) so that _up()
+    // can concentrate on the real job.
 
-            this._up(null, opts);
-        }
-    } else
-        this._up(account, opts);
+    var continuation;
+    if(typeof(extra) == 'function')
+        continuation = extra;
+    else if(typeof(opts) == 'object') {
+        deprecation(
+            'opts parameter will be removed, use account instead.');
+        if(opts.ssl)
+            account.connectionSecurity = 1;
+        if(opts.host)
+            account.connectionHost = opts.host;
+        if(opts.port)
+            account.connectionPort = opts.port;
+        if(opts.continuation)
+            continuation = opts.continuation;
+    }
+    
+    if(!account)
+        account = {};
+    else if(typeof(account) == 'string')
+        account = this.getAccountByJid(account);
+    
+    if(account.jid)
+        this._up(account, continuation);
+    else
+        this._up(null, function(jid) {
+                     account.jid = jid;
+                     if(continuation)
+                         continuation(jid);
+                 });
 }
 
 function down(account) {
@@ -222,9 +289,9 @@ function send(account, stanza, handler) {
         this._send(account.jid || account, stanza, handler);
     else
         // TODO will multiple send cause multiple signon dialogs?
-        this.up(account, {continuation: function(jid) {
-                        _this._send(jid, stanza, handler);
-                    }});
+        this.up(account, function(jid) {
+                    _this._send(jid, stanza, handler);
+                });
 }
 
 function createChannel(features) {
@@ -674,23 +741,16 @@ function _promptAccount(jid) {
     return params;
 }
 
-function _up(jid, opts) {
-    opts = opts || {};
-
-    var password, continuation;
-    continuation = opts.continuation;
-    if(jid) {
-        var account = this.getAccountByJid(jid);
-        password = opts.password || account.password;
-        opts.host = opts.host || account.connectionHost;
-        opts.port = opts.port || account.connectionPort;
-        if(opts.ssl == undefined)
-            opts.ssl = (account.connectionSecurity == 1);
-    } else 
-        password = opts.password;
-
-    delete opts.password;
-    delete opts.continuation;
+function _up(account, continuation) {
+    var jid, password, host, port, ssl;
+    if(account) {
+        jid = account.jid;
+        password = account.password;
+        host = account.connectionHost;
+        port = account.connectionPort;
+        ssl = (account.connectionSecurity == undefined ||
+               account.connectionSecurity == 1);
+    }
 
     if(!((jid && password) || (jid && this.isUp(jid)))) {
         var userInput = this._promptAccount(jid);
@@ -706,7 +766,7 @@ function _up(jid, opts) {
     else if(jid && password) {
         var XMPP = this;
 
-        open(jid, opts,
+        open(jid, {host: host, port: port, ssl: ssl},
              function() {
                  send(
                      jid,
@@ -838,6 +898,16 @@ function getAccountByKey(key) {
 
 // DEVELOPER UTILITIES
 // ----------------------------------------------------------------------
+
+function deprecation(msg) {
+    var frame = Components.stack.caller;
+    
+    dump('xmpp4moz :: DEPRECATION NOTICE :: "' + msg + '" in: \n');
+    while(frame) {
+        dump('  ' + frame + '\n');
+        frame = frame.caller
+    }
+}
 
 function getStackTrace() {
     var frame = Components.stack.caller;
