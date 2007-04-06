@@ -95,6 +95,30 @@ const stanzaTemplates = {
         <query xmlns="jabber:iq:private">
         <storage xmlns="storage:bookmarks"/>
         </query>
+        </iq>,
+
+        'PEP/Create Collection Node':
+        <iq type="set">
+        <pubsub xmlns="http://jabber.org/protocol/pubsub">
+        <create node="NODE NAME"/>
+        <configure>
+        <x type="submit" xmlns="jabber:x:data">
+        <field var="FORM_TYPE" type="hidden">
+        <value>http://jabber.org/protocol/pubsub#node_config</value>
+        </field>
+        <field var="pubsub#node_type">
+        <value>collection</value>
+        </field>
+        </x>
+        </configure>
+        </pubsub>
+        </iq>,
+
+        'PEP/Delete Node':
+        <iq type="set">
+        <pubsub xmlns="http://jabber.org/protocol/pubsub#owner">
+        <delete node="NODE NAME"/>
+        </pubsub>
         </iq>
     },
 
