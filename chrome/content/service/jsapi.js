@@ -609,15 +609,39 @@ function enableContentDocument(panel, account, address, type, createSocket) {
                 stanza.@to = address + stanza.@to;
             else if(stanza.@to == undefined)
                 stanza.@to = address;
+
+            if(stanza.localName() == 'iq') {
+                // iq's are traced for unrestricted applications, so that
+                // they can find their way back to the application.
+                    
+                // Allow XMPP bus to take care of id, but remember of
+                // the one set by the application, so that it can be
+                // set on the response.
+
+                var requestId = stanza.@id.toString();
+                delete stanza.@id;
+                
+                send(account, stanza, function(reply) {
+                         var s = reply.stanza.copy();
+
+                         if(requestid)
+                             s.@id = requestid;
+                         else
+                             delete s.@id;
+
+                         gotDataFromXMPP(s);
+                     });
+            } else
+                send(account, stanza);
         } else {
             delete stanza.@from;
             if(/^\/.+$/.test(stanza.@to.toString()))
                 stanza.@to = address + stanza.@to;
             else
                 stanza.@to = address;
-        }
 
-        send(account, stanza);
+            send(account, stanza);
+        }
     }
 
     function gotDataFromXMPP(stanza) {
