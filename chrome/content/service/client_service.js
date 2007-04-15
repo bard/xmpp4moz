@@ -199,24 +199,27 @@ function _openUserSession(jid, transport, streamObserver) {
 
             if(topic == 'stanza-in' && subject.nodeName == 'presence')
                 cache.receive({
-                    session : { name: data },
-                    stanza  : subject
+                    direction : 'in',
+                    session   : { name: data },
+                    stanza    : subject
                     });
 
             if(topic == 'stanza-out' && subject.nodeName == 'presence' &&
                (subject.getAttribute('type') == undefined ||
                 subject.getAttribute('type') == 'unavailable'))
                 cache.receive({
-                    session : { name: data },
-                    stanza  : subject
+                    direction : 'out',
+                    session   : { name: data },
+                    stanza    : subject
                     });
 
             if(topic == 'stanza-in' && subject.nodeName == 'iq') {
                 var query = subject.getElementsByTagName('query')[0];
                 if(query && query.getAttribute('xmlns') == 'jabber:iq:roster')
                     cache.receive({
-                        session: { name: data },
-                        stanza: subject });
+                        direction : 'in',
+                        session   : { name: data },
+                        stanza    : subject });
             }
 
             service.notifyObservers(subject, topic, data);
@@ -292,8 +295,9 @@ function _openUserSession(jid, transport, streamObserver) {
                             var inverse = syntheticClone(presence.stanza);
                             inverse.setAttribute('type', 'unavailable');
                             cache.receive({
-                                session : { name: data },
-                                stanza  : inverse
+                                direction : 'in',
+                                session   : { name: data },
+                                stanza    : inverse
                                 });
                         });
 
@@ -311,8 +315,9 @@ function _openUserSession(jid, transport, streamObserver) {
     // roster (or if we don't receive it at all).
 
     cache.receive({
-        session: { name: session.name },
-        stanza: domParser.parseFromString(
+        direction : 'in',
+        session   : { name: session.name },
+        stanza    : domParser.parseFromString(
             '<iq from="' + jid + '" to="' + jid + '" type="result">' +
             '<query xmlns="jabber:iq:roster"/>' +
             '</iq>',

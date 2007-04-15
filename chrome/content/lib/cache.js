@@ -180,13 +180,6 @@ Cache.prototype = {
                 });
 
             object.__defineGetter__(
-                'direction', function() {
-                    // XXX won't return correct result for roster
-                    return (this.stanza.hasAttribute('from') ?
-                            'in' : 'out');
-                });
-            
-            object.__defineGetter__(
                 'from', function() {
                     return this.stanza.hasAttribute('from') ?
                         JID(this.stanza.getAttribute('from')) :
