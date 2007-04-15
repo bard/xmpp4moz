@@ -319,11 +319,11 @@ function createChannel(features) {
         observe: function(subject, topic, data) {
             var match = topic.match(/^(stream|data|stanza|transport)-(in|out)$/);
 
-            var eventObject = wrapEvent({
+            var eventObject = {
                 event: match[1],
                 direction: match[2],
                 session: _this.service.getSession(data.toString()) || { name: data.toString() },
-                });
+            };
 
             switch(eventObject.event) {
                 case 'transport':
@@ -345,7 +345,7 @@ function createChannel(features) {
                 eventObject.stanza = stanza;
                 break;
             }
-            this.receive(eventObject)
+            this.receive(wrapEvent(eventObject));
         },
 
         release: function() {
@@ -448,25 +448,21 @@ function wrapEvent(eventObject) {
             return this.session.name;
         });
 
-    if(!eventObject.direction)
-        eventObject.__defineGetter__(
-            'direction', function() {
-                if(this.stanza)
-                    if(this.stanza.localName() == 'presence')
-                        if(this.stanza.@from == undefined)
-                            return 'out';
-                        else
-                            return 'in';
-                    else(this.stanza.localName() == 'iq' && this.stanza.ns_roster::query != undefined)
-                        return 'in';
-            });
     if(!eventObject.event)
         eventObject.__defineGetter__(
             'event', function() {
                 if(this.stanza)
                     return this.stanza.localName();
             });
-    
+
+    if(!eventObject.direction)
+        eventObject.__defineGetter__(
+            'direction', function() {
+                if(this.stanza && stanza.localName() == 'presence')
+                    return (this.stanza.@from == undefined ?
+                            'out' : 'in')
+            });
+
     return eventObject;
 }
 
