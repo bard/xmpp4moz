@@ -237,17 +237,17 @@ function up(account, extra) {
     var continuation;
     if(typeof(extra) == 'function')
         continuation = extra;
-    else if(typeof(opts) == 'object') {
+    else if(typeof(extra) == 'object') {
         deprecation(
             'opts parameter will be removed, use account instead.');
-        if(opts.ssl)
+        if(extra.ssl)
             account.connectionSecurity = 1;
-        if(opts.host)
-            account.connectionHost = opts.host;
-        if(opts.port)
-            account.connectionPort = opts.port;
-        if(opts.continuation)
-            continuation = opts.continuation;
+        if(extra.host)
+            account.connectionHost = extra.host;
+        if(extra.port)
+            account.connectionPort = extra.port;
+        if(extra.continuation)
+            continuation = extra.continuation;
     }
     
     if(!account)
