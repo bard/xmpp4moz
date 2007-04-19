@@ -89,17 +89,17 @@ function Cache() {
                 stanza    : function(s) {
                         return isMUCPresence(s) == isMUCPresence(object.stanza);
                     }
-                });
+                })[0];
 
             if(object.stanza.getAttribute('type') == 'unavailable') {
-                if(previous && previous[0])
-                    if(isMUCUserPresence(previous[0].stanza))
-                        db.put(null, previous[0].id);
+                if(previous)
+                    if(isMUCUserPresence(previous.stanza))
+                        db.put(null, previous.id);
                     else
-                        db.put(object, previous[0].id);
+                        db.put(object, previous.id);
             } else {
-                if(previous && previous[0])
-                    db.put(object, previous[0].id);
+                if(previous)
+                    db.put(object, previous.id);
                 else
                     db.put(object);
             }
