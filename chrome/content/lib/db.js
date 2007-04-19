@@ -109,7 +109,7 @@ DB.prototype = {
 
         return subStore.filter(
             function(object) {
-                return match(object, pattern);
+                return object ? match(object, pattern) : false;
             });
     },
 
