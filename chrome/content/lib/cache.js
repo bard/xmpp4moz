@@ -85,7 +85,10 @@ function Cache() {
                 event     : 'presence',
                 direction : object.direction,
                 session   : object.session,
-                from      : { full: object.from.full }
+                from      : { full: object.from.full },
+                stanza    : function(s) {
+                        return isMUCPresence(s) == isMUCPresence(object.stanza);
+                    }
                 });
 
             if(object.stanza.getAttribute('type') == 'unavailable') {
@@ -228,6 +231,11 @@ function JID(string) {
 function isMUCUserPresence(presenceStanza) {
     var x = presenceStanza.getElementsByTagName('x')[0];
     return (x && x.getAttribute('xmlns') == ns_muc_user);
+}
+
+function isMUCPresence(presenceStanza) {
+    var x = presenceStanza.getElementsByTagName('x')[0];
+    return (x && x.getAttribute('xmlns') == ns_muc);
 }
 
 function verify() {
@@ -571,6 +579,29 @@ function verify() {
                 asStanzas(cache.fetch({
                               session: { name: 'arthur@earth.org/Test' },
                               from: { address: 'ford@betelgeuse.org' }})));
+        },
+
+        'user sends regular presence, user sends muc presence: add': function() {
+            var cache = new Cache();
+            cache.receive({
+                session   : { name: 'arthur@earth.org/Test' },
+                direction : 'out',
+                stanza    : asDOM(<presence/>)
+                });
+            
+            cache.receive({
+                session   : { name: 'arthur@earth.org/Test' },
+                direction : 'out',
+                stanza    : asDOM(<presence to="room@server/arthur">
+                                  <x xmlns="http://jabber.org/protocol/muc"/>
+                                  </presence>)
+                });
+
+            assert.equals([<presence/>,
+                           <presence to="room@server/arthur">
+                           <x xmlns="http://jabber.org/protocol/muc"/>
+                           </presence>],
+                          asStanzas(cache._db._store));
         },
 
         'receive iq roster': function() {
