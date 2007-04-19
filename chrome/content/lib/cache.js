@@ -82,9 +82,10 @@ function Cache() {
 
         apply: function(db, object) {
             var previous = db.get({
-                event   : 'presence',
-                session : object.session,
-                from    : { full: object.from.full }
+                event     : 'presence',
+                direction : object.direction,
+                session   : object.session,
+                from      : { full: object.from.full }
                 });
 
             if(object.stanza.getAttribute('type') == 'unavailable') {
@@ -280,8 +281,9 @@ function verify() {
         'contact sends user available presence, cache is empty: add': function() {
             var cache = new Cache();
             cache.receive({
-                session: { name: 'arthur@earth.org/Test' },
-                stanza: asDOM(<presence from="ford@betelgeuse.org/Test"/>)
+                session   : { name: 'arthur@earth.org/Test' },
+                direction : 'in',
+                stanza    : asDOM(<presence from="ford@betelgeuse.org/Test"/>)
                 });
 
             assert.equals([<presence from="ford@betelgeuse.org/Test"/>],
@@ -291,13 +293,15 @@ function verify() {
         'contact sends user available presence, presence from contact is not in cache: add': function() {
             var cache = new Cache();
             cache.receive({
-                session: { name: 'arthur@earth.org/Test' },
-                stanza: asDOM(<presence from="ford@betelgeuse.org/Test"/>)
+                session   : { name: 'arthur@earth.org/Test' },
+                direction : 'in',
+                stanza    : asDOM(<presence from="ford@betelgeuse.org/Test"/>)
                 });
 
             cache.receive({
-                session: { name: 'arthur@earth.org/Test' },
-                stanza: asDOM(<presence from="marvin@spaceship.org/Test"/>)
+                session   : { name: 'arthur@earth.org/Test' },
+                direction : 'in',
+                stanza    : asDOM(<presence from="marvin@spaceship.org/Test"/>)
                 });
 
             assert.equals([<presence from="ford@betelgeuse.org/Test"/>,
@@ -308,15 +312,17 @@ function verify() {
         'contact sends user available presence, presence from contact is already in cache: replace': function() {
             var cache = new Cache();
             cache.receive({
-                session: { name: 'arthur@earth.org/Test' },
-                stanza: asDOM(<presence from="ford@betelgeuse.org/Test" to="arthur@earth.org/Test"/>)
+                session   : { name: 'arthur@earth.org/Test' },
+                direction : 'in',
+                stanza    : asDOM(<presence from="ford@betelgeuse.org/Test" to="arthur@earth.org/Test"/>)
                 });
 
             cache.receive({
-                session: { name: 'arthur@earth.org/Test' },
-                stanza: asDOM(<presence from="ford@betelgeuse.org/Test" to="arthur@earth.org/Test">
-                              <show>away</show>
-                              </presence>)
+                session   : { name: 'arthur@earth.org/Test' },
+                direction : 'in',
+                stanza    : asDOM(<presence from="ford@betelgeuse.org/Test" to="arthur@earth.org/Test">
+                                  <show>away</show>
+                                  </presence>)
                 });
 
             assert.equals([<presence from="ford@betelgeuse.org/Test" to="arthur@earth.org/Test">
@@ -328,8 +334,9 @@ function verify() {
         'contact sends user unavailable presence, presence from contact is not in cache: ignore': function() {
             var cache = new Cache();
             cache.receive({
-                session: { name: 'arthur@earth.org/Test' },
-                stanza: asDOM(<presence from="ford@betelgeuse.org/Test" to="arthur@earth.org/Test" type="unavailable"/>)
+                session   : { name: 'arthur@earth.org/Test' },
+                direction : 'in',
+                stanza    : asDOM(<presence from="ford@betelgeuse.org/Test" to="arthur@earth.org/Test" type="unavailable"/>)
                 });
 
             assert.equals([], asStanzas(cache._db._store));
@@ -338,13 +345,15 @@ function verify() {
         'contact sends user unavailable presence, presence from contact is in cache: replace': function() {
             var cache = new Cache();
             cache.receive({
-                session: { name: 'arthur@earth.org/Test' },
-                stanza: asDOM(<presence from="ford@betelgeuse.org/Test" to="arthur@earth.org/Test"/>)
+                session   : { name: 'arthur@earth.org/Test' },
+                direction : 'in',
+                stanza    : asDOM(<presence from="ford@betelgeuse.org/Test" to="arthur@earth.org/Test"/>)
                 });
 
             cache.receive({
-                session: { name: 'arthur@earth.org/Test' },
-                stanza: asDOM(<presence from="ford@betelgeuse.org/Test" to="arthur@earth.org/Test" type="unavailable"/>)
+                session   : { name: 'arthur@earth.org/Test' },
+                direction : 'in',
+                stanza    : asDOM(<presence from="ford@betelgeuse.org/Test" to="arthur@earth.org/Test" type="unavailable"/>)
                 });
 
             assert.equals([<presence from="ford@betelgeuse.org/Test" to="arthur@earth.org/Test" type="unavailable"/>],
@@ -354,10 +363,11 @@ function verify() {
         'occupant sends user available presence, presence from occupant is not in cache: add': function() {
             var cache = new Cache();
             cache.receive({
-                session: { name: 'arthur@earth.org/Test' },
-                stanza: asDOM(<presence from="room@server/foo" to="arthur@earth.org/Test">
-                              <x xmlns="http://jabber.org/protocol/muc#user"/>
-                              </presence>)
+                session   : { name: 'arthur@earth.org/Test' },
+                direction : 'in',
+                stanza    : asDOM(<presence from="room@server/foo" to="arthur@earth.org/Test">
+                                  <x xmlns="http://jabber.org/protocol/muc#user"/>
+                                  </presence>)
                 });
 
             assert.equals([<presence from="room@server/foo" to="arthur@earth.org/Test">
@@ -369,18 +379,20 @@ function verify() {
         'occupant sends user available presence, presence from occupant is in cache: replace': function() {
             var cache = new Cache();
             cache.receive({
-                session: { name: 'arthur@earth.org/Test' },
-                stanza: asDOM(<presence from="room@server/foo" to="arthur@earth.org/Test">
-                              <x xmlns="http://jabber.org/protocol/muc#user"/>
-                              </presence>)
+                session   : { name: 'arthur@earth.org/Test' },
+                direction : 'in',
+                stanza    : asDOM(<presence from="room@server/foo" to="arthur@earth.org/Test">
+                                  <x xmlns="http://jabber.org/protocol/muc#user"/>
+                                  </presence>)
                 });
 
             cache.receive({
-                session: { name: 'arthur@earth.org/Test' },
-                stanza: asDOM(<presence from="room@server/foo" to="arthur@earth.org/Test">
-                              <x xmlns="http://jabber.org/protocol/muc#user"/>
-                              <show>away</show>
-                              </presence>)
+                session   : { name: 'arthur@earth.org/Test' },
+                direction : 'in',
+                stanza    : asDOM(<presence from="room@server/foo" to="arthur@earth.org/Test">
+                                  <x xmlns="http://jabber.org/protocol/muc#user"/>
+                                  <show>away</show>
+                                  </presence>)
                 });
 
             assert.equals([<presence from="room@server/foo" to="arthur@earth.org/Test">
@@ -393,17 +405,19 @@ function verify() {
         'occupant sends user unavailable presence, presence from occupant is not in cache: ignore': function() {
             var cache = new Cache();
             cache.receive({
-                session: { name: 'arthur@earth.org/Test' },
-                stanza: asDOM(<presence to="room@server/arthur">
-                              <x xmlns="http://jabber.org/protocol/muc"/>
-                              </presence>)
+                session   : { name: 'arthur@earth.org/Test' },
+                direction : 'in',
+                stanza    : asDOM(<presence to="room@server/arthur">
+                                  <x xmlns="http://jabber.org/protocol/muc"/>
+                                  </presence>)
                 });
 
             cache.receive({
-                session: { name: 'arthur@earth.org/Test' },
-                stanza: asDOM(<presence from="room@server/foo" to="arthur@earth.org/Test" type="unavailable">
-                              <x xmlns="http://jabber.org/protocol/muc#user"/>
-                              </presence>)
+                session   : { name: 'arthur@earth.org/Test' },
+                direction : 'in',
+                stanza    : asDOM(<presence from="room@server/foo" to="arthur@earth.org/Test" type="unavailable">
+                                  <x xmlns="http://jabber.org/protocol/muc#user"/>
+                                  </presence>)
                 });
 
             assert.equals([<presence to="room@server/arthur">
@@ -415,24 +429,27 @@ function verify() {
         'occupant sends user unavailable presence, presence from occupant is in cache: remove': function() {
             var cache = new Cache();
             cache.receive({
-                session: { name: 'arthur@earth.org/Test' },
-                stanza: asDOM(<presence to="room@server/arthur">
-                              <x xmlns="http://jabber.org/protocol/muc"/>
-                              </presence>)
+                session   : { name: 'arthur@earth.org/Test' },
+                direction : 'in',
+                stanza    : asDOM(<presence to="room@server/arthur">
+                                  <x xmlns="http://jabber.org/protocol/muc"/>
+                                  </presence>)
                 });
 
             cache.receive({
-                session: { name: 'arthur@earth.org/Test' },
-                stanza: asDOM(<presence from="room@server/foo" to="arthur@earth.org/Test">
-                              <x xmlns="http://jabber.org/protocol/muc#user"/>
-                              </presence>)
+                session   : { name: 'arthur@earth.org/Test' },
+                direction : 'in',
+                stanza    : asDOM(<presence from="room@server/foo" to="arthur@earth.org/Test">
+                                  <x xmlns="http://jabber.org/protocol/muc#user"/>
+                                  </presence>)
                 });
 
             cache.receive({
-                session: { name: 'arthur@earth.org/Test' },
-                stanza: asDOM(<presence from="room@server/foo" to="arthur@earth.org/Test" type="unavailable">
-                              <x xmlns="http://jabber.org/protocol/muc#user"/>
-                              </presence>)
+                session   : { name: 'arthur@earth.org/Test' },
+                direction : 'in',
+                stanza    : asDOM(<presence from="room@server/foo" to="arthur@earth.org/Test" type="unavailable">
+                                  <x xmlns="http://jabber.org/protocol/muc#user"/>
+                                  </presence>)
                 });
 
             assert.equals([<presence to="room@server/arthur">
@@ -444,8 +461,9 @@ function verify() {
         'user sends contacts available presence, no user presence is in cache: add': function() {
             var cache = new Cache();
             cache.receive({
-                session: { name: 'arthur@earth.org/Test' },
-                stanza: asDOM(<presence/>)
+                session   : { name: 'arthur@earth.org/Test' },
+                direction : 'out',
+                stanza    : asDOM(<presence/>)
                 });
 
             assert.equals([<presence/>], asStanzas(cache._db._store));
@@ -454,13 +472,15 @@ function verify() {
         'user sends contacts available presence, user presence is in cache: replace': function() {
             var cache = new Cache();
             cache.receive({
-                session: { name: 'arthur@earth.org/Test' },
-                stanza: asDOM(<presence/>)
+                session   : { name: 'arthur@earth.org/Test' },
+                direction : 'out',
+                stanza    : asDOM(<presence/>)
                 });
 
             cache.receive({
-                session: { name: 'arthur@earth.org/Test' },
-                stanza: asDOM(<presence><show>away</show></presence>)
+                session   : { name: 'arthur@earth.org/Test' },
+                direction : 'out',
+                stanza    : asDOM(<presence><show>away</show></presence>)
                 });
 
             assert.equals([<presence><show>away</show></presence>],
@@ -471,13 +491,15 @@ function verify() {
             var cache = new Cache();
 
             cache.receive({
-                session: { name: 'arthur@earth.org/Test' },
-                stanza: asDOM(<presence/>)
+                session   : { name: 'arthur@earth.org/Test' },
+                direction : 'out',
+                stanza    : asDOM(<presence/>)
                 });
 
             cache.receive({
-                session: { name: 'marvin@spaceship.org/Test' },
-                stanza: asDOM(<presence/>)
+                session   : { name: 'marvin@spaceship.org/Test' },
+                direction : 'out',
+                stanza    : asDOM(<presence/>)
                 });
 
             assert.equals([<presence/>, <presence/>],
@@ -487,13 +509,15 @@ function verify() {
         'user sends contact directed presence: do not cache': function() {
             var cache = new Cache();
             cache.receive({
-                session: { name: 'arthur@earth.org/Test' },
-                stanza: asDOM(<presence/>)
+                session   : { name: 'arthur@earth.org/Test' },
+                direction : 'out',
+                stanza    : asDOM(<presence/>)
                 });
 
             cache.receive({
-                session: { name: 'arthur@earth.org/Test' },
-                stanza: asDOM(<presence to="ford@betelgeuse.org/Test"/>)
+                session   : { name: 'arthur@earth.org/Test' },
+                direction : 'out',
+                stanza    : asDOM(<presence to="ford@betelgeuse.org/Test"/>)
                 });
 
             assert.equals([<presence/>], asStanzas(cache._db._store));
@@ -502,8 +526,9 @@ function verify() {
         'user receives presence subscription: do not cache': function() {
             var cache = new Cache();
             cache.receive({
-                session: { name: 'arthur@earth.org/Test' },
-                stanza: asDOM(<presence from="arthur@earth.org/Test" type="subscribe"/>)
+                session   : { name: 'arthur@earth.org/Test' },
+                direction : 'in',
+                stanza    : asDOM(<presence from="arthur@earth.org/Test" type="subscribe"/>)
                 });
 
             assert.equals([], asStanzas(cache._db._store));
@@ -512,8 +537,9 @@ function verify() {
         'user sends presence subscription confirmation: do not cache': function() {
             var cache = new Cache();
             cache.receive({
-                session: { name: 'arthur@earth.org/Test' },
-                stanza: asDOM(<presence to="arthur@earth.org/Test" type="subscribed"/>)
+                session   : { name: 'arthur@earth.org/Test' },
+                direction : 'out',
+                stanza    : asDOM(<presence to="arthur@earth.org/Test" type="subscribed"/>)
                 });
 
             assert.equals([], asStanzas(cache._db._store));
@@ -522,18 +548,21 @@ function verify() {
         'fetch presences from a given session and contact address': function() {
             var cache = new Cache();
             cache.receive({
-                session: { name: 'arthur@earth.org/Test' },
-                stanza: asDOM(<presence from="ford@betelgeuse.org/Test"><show>dnd</show></presence>)
+                session   : { name: 'arthur@earth.org/Test' },
+                direction : 'in',
+                stanza    : asDOM(<presence from="ford@betelgeuse.org/Test"><show>dnd</show></presence>)
                 });
 
             cache.receive({
-                session: { name: 'arthur@earth.org/Test' },
-                stanza: asDOM(<presence from="ford@betelgeuse.org/Toast"/>)
+                session   : { name: 'arthur@earth.org/Test' },
+                direction : 'in',
+                stanza    : asDOM(<presence from="ford@betelgeuse.org/Toast"/>)
                 });
 
             cache.receive({
-                session: { name: 'arthur@earth.org/Test' },
-                stanza: asDOM(<presence from="marvin@spaceship.org/Test"/>)
+                session   : { name: 'arthur@earth.org/Test' },
+                direction : 'in',
+                stanza    : asDOM(<presence from="marvin@spaceship.org/Test"/>)
                 });
 
             assert.equals(
