@@ -176,11 +176,10 @@ function removeObserver(observer) {
 // ----------------------------------------------------------------------
 
 function _stream(direction, state) {
-    if(direction == 'in')
-        if(state == 'open')
-            this._isOpen = true;
-        else if(state == 'close')
-            this._isOpen = false;
+    if(direction == 'in' && state == 'open')
+        this._isOpen = true;
+    else if(direction =='out' && state == 'close')
+        this._isOpen = false;
 
     this.notifyObservers(state, 'stream-' + direction, this.name);
 }
@@ -189,16 +188,9 @@ function _data(direction, data) {
     this.notifyObservers(data, 'data-' + direction, this.name);
 
     if(direction == 'in') {
-        if(!this._isOpen) {
-            try {
-                new XML(data);
-            } catch(e if e.name == 'SyntaxError') {
-                if(/<stream:stream/.test(data))
-                    this._stream('in', 'open');
-                else
-                    dump('*** xmpp4moz *** Invalid data read: ' + data + '\n');
-            }
-        } else {
+        if(/<stream:stream/.test(data))
+            this._stream('in', 'open');
+        else {
             var node = domParser
                 .parseFromString('<stream:stream xmlns:stream="http://etherx.jabber.org/streams">' +
                                  data +
@@ -213,9 +205,10 @@ function _data(direction, data) {
 
                 node = node.nextSibling;
             }
+
+            if(data.indexOf('</stream:stream>') != -1)
+                this._stream('in', 'close');
         }
-        if(data.indexOf('</stream:stream>') != -1)
-            this._stream('in', 'close');
     }
 }
 
