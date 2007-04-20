@@ -229,13 +229,11 @@ function JID(string) {
 }
 
 function isMUCUserPresence(presenceStanza) {
-    var x = presenceStanza.getElementsByTagName('x')[0];
-    return (x && x.getAttribute('xmlns') == ns_muc_user);
+    return presenceStanza.getElementsByTagNameNS(ns_muc_user, 'x').length > 0;
 }
 
 function isMUCPresence(presenceStanza) {
-    var x = presenceStanza.getElementsByTagName('x')[0];
-    return (x && x.getAttribute('xmlns') == ns_muc);
+    return presenceStanza.getElementsByTagNameNS(ns_muc, 'x').length > 0;
 }
 
 function verify() {
@@ -601,6 +599,33 @@ function verify() {
                            <presence to="room@server/arthur">
                            <x xmlns="http://jabber.org/protocol/muc"/>
                            </presence>],
+                          asStanzas(cache._db._store));
+        },
+
+        'non-muc <x/> child elements are ignored when deciding whether later presence should replace previous one': function() {
+            var cache = new Cache();
+            cache.receive({
+                session: { name: 'alyssa@sameplace.cc/Firefox' },
+                direction: 'in',
+                stanza: asDOM(<presence from="alyssa@sameplace.cc/SamePlaceAgent"
+                              to="alyssa@sameplace.cc/Firefox" xml:lang="*">
+                              <status/>
+                              <priority>0</priority>
+                              <c node="http://www.google.com/xmpp/client/caps" ver="1.0.0.66"
+                              ext="share-v1" xmlns="http://jabber.org/protocol/caps"/>
+                              <x stamp="20070420T20:36:59" xmlns="jabber:x:delay"/>
+                              </presence>)
+                });
+
+            cache.receive({
+                session: { name: 'alyssa@sameplace.cc/Firefox' },
+                direction: 'in',
+                stanza: asDOM(<presence from="alyssa@sameplace.cc/SamePlaceAgent"
+                              to="alyssa@sameplace.cc/Firefox" type="unavailable"/>)
+                });
+
+            assert.equals([<presence from="alyssa@sameplace.cc/SamePlaceAgent"
+                           to="alyssa@sameplace.cc/Firefox" type="unavailable"/>],
                           asStanzas(cache._db._store));
         },
 
