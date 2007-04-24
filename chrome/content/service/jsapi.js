@@ -732,6 +732,8 @@ function enableContentDocument(panel, account, address, type, createSocket) {
 
     if(contactPresence)
         gotDataFromXMPP(contactPresence.stanza);
+    else
+        gotDataFromXMPP(<presence from={address} type="unavailable"/>)
     if(mucPresences)
         mucPresences.forEach(
             function(mucPresence) { gotDataFromXMPP(mucPresence.stanza); });
