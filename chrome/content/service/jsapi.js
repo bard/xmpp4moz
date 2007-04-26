@@ -666,13 +666,9 @@ function enableContentDocument(panel, account, address, type, createSocket) {
         stanza    : function(s) { return s.ns_roster::query != undefined; }});
     var contactSubRoster = extractSubRoster(roster.stanza, address);
 
-    // Latest presence seen from contact.
+    // Presence from contact
 
-    var contactPresence = cache.find({
-        event     : 'presence',
-        direction : 'in',
-        session   : function(s) { return s.name == account; },
-        stanza    : function(s) { return JID(s.@from).address == address; }});
+    var contactPresence = presenceSummary(account, address);
 
     // MUC presence is the presence stanza we used to join the room
     // (if we are joining a room).
