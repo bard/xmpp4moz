@@ -228,43 +228,40 @@ function connectAutologinAccounts() {
 }
 
 function changeStatus(type) {
-    var accountsUp = XMPP.accounts.filter(
-        function(account) {
-            return XMPP.isUp(account);
-        });
+    var accountsUp = XMPP.accounts.filter(XMPP.isUp);
 
     if(accountsUp.length == 0) {
         if(type == 'available')
-            XMPP.accounts.forEach(
-                function(account) {
-                    XMPP.up(account); });
+            XMPP.accounts.forEach(XMPP.up);
     } else
         accountsUp.forEach(
             function(account) {
                 if(type == 'unavailable')
                     XMPP.down(account);
                 else {
-                    var stanza;
-                    for each(var presence in XMPP.cache.presenceOut) 
-                        if(presence.session.name == account.jid) {
-                            stanza = presence.stanza.copy();
-                            break;
-                        }
+                    var existingPresenceStanza =
+                        XMPP.cache.fetch({
+                            account   : account.jid,
+                            direction : 'out',
+                            stanza    : function(s) {
+                                    return s.ns_muc::x == undefined;
+                                }})[0];
 
-                    stanza = stanza || <presence/>;
-
+                    var newPresenceStanza = (existingPresenceStanza ?
+                                             existingPresenceStanza.stanza.copy() :
+                                             <presence/>);
                     switch(type) {
                     case 'available':
-                        delete stanza.show;
+                        delete newPresenceStanza.show;
                         break;
                     case 'away':
-                        stanza.show = <show>away</show>;
+                        newPresenceStanza.show = <show>away</show>;
                         break;
                     case 'dnd':
-                        stanza.show = <show>dnd</show>;
+                        newPresenceStanza.show = <show>dnd</show>;
                         break;
                     }
-                    XMPP.send(account, stanza);
+                    XMPP.send(account, newPresenceStanza);
                 }
             });
 }
