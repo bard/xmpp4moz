@@ -46,6 +46,8 @@ xmpp.ui = xmpp.ui || {};
 // ----------------------------------------------------------------------
 
 xmpp.ui.refreshAccounts = function(menuPopup) {
+    var ns_muc = 'http://jabber.org/protocol/muc';
+
     while(menuPopup.firstChild &&
           menuPopup.firstChild.nodeName != 'menuseparator')
         menuPopup.removeChild(menuPopup.firstChild);
@@ -58,10 +60,12 @@ xmpp.ui.refreshAccounts = function(menuPopup) {
             menuItem.setAttribute('class', 'menuitem-iconic');
 
             accountPresence =
-                XMPP.cache.find({
+                XMPP.cache.fetch({
                     event: 'presence',
                     direction: 'out',
-                    account: account.jid}) ||
+                    account: account.jid,
+                    stanza: function(s) { return s.ns_muc::x == undefined; }
+                    })[0] ||
                 { stanza: <presence type="unavailable"/> };
 
             menuItem.setAttribute('availability',
