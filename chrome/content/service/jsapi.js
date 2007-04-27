@@ -541,7 +541,26 @@ function presenceSummary(account, address) {
             return presenceDegree(b.stanza) - presenceDegree(a.stanza);
         });
 
-    return presences[0] || { stanza: <presence type="unavailable"/> };
+    if(presences[0])
+        return presences[0];
+    else {
+        var synthPresence;
+        if(address)
+            synthPresence = {
+                session   : { name: account },
+                account   : account,
+                direction : 'in',
+                stanza    : <presence from={address} type="unavailable"/>
+            }
+        else
+            synthPresence = {
+                session   : { name: account },
+                account   : account,
+                direction : 'out',
+                stanza    : <presence type="unavailable"/>
+            }
+        return synthPresence;
+    }
 }
 
 
