@@ -65,7 +65,7 @@
                         'chrome://xmpp4moz/content/ui/disco.xul',
                         'xmpp-disco', 'chrome');"/>
     <command id="xmpp-command-open-preferences"
-             label="Configure..."
+             label="Configure Accounts..."
              accesskey="C"
              oncommand="window.openOptionsDialog('xmpp-pane');"/>
   </commandset>
@@ -79,7 +79,7 @@
   <menubar id="mail-menubar">
     <menu label="Jabber" accesskey="J" position="1" insertbefore="tasksMenu">
       <menupopup id="xmpp-menu-main">
-        <menu label="Accounts" accesskey="A" oncommand="xmpp4moz.selectedAccount(event);">
+        <menu label="Connect" accesskey="C" oncommand="xmpp4moz.selectedAccount(event);">
           <menupopup id="xmpp-popup-accounts">
             <menuseparator/>
             <menuitem class="menuitem-iconic" command="xmpp-command-open-preferences"/>
