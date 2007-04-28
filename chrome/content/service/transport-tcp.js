@@ -42,10 +42,6 @@ const Cc = Components.classes;
 const Ci = Components.interfaces;
 const Cu = Components.utils;
 
-const srvEventQueue = Cc['@mozilla.org/event-queue-service;1']
-    .getService(Ci.nsIEventQueueService);
-const srvThread = Cc['@mozilla.org/thread;1']
-    .getService(Ci.nsIThread);
 const srvSocketTransport = Cc["@mozilla.org/network/socket-transport-service;1"]
     .getService(Ci.nsISocketTransportService);
 
@@ -97,9 +93,8 @@ function connect() {
                     socket._connected = true;
                     socket.notifyObservers(_xpcomize('stub'), 'start', null);
                 }
-            }}, 
-        srvEventQueue.createFromIThread(
-            srvThread.currentThread, true));
+            }},
+        getCurrentThreadTarget());
 
     var baseOutstream = this._transport.openOutputStream(0,0,0);
     this._outstream = Cc['@mozilla.org/intl/converter-output-stream;1']
@@ -179,4 +174,13 @@ function _xpcomize(string) {
         return xpcomized;
     } else
         throw new Error('Not an XPCOM nor a Javascript string. (' + string + ')');
+}
+
+function getCurrentThreadTarget() {
+    if('@mozilla.org/thread-manager;1' in Cc)
+        return Cc['@mozilla.org/thread-manager;1'].getService().currentThread;
+    else
+        return Cc['@mozilla.org/event-queue-service;1'].getService(Ci.nsIEventQueueService)
+            .createFromIThread(
+                Cc['@mozilla.org/thread;1'].getService(Ci.nsIThread), true)
 }
