@@ -322,7 +322,7 @@ function createChannel(features) {
             var eventObject = {
                 event: match[1],
                 direction: match[2],
-                session: _this.service.getSession(data.toString()) || { name: data.toString() },
+                session: _this.service.getSession(data.toString()) || { name: data.toString() }
             };
 
             switch(eventObject.event) {
@@ -453,6 +453,8 @@ function wrapEvent(eventObject) {
             'event', function() {
                 if(this.stanza)
                     return this.stanza.localName();
+                
+                return undefined;
             });
 
     if(!eventObject.direction)
@@ -460,7 +462,9 @@ function wrapEvent(eventObject) {
             'direction', function() {
                 if(this.stanza && stanza.localName() == 'presence')
                     return (this.stanza.@from == undefined ?
-                            'out' : 'in')
+                            'out' : 'in');
+
+                return undefined;
             });
 
     return eventObject;
@@ -492,7 +496,8 @@ function uniq(array) {
             if(encountered.indexOf(item) == -1) {
                 encountered.push(item);
                 return true;
-            }
+            } else
+                return false;
         });
 }
 
@@ -506,19 +511,21 @@ function extractSubRoster(roster, jid) {
 
 function presenceSummary(account, address) {
     function presenceDegree(stanza) {
+        var weight;
         if(stanza.@type == undefined && stanza.show == undefined)
-            return 4;
+            weight = 4;
         else if(stanza.@type == 'unavailable')
-            return 0;
+            weight = 0;
         else
             switch(stanza.show.toString()) {
-            case 'chat': return 5; break;
-            case 'dnd':  return 3; break;
-            case 'away': return 2; break;
-            case 'xa':   return 1; break;
+            case 'chat': weight = 5; break;
+            case 'dnd':  weight = 3; break;
+            case 'away': weight = 2; break;
+            case 'xa':   weight = 1; break;
             default:
                 throw new Error('Unexpected. (' + stanza.toXMLString() + ')');
             }
+        return weight;
     }
 
     var presences;
@@ -863,6 +870,7 @@ AccountWrapper.prototype = {
                 return pref[reader]('account.' + this.key + '.' + preference);
             } catch(e) {}
         }
+        return undefined;
     },
 
     get jid() {
@@ -896,6 +904,7 @@ this.__defineGetter__(
                         // just catch the exception and report the
                         // error to the console.
                         Cu.reportError(e);
+                        return undefined;
                     }})
             .filter(
                 function(key) {
