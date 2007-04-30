@@ -40,3 +40,7 @@ Components
 .classes['@mozilla.org/moz/jssubscript-loader;1']
 .getService(Components.interfaces.mozIJSSubScriptLoader)
     .loadSubScript('chrome://xmpp4moz/content/service/jsapi.js', XMPP);
+
+dump(<workaround>
+     <bug comment="in some mozilla apps, it seems necessary to kickstart e4x outside of a subscript"/>
+     </workaround>);

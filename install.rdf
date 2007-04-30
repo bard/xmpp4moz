@@ -37,7 +37,17 @@
         <em:maxVersion>2.0.0.*</em:maxVersion>
       </Description>
     </em:targetApplication>
+
+    <!-- songbird -->
     
+    <em:targetApplication>
+      <Description>
+        <em:id>songbird@songbirdnest.com</em:id>
+        <em:minVersion>0.2</em:minVersion>
+        <em:maxVersion>1.0+</em:maxVersion>
+      </Description>
+    </em:targetApplication>
+
     <em:name>xmpp4moz (unstable branch)</em:name>
     <em:description>XMPP integration layer for Mozilla</em:description>
     <em:creator>Massimiliano Mirra</em:creator>
