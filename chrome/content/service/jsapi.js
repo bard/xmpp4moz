@@ -315,35 +315,41 @@ function createChannel(features) {
         },
 
         observe: function(subject, topic, data) {
+            function asString(object) {
+                if(object instanceof Ci.nsISupportsString)
+                    return object.toString();
+                else if(typeof(object) == 'string')
+                    return object;
+                else
+                    throw new Exception('Bad argument.');
+            }
+
             var match = topic.match(/^(stream|data|stanza|transport)-(in|out)$/);
 
-            var eventObject = {
-                event: match[1],
-                direction: match[2],
-                session: _this.service.getSession(data.toString()) || { name: data.toString() }
+            var sessionName = data.toString();
+
+            var eventInfo = {
+                event     : match[1],
+                direction : match[2],
+                session   : service.getSession(sessionName) || { name: sessionName }
             };
 
-            switch(eventObject.event) {
-                case 'transport':
-                subject.QueryInterface(Ci.nsISupportsString).toString();
-                eventObject.state = subject.toString();
+            switch(eventInfo.event) {
+            case 'transport':
+                eventInfo.state = asString(subject);
                 break;
-                case 'stream':
-                subject.QueryInterface(Ci.nsISupportsString).toString();
-                eventObject.state = subject.toString();
+            case 'stream':
+                eventInfo.state = asString(subject);
                 break;
-                case 'data':
-                subject.QueryInterface(Ci.nsISupportsString).toString();
-                eventObject.content = subject.toString();
+            case 'data':
+                eventInfo.content = asString(subject);
                 break;
-                case 'stanza':
-                subject.QueryInterface(Ci.nsIDOMElement);
-                var stanza = dom2xml(subject);
-                eventObject.event = stanza.name();
-                eventObject.stanza = stanza;
+            case 'stanza':
+                eventInfo.stanza = dom2xml(subject.QueryInterface(Ci.nsIDOMElement));
+                eventInfo.event = eventInfo.stanza.name();
                 break;
             }
-            this.receive(wrapEvent(eventObject));
+            this.receive(wrapEvent(eventInfo));
         },
 
         release: function() {
