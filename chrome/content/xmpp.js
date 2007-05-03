@@ -41,6 +41,8 @@ Components
 .getService(Components.interfaces.mozIJSSubScriptLoader)
     .loadSubScript('chrome://xmpp4moz/content/service/jsapi.js', XMPP);
 
-dump(<workaround>
-     <bug comment="in some mozilla apps, it seems necessary to kickstart e4x outside of a subscript"/>
-     </workaround>);
+// Apparently, in some Mozilla applications it is necessary to
+// kickstart e4x before it works from a script loaded with subscript
+// loader.
+
+(function() {})(<workaround/>);
