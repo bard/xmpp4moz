@@ -77,30 +77,28 @@ function isConnected() {
 function connect() {
     if(this._connected)
         return;
-            
-    if(this._ssl)
-        this._transport = srvSocketTransport.createTransport(
-            ['ssl'], 1, this._host, this._port, null);
-    else
-        this._transport = srvSocketTransport.createTransport(
+
+    this._socketTransport = this._ssl ?
+        srvSocketTransport.createTransport(
+            ['ssl'], 1, this._host, this._port, null) :
+        srvSocketTransport.createTransport(
             null, 0, this._host, this._port, null);
 
-    var socket = this;
-
-    this._transport.setEventSink(
-        {onTransportStatus: function(transport, status, progress, progressMax) {
+    var _this = this;
+    this._socketTransport.setEventSink({
+        onTransportStatus: function(transport, status, progress, progressMax) {
                 if(status == Ci.nsISocketTransport.STATUS_CONNECTED_TO) {
-                    socket._connected = true;
-                    socket.notifyObservers(_xpcomize('stub'), 'start', null);
+                    _this._connected = true;
+                    _this.notifyObservers(_xpcomize('stub'), 'start', null);
                 }
             }},
         getCurrentThreadTarget());
 
-    var baseOutstream = this._transport.openOutputStream(0,0,0);
+    var baseOutstream = this._socketTransport.openOutputStream(0,0,0);
     this._outstream = Cc['@mozilla.org/intl/converter-output-stream;1']
         .createInstance(Ci.nsIConverterOutputStream);
 
-    var baseInstream = this._transport.openInputStream(0,0,0);
+    var baseInstream = this._socketTransport.openInputStream(0,0,0);
     this._instream = Cc['@mozilla.org/intl/converter-input-stream;1']
         .createInstance(Ci.nsIConverterInputStream);
 
@@ -111,14 +109,16 @@ function connect() {
     inputPump.asyncRead({
         onStartRequest: function(request, context) {},
         onStopRequest: function(request, context, status) {
-                socket._instream.close();
-                socket._outstream.close();
-                socket.notifyObservers(_xpcomize('stub'), 'stop', null);
+                _this._instream.close();
+                _this._outstream.close();
+                if(status != 0)
+                    dump('Error! ' + status);
+                _this.notifyObservers(_xpcomize('stub'), 'stop', null);
             },
         onDataAvailable: function(request, context, inputStream, offset, count) {
                 var data = {};
-                socket._instream.readString(count, data);
-                socket.notifyObservers(_xpcomize('stub'), 'data', data.value);
+                _this._instream.readString(count, data);
+                _this.notifyObservers(_xpcomize('stub'), 'data', data.value);
             }
         }, null);
 
