@@ -284,14 +284,12 @@ function isDown(account) {
 }
 
 function send(account, stanza, handler) {
-    var _this = this;
-    if(this.isUp(account))
-        this._send(account.jid || account, stanza, handler);
+    if(isUp(account))
+        _send(account.jid || account, stanza, handler);
     else
-        // TODO will multiple send cause multiple signon dialogs?
-        this.up(account, function(jid) {
-                    _this._send(jid, stanza, handler);
-                });
+        up(account, function(jid) {
+               _send(jid, stanza, handler);
+           });
 }
 
 function createChannel(features) {
