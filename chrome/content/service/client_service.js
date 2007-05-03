@@ -165,6 +165,8 @@ function _openUserSession(jid, transport, streamObserver) {
                 service.notifyObservers(xpcomize('stop'), 'transport-out', session.name);
                 if(session.isOpen()) 
                     session.close();
+
+                sessions.closed(session);
                 break;
                 case 'data':
                 this.buffer += data;
@@ -302,7 +304,6 @@ function _openUserSession(jid, transport, streamObserver) {
                         });
 
                 transport.disconnect();
-                sessions.closed(session);
             }
         }
     }
