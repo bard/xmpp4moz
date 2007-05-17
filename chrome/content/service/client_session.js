@@ -201,7 +201,12 @@ function _data(direction, data) {
                 .firstChild;
             while(node) {
                 if(node.nodeType == Ci.nsIDOMNode.ELEMENT_NODE)
-                    this._stanza('in', node);
+                    this._stanza(
+                        'in', (node.getAttribute('xmlns') == 'jabber:client' ?
+                               attrFilter(node, function(attrName, attrValue) {
+                                              return !(attrName == 'xmlns' && attrValue == 'jabber:client');
+                                          }) :
+                               node));
 
                 node = node.nextSibling;
             }
@@ -248,3 +253,35 @@ function notifyObservers(subject, topic, data) {
         }    
 }
 
+function attrFilter(srcNode, filterFn) {
+    function serialize(element) {
+        return Cc['@mozilla.org/xmlextras/xmlserializer;1']
+            .getService(Ci.nsIDOMSerializer)
+            .serializeToString(element);
+    }
+
+    var dstNode;
+    switch(srcNode.nodeType) {
+    case srcNode.ELEMENT_NODE:
+        dstNode = srcNode.ownerDocument.createElement(srcNode.nodeName);
+        for(var i=0, l=srcNode.attributes.length, attr;
+            i<l; i++) {
+            attr = srcNode.attributes[i];
+            if(filterFn(attr.name, attr.value) == false)
+                continue;
+            else
+                dstNode.setAttribute(attr.name, attr.value);
+        }
+
+        var child = srcNode.firstChild;
+        while(child) {
+            dstNode.appendChild(arguments.callee(child, filterFn));
+            child = child.nextSibling;
+        }
+        break;
+    default:
+        dstNode = srcNode;
+    }
+
+    return dstNode;
+}
