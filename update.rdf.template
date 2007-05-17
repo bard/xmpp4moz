@@ -39,6 +39,17 @@
                 <updateLink>http://repo.hyperstruct.net/xmpp4moz/unstable/xmpp4moz-unstable.xpi</updateLink>
               </Description>
             </targetApplication>
+
+            <!-- songbird -->
+            
+            <targetApplication>
+              <Description>
+                <id>songbird@songbirdnest.com</id>
+                <minVersion>0.2</minVersion>
+                <maxVersion>1.0+</maxVersion>
+                <updateLink>http://repo.hyperstruct.net/xmpp4moz/unstable/xmpp4moz-unstable.xpi</updateLink>
+              </Description>
+            </targetApplication>
           </r:Description>
         </r:li>
       </r:Seq>
