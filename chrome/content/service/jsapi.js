@@ -505,14 +505,6 @@ function uniq(array) {
         });
 }
 
-function extractSubRoster(roster, jid) {
-    var subRoster = <iq type="result"><query xmlns="jabber:iq:roster"></query></iq>;
-    subRoster.@to = roster.@to;
-    subRoster.@from = roster.@from;
-    subRoster.ns_roster::query.item = roster..ns_roster::item.(@jid == jid);
-    return subRoster;
-}
-
 function presenceSummary(account, address) {
     function presenceDegree(stanza) {
         var weight;
@@ -694,7 +686,11 @@ function enableContentDocument(panel, account, address, type, createSocket) {
         direction : 'in',
         account   : account,
         stanza    : function(s) { return s.ns_roster::query != undefined; }});
-    var contactSubRoster = extractSubRoster(roster.stanza, address);
+    
+    var contactSubRoster = <iq type="result"><query xmlns="jabber:iq:roster"/></iq>;
+    contactSubRoster.@to = roster.stanza.@to.toString() || account;
+    contactSubRoster.@from = roster.stanza.@from.toString() || account;
+    contactSubRoster.ns_roster::query.item = roster.stanza..ns_roster::item.(@jid == address);
 
     // Presence from contact
 
