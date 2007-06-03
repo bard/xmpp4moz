@@ -222,8 +222,13 @@ function _stanza(direction, domStanza, handler) {
     case 'in':
         var id = domStanza.getAttribute('id');
         if(this._pending[id]) {
-            this._pending[id](domStanza);
-            delete this._pending[id];
+            try {
+                this._pending[id](domStanza);
+            } catch(e) {
+                Cu.reportError(e);
+            } finally {
+                delete this._pending[id];
+            }
         }
         break;
     case 'out':
