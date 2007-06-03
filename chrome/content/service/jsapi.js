@@ -266,6 +266,9 @@ function up(account, extra) {
 }
 
 function down(account) {
+    if(isDown(account))
+        return;
+
     var jid = 
         (typeof(account) == 'object' && account.jid) ?
         account.jid : account;
