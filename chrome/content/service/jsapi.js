@@ -253,16 +253,16 @@ function up(account, extra) {
     if(!account)
         account = {};
     else if(typeof(account) == 'string')
-        account = this.getAccountByJid(account);
+        account = getAccountByJid(account);
     
     if(account.jid)
-        this._up(account, continuation);
+        _up(account, continuation);
     else
-        this._up(null, function(jid) {
-                     account.jid = jid;
-                     if(continuation)
-                         continuation(jid);
-                 });
+        _up(null, function(jid) {
+                account.jid = jid;
+                if(continuation)
+                    continuation(jid);
+            });
 }
 
 function down(account) {
@@ -270,7 +270,7 @@ function down(account) {
         (typeof(account) == 'object' && account.jid) ?
         account.jid : account;
 
-    this.send(jid, <presence type="unavailable"/>);
+    send(jid, <presence type="unavailable"/>);
     service.close(jid);
 }
 
@@ -808,8 +808,6 @@ function _up(account, continuation) {
     if(this.isUp(jid) && continuation)
         continuation(jid);
     else if(jid && password) {
-        var XMPP = this;
-
         open(jid, {host: host, port: port, ssl: ssl},
              function() {
                  send(
