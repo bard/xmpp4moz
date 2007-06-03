@@ -119,6 +119,11 @@ const stanzaTemplates = {
         <pubsub xmlns="http://jabber.org/protocol/pubsub#owner">
         <delete node="NODE NAME"/>
         </pubsub>
+        </iq>,
+
+        'Get room configuration':
+        <iq type="get" to="ROOM ID">
+        <query xmlns="http://jabber.org/protocol/muc#owner"/>
         </iq>
     },
 
