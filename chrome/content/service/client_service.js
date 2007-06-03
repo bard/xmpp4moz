@@ -215,14 +215,13 @@ function _openUserSession(jid, transport, streamObserver) {
                     stanza    : subject
                     });
 
-            if(topic == 'stanza-in' && subject.nodeName == 'iq') {
-                var query = subject.getElementsByTagName('query')[0];
-                if(query && query.getAttribute('xmlns') == 'jabber:iq:roster')
+            if(topic == 'stanza-in' &&
+               subject.nodeName == 'iq' &&
+               subject.getElementsByTagName('query').length > 0)
                     cache.receive({
                         direction : 'in',
                         session   : { name: data },
                         stanza    : subject });
-            }
 
             service.notifyObservers(subject, topic, data);
 

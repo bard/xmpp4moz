@@ -50,9 +50,11 @@ var DB          =
         return pkg.DB;
     })();
 
-var ns_roster   = 'jabber:iq:roster';
-var ns_muc      = 'http://jabber.org/protocol/muc';
-var ns_muc_user = 'http://jabber.org/protocol/muc#user';
+var ns_roster    = 'jabber:iq:roster';
+var ns_private   = 'jabber:iq:private';
+var ns_bookmarks = 'storage:bookmarks';
+var ns_muc       = 'http://jabber.org/protocol/muc';
+var ns_muc_user  = 'http://jabber.org/protocol/muc#user';
 
 
 // PUBLIC FUNCTIONALITY
@@ -103,6 +105,27 @@ function Cache() {
                 else
                     db.put(object);
             }
+        }
+    };
+
+    var bookmarks = {
+        manages: function(object) {
+            return (object.event == 'iq' &&
+                    object.stanza.getElementsByTagNameNS(ns_bookmarks, 'storage').length > 0);
+        },
+
+        apply: function(db, object) {
+            var previous = db.get({
+                event   : 'iq',
+                session : object.session,
+                stanza  : function(s) {
+                        return s.getElementsByTagNameNS(ns_bookmarks, 'storage').length > 0;
+                    }});
+
+            if(!previous[0])
+                db.put(object);
+            else
+                previous[0].stanza = object.stanza;
         }
     };
 
@@ -161,9 +184,9 @@ function Cache() {
                 previous[0].stanza = updatedIq;
             }
         }
-    }
+    };
 
-    this._policies = [ presence, roster ];
+    this._policies = [ presence, roster, bookmarks ];
 }
 
 Cache.prototype = {
@@ -265,7 +288,9 @@ function verify() {
             }
             else if('length' in array1) {
                 if(array1.length != array2.length) {
-                    throw new Error('FAIL: different array lengths - ' + Components.stack.caller.lineNumber);
+                    throw new Error('FAIL: different array lengths (' +
+                                    array1.length + ',' + array2.length + ') ' +
+                                    Components.stack.caller.lineNumber);
                     return;
                 } else {
                     for(var i=0; i<array1.length; i++)
@@ -801,6 +826,32 @@ function verify() {
                 [<iq from="arthur@sameplace.cc/Firefox" to="arthur@sameplace.cc/Firefox" type="result">
                  <query xmlns="jabber:iq:roster">
                  <item subscription="both" jid="marvin@sameplace.cc"/>
+                 </query>
+                 </iq>],
+                asStanzas(cache.fetch({})));
+        },
+
+        'bookmarks are cached': function() {
+            var cache = new Cache();
+
+            cache.receive({
+                session: { name: 'arthur@sameplace.cc/Firefox' },
+                stanza: asDOM(
+                    <iq from="arthur@sameplace.cc/Firefox" to="arthur@sameplace.cc/Firefox" type="result">
+                    <query xmlns="jabber:iq:private">
+                    <storage xmlns="storage:bookmarks">
+                    <conference jid="test@places.sameplace.cc"/>
+                    </storage>
+                    </query>
+                    </iq>)
+                });
+            
+            assert.equals(
+                [<iq from="arthur@sameplace.cc/Firefox" to="arthur@sameplace.cc/Firefox" type="result">
+                 <query xmlns="jabber:iq:private">
+                 <storage xmlns="storage:bookmarks">
+                 <conference jid="test@places.sameplace.cc"/>
+                 </storage>
                  </query>
                  </iq>],
                 asStanzas(cache.fetch({})));
