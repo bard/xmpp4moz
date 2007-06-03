@@ -89,7 +89,12 @@ function Cache() {
                 session   : object.session,
                 from      : { full: object.from.full },
                 stanza    : function(s) {
-                        return isMUCPresence(s) == isMUCPresence(object.stanza);
+                        if(isMUCPresence(s) == isMUCPresence(object.stanza))
+                            if(isMUCPresence(s))
+                                return (JID(s.getAttribute('to')).address ==
+                                        JID(object.stanza.getAttribute('to')).address);
+                            else
+                                return true;
                     }
                 })[0];
 
@@ -622,6 +627,33 @@ function verify() {
 
             assert.equals([<presence/>,
                            <presence to="room@server/arthur">
+                           <x xmlns="http://jabber.org/protocol/muc"/>
+                           </presence>],
+                          asStanzas(cache._db._store));
+        },
+
+        'user sends muc presence, user sends a different muc presence: add': function() {
+            var cache = new Cache();
+            cache.receive({
+                session   : { name: 'arthur@earth.org/Test' },
+                direction : 'out',
+                stanza    : asDOM(<presence to="room@server/arthur">
+                                  <x xmlns="http://jabber.org/protocol/muc"/>
+                                  </presence>)
+                });
+
+            cache.receive({
+                session   : { name: 'arthur@earth.org/Test' },
+                direction : 'out',
+                stanza    : asDOM(<presence to="anotherroom@server/arthur">
+                                  <x xmlns="http://jabber.org/protocol/muc"/>
+                                  </presence>)
+                });
+
+            assert.equals([<presence to="room@server/arthur">
+                           <x xmlns="http://jabber.org/protocol/muc"/>
+                           </presence>,
+                           <presence to="anotherroom@server/arthur">
                            <x xmlns="http://jabber.org/protocol/muc"/>
                            </presence>],
                           asStanzas(cache._db._store));
