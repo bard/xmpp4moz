@@ -169,12 +169,7 @@ function _openUserSession(jid, transport, streamObserver) {
                 sessions.closed(session);
                 break;
                 case 'data':
-                this.buffer += data;
-
-                if(this.buffer.match(/>\s*$/)) {
-                    session.receive(this.buffer);
-                    this.buffer = '';
-                }
+                session.receive(data);
 
                 break;
             }
