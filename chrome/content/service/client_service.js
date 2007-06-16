@@ -163,6 +163,23 @@ function _openUserSession(jid, transport, streamObserver) {
                 case 'stop':
                 log('Xmpp E: Transport for ' + session.name + ' closing');
                 service.notifyObservers(xpcomize('stop'), 'transport-out', session.name);
+
+                // For unexpected connections, we still need to
+                // reflect the fact that we are no longer available.
+                //
+                // This has drawbacks: first, only those who listen to
+                // transport events and then poll the cache will know,
+                // because there is no corresponding event sent on the
+                // bus; second, it will override the regular
+                // unavailable presence sent before an intentional
+                // disconnection.
+                 
+                cache.receive({
+                    direction : 'out',
+                    session   : { name: session.name },
+                    stanza    : parse('<presence type="unavailable"/>')
+                    });
+
                 if(session.isOpen()) 
                     session.close();
 
@@ -507,4 +524,17 @@ function syntheticClone(stanza) {
                 'synthetic'));
  
     return clone;
+}
+
+/**
+ * Parses an XML string (must be well-formed) and returns the root
+ * element.
+ *
+ */
+
+function parse(string) {
+    var _ = arguments.callee;
+    _.parser = _.parser || Cc['@mozilla.org/xmlextras/domparser;1'].getService(Ci.nsIDOMParser);
+
+    return _.parser.parseFromString(string, 'text/xml').documentElement;
 }
