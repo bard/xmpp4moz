@@ -60,8 +60,6 @@ const loader = Cc['@mozilla.org/moz/jssubscript-loader;1']
     .getService(Ci.mozIJSSubScriptLoader);
 const serializer = Cc['@mozilla.org/xmlextras/xmlserializer;1']
     .getService(Ci.nsIDOMSerializer);
-const domParser = Cc['@mozilla.org/xmlextras/domparser;1']
-    .getService(Ci.nsIDOMParser);
 
 
 // INITIALIZATION
@@ -136,7 +134,7 @@ function send(data, replyObserver) {
         // XML (stream prologue/epilogue, keepalives).
         this._data('out', data);
     else {
-        var domStanza = domParser.parseFromString(data, 'text/xml').documentElement;
+        var domStanza = parseOut(data);
         if(domStanza.tagName == 'parsererror' ||
            domStanza.namespaceURI == 'http://www.mozilla.org/newlayout/xml/parsererror.xml')
             this._data('out', data);
@@ -184,27 +182,29 @@ function _data(direction, data) {
         if(/<stream:stream/.test(data))
             this._stream('in', 'open');
         else {
-            var node = domParser
-                .parseFromString('<stream:stream xmlns:stream="http://etherx.jabber.org/streams">' +
-                                 data +
-                                 (/<\/stream:stream>\s*$/.test(data) ?
-                                  '' : '</stream:stream>'),
-                                 'text/xml')
-                .documentElement
-                .firstChild;
-            while(node) {
-                if(node.nodeType == Ci.nsIDOMNode.ELEMENT_NODE)
-                    this._stanza(
-                        'in', (node.getAttribute('xmlns') == 'jabber:client' ?
-                               attrFilter(node, function(attrName, attrValue) {
-                                              return !(attrName == 'xmlns' && attrValue == 'jabber:client');
-                                          }) :
-                               node));
-
-                node = node.nextSibling;
+            var streamClosed = false;
+            if(endsWith(data, '</stream:stream>')) {
+                data = data.substr(0, s.length - '</stream:stream>'.length)
+                streamClosed = true;
             }
 
-            if(data.indexOf('</stream:stream>') != -1)
+            var batch = parseIn(data);
+            if(batch) {
+                var node = batch.firstChild;
+                while(node) {
+                    if(node.nodeType == Ci.nsIDOMNode.ELEMENT_NODE)
+                        this._stanza(
+                            'in', (node.getAttribute('xmlns') == 'jabber:client' ?
+                                   attrFilter(node, function(attrName, attrValue) {
+                                                  return !(attrName == 'xmlns' && attrValue == 'jabber:client');
+                                              }) :
+                                   node));
+
+                    node = node.nextSibling;
+                }
+            }
+
+            if(streamClosed)
                 this._stream('in', 'close');
         }
     }
@@ -283,4 +283,52 @@ function attrFilter(srcNode, filterFn) {
     }
 
     return dstNode;
+}
+
+function parseOut(data) {
+    var _ = arguments.callee;
+    _.parser = _.parser || Cc['@mozilla.org/xmlextras/domparser;1'].getService(Ci.nsIDOMParser);
+
+    return _.parser.parseFromString(data, 'text/xml').documentElement;
+}
+
+/**
+ * Parse incoming data.
+ *
+ * A single <stream:stream> element is returned, containing one or
+ * more XMPP stanzas and other stream-level elements.
+ *
+ * If data does not parse correctly, we assume it is because the
+ * server did not send complete XML input.  Thus, we store data in a
+ * buffer and return null.  Next time the function is called, we parse
+ * the buffered data plus the newly received data.
+ *
+ * Because of internal state, this function is more like an object.
+ * Use with care.
+ *
+ */
+
+function parseIn(data) {
+    var _ = arguments.callee;
+
+    _.buffer = _.buffer || '';
+    _.parser = _.parser || Cc['@mozilla.org/xmlextras/domparser;1'].getService(Ci.nsIDOMParser);
+
+    var batch = _.parser.parseFromString(
+        '<stream:stream xmlns:stream="http://etherx.jabber.org/streams">' +
+        _.buffer + data +
+        '</stream:stream>',
+        'text/xml').documentElement;
+
+    if(batch.nodeName == 'parsererror') {
+        _.buffer += data;
+        return null;
+    } else {
+        _.buffer = '';
+        return batch;
+    }
+}
+
+function endsWith(string, suffix) {
+    return string.substr(string.length - suffix.length) == suffix;
 }
