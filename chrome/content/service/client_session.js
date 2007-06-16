@@ -129,14 +129,7 @@ function isOpen() {
  *
  */
 
-function send(data, observer) {
-    if(observer) {
-        var session = this;
-        var handler = function(domReply) {
-            observer.observe(domReply, 'reply-in', this.name);
-        }
-    }
-
+function send(data, replyObserver) {
     if(/^(<\?xml version="1.0"\?><stream:stream|<\/stream:stream>|\s*$)/.test(data))
         // Session: work around apparently uncatchable exception from
         // parseFromString() by not attempting to parse known invalid
@@ -148,7 +141,7 @@ function send(data, observer) {
            domStanza.namespaceURI == 'http://www.mozilla.org/newlayout/xml/parsererror.xml')
             this._data('out', data);
         else
-            this._stanza('out', domStanza, handler);        
+            this._stanza('out', domStanza, replyObserver);
     } 
 }
 
@@ -217,13 +210,14 @@ function _data(direction, data) {
     }
 }
 
-function _stanza(direction, domStanza, handler) {
+function _stanza(direction, domStanza, replyObserver) {
     switch(direction) {
     case 'in':
         var id = domStanza.getAttribute('id');
         if(this._pending[id]) {
+            var _this = this;
             try {
-                this._pending[id](domStanza);
+                this._pending[id].observe(domStanza, 'reply-in', _this.name);
             } catch(e) {
                 Cu.reportError(e);
             } finally {
@@ -233,8 +227,8 @@ function _stanza(direction, domStanza, handler) {
         break;
     case 'out':
         domStanza.setAttribute('id', this._idCounter++);
-        if(handler)
-            this._pending[domStanza.getAttribute('id')] = handler;
+        if(replyObserver)
+            this._pending[domStanza.getAttribute('id')] = replyObserver;
         this._data('out', serializer.serializeToString(domStanza));
         break;
     }
