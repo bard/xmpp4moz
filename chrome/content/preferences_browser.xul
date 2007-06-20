@@ -82,7 +82,7 @@
                       <row align="center">
                         <label value="Address:" control="xmpp-address" accesskey="A"/>
                         <vbox flex="1">
-                          <hbox flex="1" align="center">
+                          <hbox flex="0" align="center">
                             <textbox id="xmpp-address"
                                      onchange="xmppPrefs.changedField(this);"
                                      oninput="xmppPrefs.modifiedAddress(this.value);"
