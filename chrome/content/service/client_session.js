@@ -184,7 +184,7 @@ function _data(direction, data) {
         else {
             var streamClosed = false;
             if(endsWith(data, '</stream:stream>')) {
-                data = data.substr(0, s.length - '</stream:stream>'.length)
+                data = data.substr(0, data.length - '</stream:stream>'.length)
                 streamClosed = true;
             }
 
