@@ -70,6 +70,7 @@ function init() {
     this._idCounter = 1000;
     this._pending = {};
     this._observers = [];
+    this._buffer = '';
 
     this.__defineGetter__(
         'name', function() {
@@ -188,9 +189,10 @@ function _data(direction, data) {
                 streamClosed = true;
             }
 
-            var batch = parseIn(data);
-            if(batch) {
-                var node = batch.firstChild;
+            var res = parseIn(data, this._buffer);
+            this._buffer = res.buffer;
+            if(res.batch) {
+                var node = res.batch.firstChild;
                 while(node) {
                     if(node.nodeType == Ci.nsIDOMNode.ELEMENT_NODE)
                         this._stanza(
@@ -203,7 +205,7 @@ function _data(direction, data) {
                     node = node.nextSibling;
                 }
             }
-
+            
             if(streamClosed)
                 this._stream('in', 'close');
         }
@@ -293,40 +295,38 @@ function parseOut(data) {
 }
 
 /**
- * Parse incoming data.
+ * Parses incoming data.
  *
- * A single <stream:stream> element is returned, containing one or
- * more XMPP stanzas and other stream-level elements.
+ * Receives last read data and, optionally, a buffer of previously
+ * read data.
  *
- * If data does not parse correctly, we assume it is because the
- * server did not send complete XML input.  Thus, we store data in a
- * buffer and return null.  Next time the function is called, we parse
- * the buffered data plus the newly received data.
+ * Returns a result object with a 'batch' member and a 'buffer'
+ * member.
  *
- * Because of internal state, this function is more like an object.
- * Use with care.
+ * If parse was successful, 'batch' holds a single <stream:stream> DOM
+ * element containing one or more XMPP stanzas and other stream-level
+ * XMPP elements.  'buffer' is empty.
+ *
+ * If parse did not succeed, we assume this is because of partial
+ * input.  'batch' is null and 'buffer' holds previous buffer plus
+ * current data, so that it can be passed back again as a 'buffer' parameter to parseIn.
  *
  */
 
-function parseIn(data) {
+function parseIn(data, buffer) {
     var _ = arguments.callee;
-
-    _.buffer = _.buffer || '';
     _.parser = _.parser || Cc['@mozilla.org/xmlextras/domparser;1'].getService(Ci.nsIDOMParser);
+    buffer = buffer || '';
 
     var batch = _.parser.parseFromString(
         '<stream:stream xmlns:stream="http://etherx.jabber.org/streams">' +
-        _.buffer + data +
+        buffer + data +
         '</stream:stream>',
         'text/xml').documentElement;
 
-    if(batch.nodeName == 'parsererror') {
-        _.buffer += data;
-        return null;
-    } else {
-        _.buffer = '';
-        return batch;
-    }
+    return (batch.nodeName == 'parsererror' ?
+        { buffer: buffer + data, batch: null } :
+        { buffer: '', batch: batch });
 }
 
 function endsWith(string, suffix) {
