@@ -61,18 +61,6 @@ function init() {
     request = window.arguments[0];
     _('form-container').appendChild(
         xmpp.ui.createRegisterForm(request.query));
-
-    if(request.presets) {
-        var xulField = _('form-container', {'xulx:role': 'fields'}).firstChild;
-        while(xulField) {
-            for(var presetName in request.presets)
-                if(presetName == xulField.getAttributeNS(ns_register, 'field') ||
-                   presetName == xulField.getAttributeNS(ns_data, 'var'))
-                    _(xulField, {'xulx:role': 'value'}).value = request.presets[presetName];
-
-            xulField = xulField.nextSibling;
-        }
-    }
 }
 
 function finish(event) {

@@ -162,11 +162,7 @@ function registerAccount(address, host, port, ssl) {
 
     var request = {
         confirm: false,
-        query: undefined, 
-        presets: {
-            username: XMPP.JID(jid).username,
-            password: v('xmpp-password')
-        }
+        query: undefined
     };
 
     XMPP.open(
@@ -179,6 +175,10 @@ function registerAccount(address, host, port, ssl) {
                 </iq>,
                 function(reply) {
                     request.query = reply.stanza.ns_register::query;
+                    if(request.query.ns_register::username.text() == undefined)
+                        request.query.ns_register::username = XMPP.JID(jid).username;
+                    if(request.query.ns_register::password.text() == undefined)
+                        request.query.ns_register::password = v('xmpp-password');
 
                     window.openDialog(
                         'chrome://xmpp4moz/content/ui/registration.xul',

@@ -60,6 +60,9 @@ xmpp.ui.createRegisterForm = function(registerQuery) {
         for each(var field in registerQuery.*) {
             if(field.name().localName == 'instructions')
                 _(xulForm, {'xulx:role': 'instructions'}).textContent = field.toString();
+            else if(field.name().localName == 'registered')
+                // XXX should give feedback about registration status.
+                continue;
             else {
                 var xulField = cloneBlueprint('registration-form-field');
                 var fieldName = field.name().localName;
@@ -67,7 +70,8 @@ xmpp.ui.createRegisterForm = function(registerQuery) {
                 _(xulField, {'xulx:role': 'label'}).value =
                     fieldName.slice(0,1).toUpperCase() + fieldName.slice(1);
                 if(fieldName == 'password')
-                _(xulField, {'xulx:role': 'value'}).setAttribute('type', 'password');
+                    _(xulField, {'xulx:role': 'value'}).setAttribute('type', 'password');
+                _(xulField, {'xulx:role': 'value'}).value = field.text();
                 _(xulForm, {'xulx:role': 'fields'}).appendChild(xulField);
             }
         } 
