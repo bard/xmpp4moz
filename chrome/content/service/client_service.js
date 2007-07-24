@@ -156,12 +156,12 @@ function _openUserSession(jid, transport, streamObserver) {
         observe: function(subject, topic, data) {
             switch(topic) {
                 case 'start':
-                log('Xmpp E: Transport for ' + session.name + ' opening');
+                log('{' + session.name + ',transport-out}    start');
                 service.notifyObservers(xpcomize('start'), 'transport-out', session.name);
                 session.open(JID(jid).hostname);
                 break;
                 case 'stop':
-                log('Xmpp E: Transport for ' + session.name + ' closing');
+                log('{' + session.name + ',transport-out}    stop');
                 service.notifyObservers(xpcomize('stop'), 'transport-out', session.name);
 
                 // For unexpected connections, we still need to
@@ -196,10 +196,9 @@ function _openUserSession(jid, transport, streamObserver) {
     var service = this;
     var sessionObserver = {
         observe: function(subject, topic, data) {
-            log('Xmpp E: ' + topic);
-
-            if(topic == 'data-in' || topic == 'data-out')
-                log('Xmpp ' + (topic == 'data-in' ? 'S' : 'C') + ': ' + asString(subject));
+            if(topic == 'data-in' || topic == 'data-out' ||
+               topic == 'stream-in' || topic == 'stream-out')
+                log('{' + session.name + ',' + topic + '}    ' + asString(subject));
 
             if(topic == 'data-out' && transport.isConnected())
                 transport.write(asString(subject));
