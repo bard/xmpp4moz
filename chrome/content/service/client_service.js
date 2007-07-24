@@ -473,7 +473,10 @@ function log(msg) {
         case 'console':
             Cc[ "@mozilla.org/consoleservice;1" ]
                 .getService(Ci.nsIConsoleService)
-                .logStringMessage(msg);
+                .logStringMessage('XMPP ' + msg);
+            break;
+        case 'sysconsole':
+            dump('XMPP ' + msg + '\n');
             break;
         }
     }
