@@ -87,44 +87,52 @@ function connect() {
     var _this = this;
     this._socketTransport.setEventSink({
         onTransportStatus: function(transport, status, progress, progressMax) {
-                if(status == Ci.nsISocketTransport.STATUS_CONNECTED_TO) {
-                    _this._connected = true;
-                    _this.notifyObservers(_xpcomize('stub'), 'start', null);
-                }
-            }},
-        getCurrentThreadTarget());
+            if(status == Ci.nsISocketTransport.STATUS_CONNECTED_TO) {
+                _this._connected = true;
+                _this.notifyObservers(_xpcomize('stub'), 'start', null);
+            }
+        }
+    }, getCurrentThreadTarget());
+}
 
+function asyncRead(listener) {
     var baseOutstream = this._socketTransport.openOutputStream(0,0,0);
     this._outstream = Cc['@mozilla.org/intl/converter-output-stream;1']
-        .createInstance(Ci.nsIConverterOutputStream);
+    .createInstance(Ci.nsIConverterOutputStream);
 
     var baseInstream = this._socketTransport.openInputStream(0,0,0);
     this._instream = Cc['@mozilla.org/intl/converter-input-stream;1']
-        .createInstance(Ci.nsIConverterInputStream);
+    .createInstance(Ci.nsIConverterInputStream);
 
     var inputPump = Cc['@mozilla.org/network/input-stream-pump;1']
-        .createInstance(Ci.nsIInputStreamPump);
+    .createInstance(Ci.nsIInputStreamPump);
     inputPump.init(baseInstream, -1, -1, 0, 0, false);
 
     inputPump.asyncRead({
-        onStartRequest: function(request, context) {},
+        onStartRequest: function(request, context) {
+            listener.onStartRequest.apply(null, arguments);
+        },
         onStopRequest: function(request, context, status) {
-                _this._instream.close();
-                _this._outstream.close();
-                if(status != 0)
-                    dump('Error! ' + status);
-                _this.notifyObservers(_xpcomize('stub'), 'stop', null);
-            },
+            _this.notifyObservers(xpcomize('stub'), 'stop', null);
+            listener.onStopRequest.apply(null, arguments);
+            _this._instream.close();
+            _this._outstream.close();
+        },
         onDataAvailable: function(request, context, inputStream, offset, count) {
-                var data = {};
-                _this._instream.readString(count, data);
-                _this.notifyObservers(_xpcomize('stub'), 'data', data.value);
-            }
-        }, null);
+            listener.onDataAvailable.apply(null, arguments);
+        }
+    }, null);
 
-    this._outstream.init(baseOutstream, 'UTF-8', 0, '?'.charCodeAt(0));
+    this._outstream.init(baseOutstream, 'UTF-8', 0,
+                         '?'.charCodeAt(0));
     this._instream.init(baseInstream, 'UTF-8', 0,
                         Ci.nsIConverterInputStream.DEFAULT_REPLACEMENT_CHARACTER);
+}
+
+function read(count) {
+    var data = {};
+    this._instream.readString(count, data);
+    return data.value;
 }
 
 function disconnect() {

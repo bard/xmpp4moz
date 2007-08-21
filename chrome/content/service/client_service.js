@@ -151,8 +151,6 @@ function _openUserSession(jid, transport, streamObserver) {
     session.setName(jid);
 
     var transportObserver = {
-        buffer: '',
-        
         observe: function(subject, topic, data) {
             switch(topic) {
                 case 'start':
@@ -164,7 +162,7 @@ function _openUserSession(jid, transport, streamObserver) {
                 log('{' + session.name + ',transport-out}    stop');
                 service.notifyObservers(xpcomize('stop'), 'transport-out', session.name);
 
-                // For unexpected connections, we still need to
+                // For unexpected disconnections, we still need to
                 // reflect the fact that we are no longer available.
                 //
                 // This has drawbacks: first, only those who listen to
@@ -185,13 +183,24 @@ function _openUserSession(jid, transport, streamObserver) {
 
                 sessions.closed(session);
                 break;
-                case 'data':
-                session.receive(data);
-
-                break;
             }
         }
     };
+
+    var transportListener = {
+        onStartRequest: function(request, context) {},
+        
+        onDataAvailable: function(request, context, inputStream, offset, count) {
+            session.receive(transport.read(count));
+        },
+
+        onStopRequest: function(request, context, status) {
+            if(status != 0)
+                dump('Error! ' + status);
+        }
+    };
+    
+
 
     var service = this;
     var sessionObserver = {
@@ -286,6 +295,7 @@ function _openUserSession(jid, transport, streamObserver) {
                 }
             }
 
+            
             if(topic == 'stream-out' && asString(subject) == 'close') {
                 cache.fetch({
                     event     : 'presence',
@@ -337,8 +347,10 @@ function _openUserSession(jid, transport, streamObserver) {
     
     if(transport.isConnected()) 
         session.open(JID(jid).hostname);
-    else
+    else {
         transport.connect();
+        transport.asyncRead(transportListener);
+    }
 
     return session;
 }
