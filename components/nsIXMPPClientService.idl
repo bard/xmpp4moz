@@ -1,6 +1,7 @@
 #include "nsISupports.idl"
 #include "nsIObserver.idl"
 #include "nsISimpleEnumerator.idl"
+#include "nsIDOMElement.idl"
 #include "nsIXMPPClientSession.idl"
 #include "nsIXMPPTransport.idl"
 
@@ -22,7 +23,7 @@ interface nsIXMPPClientService: nsISupports
 
     nsIXMPPClientSession getSession(in string accountJid);
 
-    void send(in string accountJid, in AUTF8String stanza, in nsIObserver anObserver);
+    void send(in string accountJid, in nsIDOMElement element, in nsIObserver anObserver);
 
  	void addObserver(in nsIObserver anObserver, in string aTopic, in boolean ownsWeak);
 

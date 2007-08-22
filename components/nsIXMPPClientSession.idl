@@ -1,10 +1,13 @@
 #include "nsISupports.idl"
 #include "nsIObserver.idl"
+#include "nsIXMPPTransport.idl"
+#include "nsIStreamListener.idl"
+#include "nsIDOMElement.idl"
 
 interface nsIObserver;
 
 [scriptable, uuid(0fa2417d-60a7-4d53-ba9a-b63cfbee96a4)]
-interface nsIXMPPClientSession: nsISupports
+interface nsIXMPPClientSession: nsIStreamListener
 {
     void reload();
 
@@ -14,10 +17,10 @@ interface nsIXMPPClientSession: nsISupports
 
     boolean isOpen();
 
-    void send(in AUTF8String data, in nsIObserver replyObserver);
+    void send(in nsIDOMElement element, in nsIObserver replyObserver);
 
-    void receive(in AUTF8String data);
-
+    void receive(in nsIDOMElement element);
+    
  	void addObserver(in nsIObserver anObserver, in string aTopic, in boolean ownsWeak);
 
     void removeObserver(in nsIObserver anObserver, in string aTopic);

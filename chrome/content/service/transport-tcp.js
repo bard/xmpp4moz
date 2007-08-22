@@ -54,6 +54,8 @@ function init(host, port, ssl) {
     this._port = port;
     this._ssl = ssl;
     this._observers = [];
+    this._keepAliveTimer = Cc['@mozilla.org/timer;1']
+    .createInstance(Ci.nsITimer);
 }
 
 
@@ -64,9 +66,7 @@ function write(data) {
     try {
         return this._outstream.writeString(data);
     } catch(e if e.name == 'NS_BASE_STREAM_CLOSED') {
-        this._instream.close();
-        this._outstream.close();
-        this.notifyObservers(_xpcomize('stub'), 'stop', null);
+        this.closed();
     }
 }
 
@@ -90,6 +90,7 @@ function connect() {
             if(status == Ci.nsISocketTransport.STATUS_CONNECTED_TO) {
                 _this._connected = true;
                 _this.notifyObservers(_xpcomize('stub'), 'start', null);
+                _this.startKeepAlive();
             }
         }
     }, getCurrentThreadTarget());
@@ -99,48 +100,33 @@ function asyncRead(listener) {
     var baseOutstream = this._socketTransport.openOutputStream(0,0,0);
     this._outstream = Cc['@mozilla.org/intl/converter-output-stream;1']
     .createInstance(Ci.nsIConverterOutputStream);
-
-    var baseInstream = this._socketTransport.openInputStream(0,0,0);
-    this._instream = Cc['@mozilla.org/intl/converter-input-stream;1']
-    .createInstance(Ci.nsIConverterInputStream);
-
+    this._outstream.init(baseOutstream, 'UTF-8', 0, '?'.charCodeAt(0));
+    
+    this._instream = this._socketTransport.openInputStream(0,0,0);
     var inputPump = Cc['@mozilla.org/network/input-stream-pump;1']
     .createInstance(Ci.nsIInputStreamPump);
-    inputPump.init(baseInstream, -1, -1, 0, 0, false);
+    inputPump.init(this._instream, -1, -1, 0, 0, false);
 
+    var _this = this;
     inputPump.asyncRead({
         onStartRequest: function(request, context) {
             listener.onStartRequest.apply(null, arguments);
         },
         onStopRequest: function(request, context, status) {
-            _this.notifyObservers(xpcomize('stub'), 'stop', null);
             listener.onStopRequest.apply(null, arguments);
-            _this._instream.close();
-            _this._outstream.close();
+            _this.closed();
         },
         onDataAvailable: function(request, context, inputStream, offset, count) {
-            listener.onDataAvailable.apply(null, arguments);
+           listener.onDataAvailable(request, context, inputStream, offset, count);
         }
     }, null);
-
-    this._outstream.init(baseOutstream, 'UTF-8', 0,
-                         '?'.charCodeAt(0));
-    this._instream.init(baseInstream, 'UTF-8', 0,
-                        Ci.nsIConverterInputStream.DEFAULT_REPLACEMENT_CHARACTER);
-}
-
-function read(count) {
-    var data = {};
-    this._instream.readString(count, data);
-    return data.value;
 }
 
 function disconnect() {
     if(!this._connected)
         return;
-    
-    this._instream.close();
-    this._outstream.close();
+
+    this.closed();
     this._connected = false;
 }
 
@@ -171,6 +157,22 @@ function notifyObservers(subject, topic, data) {
 
 // INTERNALS
 // ----------------------------------------------------------------------
+
+function startKeepAlive() {
+    var transport = this;
+    this._keepAliveTimer.initWithCallback({
+        notify: function(timer) {
+            transport.write(' ');
+        }
+    }, 30000, Ci.nsITimer.TYPE_REPEATING_SLACK);
+}
+
+function closed() {
+    this._instream.close();
+    this._outstream.close();
+    this._keepAliveTimer.cancel();
+    this.notifyObservers(_xpcomize('stub'), 'stop', null);
+}
 
 function _xpcomize(string) {
     if(string instanceof Ci.nsISupportsString)

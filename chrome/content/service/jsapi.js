@@ -852,10 +852,7 @@ function _send(jid, stanza, handler) {
     var settings = XML.settings();
     XML.prettyPrinting = false;
     XML.ignoreWhitespace = false;
-    service.send(
-        jid,
-        typeof(stanza) == 'xml' ? stanza.toXMLString() : stanza.toString(),
-        replyObserver);
+    service.send(jid, asDOM(stanza), replyObserver);
     XML.setSettings(settings);
 }
 
@@ -940,6 +937,30 @@ function getAccountByKey(key) {
                 result = account;
         });
     return result;
+}
+
+function asDOM(object) {
+    var _ = arguments.callee;
+    _.parser = _.parser || Cc['@mozilla.org/xmlextras/domparser;1'].getService(Ci.nsIDOMParser);
+
+    var element;    
+    switch(typeof(object)) {
+    case 'xml':
+        element = _.parser
+        .parseFromString(object.toXMLString(), 'text/xml')
+        .documentElement;
+        break;
+    case 'string':
+        element = _.parser
+        .parseFromString(object, 'text/xml')
+        .documentElement;
+        break;
+    default:
+        // XXX use xpcom exception
+        throw new Error('Argument error. (' + typeof(object) + ')');
+    }
+    
+    return element;
 }
 
 

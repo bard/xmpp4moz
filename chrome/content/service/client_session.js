@@ -61,6 +61,14 @@ const loader = Cc['@mozilla.org/moz/jssubscript-loader;1']
 const serializer = Cc['@mozilla.org/xmlextras/xmlserializer;1']
     .getService(Ci.nsIDOMSerializer);
 
+const STREAM_PROLOGUE =
+    '<?xml version="1.0"?>' +
+    '<stream:stream xmlns="jabber:client" ' +
+    'xmlns:stream="http://etherx.jabber.org/streams" ' +
+    'to="<SERVER>">';
+const STREAM_EPILOGUE =
+    '</stream>';
+
 
 // INITIALIZATION
 // ----------------------------------------------------------------------
@@ -72,10 +80,78 @@ function init() {
     this._observers = [];
     this._buffer = '';
 
-    this.__defineGetter__(
-        'name', function() {
-            return this._name;
-        });
+    this.__defineGetter__('name', function() {
+        return this._name;
+    });
+
+
+    this._parser = Cc['@mozilla.org/saxparser/xmlreader;1']
+    .createInstance(Ci.nsISAXXMLReader);
+    this._parser.parseAsync(null);
+
+    var _this = this;
+    this._parser.contentHandler = {
+        startDocument: function() {
+            this._doc = Cc['@mozilla.org/xml/xml-document;1']
+            .createInstance(Ci.nsIDOMXMLDocument);
+            _this._stream('in', 'open');
+        },
+        
+        endDocument: function() {
+            _this._stream('in', 'close');
+        },
+        
+        startElement: function(uri, localName, qName, attributes) {
+            var e = (uri == 'jabber:client' ?
+                     this._doc.createElement(localName) :
+                     this._doc.createElementNS(uri, localName))
+            for(var i=0; i<attributes.length; i++)
+                e.setAttribute(attributes.getQName(i),
+                               attributes.getValue(i));
+    
+            if(this._element) {
+                this._element.appendChild(e);
+                this._element = e;
+            }
+            else if(['message', 'iq', 'presence'].indexOf(localName) != -1)
+                this._element = e;
+        },
+        
+        endElement: function(uri, localName, qName) {
+            if(!this._element)
+                return;
+    
+            if(this._element.parentNode) {
+                this._element = this._element.parentNode;
+            } else {
+                this._element.normalize();
+                 _this._element('in', this._element);
+                this._element = null;
+            }
+        },
+        
+        characters: function(value) {
+            if(!this._element)
+                return;
+    
+            this._element.appendChild(this._doc.createTextNode(value));
+        },
+        
+        processingInstruction: function(target, data) {},
+        
+        ignorableWhitespace: function(whitespace) {},
+        
+        startPrefixMapping: function(prefix, uri) {},
+        
+        endPrefixMapping: function(prefix) {},
+    
+        QueryInterface: function(iid) {
+            if(!iid.equals(Ci.nsISupports) &&
+               !iid.equals(Ci.nsISAXContentHandler))
+                throw Cr.NS_ERROR_NO_INTERFACE;
+            return this;
+        }
+    };    
 }
 
 function setName(string) {
@@ -86,73 +162,41 @@ function setName(string) {
 // PUBLIC INTERFACE - SESSION MANAGEMENT AND DATA EXCHANGE
 // ----------------------------------------------------------------------
 
-/**
- * Send the stream prologue.
- *
- */
+// XXX should it really be the session's responsibility to manage the
+// stream?  A separate stream handler is probably a better choice, and
+// would make uncommon streams (e.g. http-binding) transparent to the
+// session.
 
 function open(server) {
     if(this._isOpen)
+        // XXX replace with XPCOM exception
         throw new Error('Session already opened.');
 
-    this.send('<?xml version="1.0"?>' +
-              '<stream:stream xmlns="jabber:client" ' +
-              'xmlns:stream="http://etherx.jabber.org/streams" ' +
-              'to="' + server + '">');
-
+    this._data('out', STREAM_PROLOGUE.replace('<SERVER>', server));
     this._stream('out', 'open');
 }
 
-/**
- * Send the stream epilogue.
- *
- */
-
 function close() {
     if(!this._isOpen)
+        // XXX replace with XPCOM exception
         throw new Error('Session already closed.');
 
     this._stream('out', 'close');
-    this.send('</stream:stream>');
+    this._data('out', STREAM_EPILOGUE);
 }
 
 function isOpen() {
     return this._isOpen;
 }
 
-/**
- * Send data to the other side.  Conversion to XML DOM will be
- * attempted internally; if successful, stanza will be stamped with
- * unique id.  If observer is provided and the data was valid XML,
- * observer will be called upon reception of reply.
- *
- */
-
-function send(data, replyObserver) {
-    if(/^(<\?xml version="1.0"\?><stream:stream|<\/stream:stream>|\s*$)/.test(data))
-        // Session: work around apparently uncatchable exception from
-        // parseFromString() by not attempting to parse known invalid
-        // XML (stream prologue/epilogue, keepalives).
-        this._data('out', data);
-    else {
-        var domStanza = parseOut(data);
-        if(domStanza.tagName == 'parsererror' ||
-           domStanza.namespaceURI == 'http://www.mozilla.org/newlayout/xml/parsererror.xml')
-            this._data('out', data);
-        else
-            this._stanza('out', domStanza, replyObserver);
-    } 
+function send(element, replyObserver) {
+    this._element('out', element, replyObserver);
 }
 
-/**
- * Receive text or XML from the other side.
- *
- */
-
-function receive(data) { 
-    this._data('in', data);
+function receive(element) {
+    this._element('in', element);
 }
-    
+
 function addObserver(observer) {
     this._observers.push(observer);    
 }
@@ -161,6 +205,21 @@ function removeObserver(observer) {
     var index = this._observers.indexOf(observer);
     if(index != -1) 
         this._observers.splice(index, 1);    
+}
+
+function onStartRequest(request, context) {
+    this._parser.onStartRequest(request, context);
+}
+        
+function onDataAvailable(request, context, inputStream, offset, count) {
+    this._parser.onDataAvailable(request, context, inputStream, offset, count);
+}
+
+function onStopRequest(request, context, status) {
+    if(status != 0)
+        dump('Error! ' + status);
+
+    this._parser.onStopRequest(request, context, status);
 }
 
 
@@ -178,41 +237,11 @@ function _stream(direction, state) {
 
 function _data(direction, data) {
     this.notifyObservers(data, 'data-' + direction, this.name);
-
-    if(direction == 'in') {
-        if(/<stream:stream/.test(data))
-            this._stream('in', 'open');
-        else {
-            var streamClosed = false;
-            if(endsWith(data, '</stream:stream>')) {
-                data = data.substr(0, data.length - '</stream:stream>'.length)
-                streamClosed = true;
-            }
-
-            var res = parseIn(data, this._buffer);
-            this._buffer = res.buffer;
-            if(res.batch) {
-                var node = res.batch.firstChild;
-                while(node) {
-                    if(node.nodeType == Ci.nsIDOMNode.ELEMENT_NODE)
-                        this._stanza(
-                            'in', (node.getAttribute('xmlns') == 'jabber:client' ?
-                                   attrFilter(node, function(attrName, attrValue) {
-                                                  return !(attrName == 'xmlns' && attrValue == 'jabber:client');
-                                              }) :
-                                   node));
-
-                    node = node.nextSibling;
-                }
-            }
-            
-            if(streamClosed)
-                this._stream('in', 'close');
-        }
-    }
 }
 
-function _stanza(direction, domStanza, replyObserver) {
+// Currently would also receive non-stanza elements.
+
+function _element(direction, domStanza, replyObserver) {
     switch(direction) {
     case 'in':
         var id = domStanza.getAttribute('id');
@@ -226,6 +255,7 @@ function _stanza(direction, domStanza, replyObserver) {
                 delete this._pending[id];
             }
         }
+        this._data('in', serializer.serializeToString(domStanza));
         break;
     case 'out':
         domStanza.setAttribute('id', this._idCounter++);
@@ -254,81 +284,3 @@ function notifyObservers(subject, topic, data) {
         }    
 }
 
-function attrFilter(srcNode, filterFn) {
-    function serialize(element) {
-        return Cc['@mozilla.org/xmlextras/xmlserializer;1']
-            .getService(Ci.nsIDOMSerializer)
-            .serializeToString(element);
-    }
-
-    var dstNode;
-    switch(srcNode.nodeType) {
-    case srcNode.ELEMENT_NODE:
-        dstNode = srcNode.ownerDocument.createElement(srcNode.nodeName);
-        for(var i=0, l=srcNode.attributes.length, attr;
-            i<l; i++) {
-            attr = srcNode.attributes[i];
-            if(filterFn(attr.name, attr.value) == false)
-                continue;
-            else
-                dstNode.setAttribute(attr.name, attr.value);
-        }
-
-        var child = srcNode.firstChild;
-        while(child) {
-            dstNode.appendChild(arguments.callee(child, filterFn));
-            child = child.nextSibling;
-        }
-        break;
-    default:
-        dstNode = srcNode;
-    }
-
-    return dstNode;
-}
-
-function parseOut(data) {
-    var _ = arguments.callee;
-    _.parser = _.parser || Cc['@mozilla.org/xmlextras/domparser;1'].getService(Ci.nsIDOMParser);
-
-    return _.parser.parseFromString(data, 'text/xml').documentElement;
-}
-
-/**
- * Parses incoming data.
- *
- * Receives last read data and, optionally, a buffer of previously
- * read data.
- *
- * Returns a result object with a 'batch' member and a 'buffer'
- * member.
- *
- * If parse was successful, 'batch' holds a single <stream:stream> DOM
- * element containing one or more XMPP stanzas and other stream-level
- * XMPP elements.  'buffer' is empty.
- *
- * If parse did not succeed, we assume this is because of partial
- * input.  'batch' is null and 'buffer' holds previous buffer plus
- * current data, so that it can be passed back again as a 'buffer' parameter to parseIn.
- *
- */
-
-function parseIn(data, buffer) {
-    var _ = arguments.callee;
-    _.parser = _.parser || Cc['@mozilla.org/xmlextras/domparser;1'].getService(Ci.nsIDOMParser);
-    buffer = buffer || '';
-
-    var batch = _.parser.parseFromString(
-        '<stream:stream xmlns:stream="http://etherx.jabber.org/streams">' +
-        buffer + data +
-        '</stream:stream>',
-        'text/xml').documentElement;
-
-    return (batch.nodeName == 'parsererror' ?
-        { buffer: buffer + data, batch: null } :
-        { buffer: '', batch: batch });
-}
-
-function endsWith(string, suffix) {
-    return string.substr(string.length - suffix.length) == suffix;
-}

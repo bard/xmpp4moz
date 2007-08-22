@@ -44,20 +44,11 @@ const Cu = Components.utils;
 
 const loader = Cc['@mozilla.org/moz/jssubscript-loader;1']
     .getService(Ci.mozIJSSubScriptLoader);
-const serializer = Cc['@mozilla.org/xmlextras/xmlserializer;1']
-    .getService(Ci.nsIDOMSerializer);
-const domParser = Cc['@mozilla.org/xmlextras/domparser;1']
-    .getService(Ci.nsIDOMParser);
 const pref = Cc['@mozilla.org/preferences-service;1']
     .getService(Ci.nsIPrefService)
     .getBranch('xmpp.');
 
 const ns_disco_info = 'http://jabber.org/protocol/disco#info';    
-
-const keepAliveTimer = Cc['@mozilla.org/timer;1']
-    .createInstance(Ci.nsITimer);
-
-const KEEPALIVE_INTERVAL = 30000;
 
 
 // GLOBAL STATE
@@ -101,11 +92,6 @@ var sessions = {
         }
     }
 };
-
-keepAliveTimer.initWithCallback(
-    { notify: function(timer) {
-            sessions.forEach(function(session) { session.send(' ', null); });
-        }}, KEEPALIVE_INTERVAL, Ci.nsITimer.TYPE_REPEATING_SLACK);
 
 
 // PUBLIC FUNCTIONALITY
@@ -175,7 +161,7 @@ function _openUserSession(jid, transport, streamObserver) {
                 cache.receive({
                     direction : 'out',
                     session   : { name: session.name },
-                    stanza    : parse('<presence type="unavailable"/>')
+                    stanza    : asDOM('<presence type="unavailable"/>')
                     });
 
                 if(session.isOpen()) 
@@ -186,21 +172,6 @@ function _openUserSession(jid, transport, streamObserver) {
             }
         }
     };
-
-    var transportListener = {
-        onStartRequest: function(request, context) {},
-        
-        onDataAvailable: function(request, context, inputStream, offset, count) {
-            session.receive(transport.read(count));
-        },
-
-        onStopRequest: function(request, context, status) {
-            if(status != 0)
-                dump('Error! ' + status);
-        }
-    };
-    
-
 
     var service = this;
     var sessionObserver = {
@@ -275,7 +246,7 @@ function _openUserSession(jid, transport, streamObserver) {
                         function(presence) {
                             var inverse = syntheticClone(presence.stanza);
                             inverse.setAttribute('type', 'unavailable');
-                            session.receive(serializer.serializeToString(inverse));
+                            session.receive(inverse);
                         });
                 
             if(topic == 'stanza-in' && subject.nodeName == 'iq' &&
@@ -291,7 +262,7 @@ function _openUserSession(jid, transport, streamObserver) {
                     for each(var feature in features)
                         stanza.ns_disco_info::query.appendChild(new XML(feature));
 
-                    session.send(stanza.toXMLString(), null);
+                    session.send(asDOM(stanza), null);
                 }
             }
 
@@ -305,7 +276,7 @@ function _openUserSession(jid, transport, streamObserver) {
                         function(presence) {
                             var inverse = syntheticClone(presence.stanza);
                             inverse.setAttribute('type', 'unavailable');
-                            session.receive(serializer.serializeToString(inverse));
+                            session.receive(inverse);
                         });
 
                 cache.fetch({
@@ -338,18 +309,16 @@ function _openUserSession(jid, transport, streamObserver) {
     cache.receive({
         direction : 'in',
         session   : { name: session.name },
-        stanza    : domParser.parseFromString(
-            '<iq from="' + jid + '" to="' + jid + '" type="result">' +
-            '<query xmlns="jabber:iq:roster"/>' +
-            '</iq>',
-            'text/xml').documentElement
+        stanza    : asDOM('<iq from="' + jid + '" to="' + jid + '" type="result">' +
+                          '<query xmlns="jabber:iq:roster"/>' +
+                          '</iq>')
         });
-    
+
     if(transport.isConnected()) 
         session.open(JID(jid).hostname);
     else {
         transport.connect();
-        transport.asyncRead(transportListener);
+        transport.asyncRead(session);
     }
 
     return session;
@@ -359,8 +328,8 @@ function close(jid) {
     sessions.get(jid).close();
 }
 
-function send(sessionName, stanza, observer) {
-    sessions.get(sessionName).send(stanza, observer);
+function send(sessionName, element, observer) {
+    sessions.get(sessionName).send(element, observer);
 }
 
 function addObserver(observer) {
@@ -540,15 +509,26 @@ function syntheticClone(stanza) {
     return clone;
 }
 
-/**
- * Parses an XML string (must be well-formed) and returns the root
- * element.
- *
- */
-
-function parse(string) {
+function asDOM(object) {
     var _ = arguments.callee;
     _.parser = _.parser || Cc['@mozilla.org/xmlextras/domparser;1'].getService(Ci.nsIDOMParser);
 
-    return _.parser.parseFromString(string, 'text/xml').documentElement;
+    var element;    
+    switch(typeof(object)) {
+    case 'xml':
+        element = _.parser
+        .parseFromString(object.toXMLString(), 'text/xml')
+        .documentElement;
+        break;
+    case 'string':
+        element = _.parser
+        .parseFromString(object, 'text/xml')
+        .documentElement;
+        break;
+    default:
+        // XXX use xpcom exception
+        throw new Error('Argument error. (' + typeof(object) + ')');
+    }
+    
+    return element;
 }
