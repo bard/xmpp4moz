@@ -82,9 +82,10 @@ const serializer = Cc['@mozilla.org/xmlextras/xmlserializer;1']
 const srvPrompt = Cc["@mozilla.org/embedcomp/prompt-service;1"]
     .getService(Ci.nsIPromptService);
 
+const ns_x4m        = 'http://hyperstruct.net/xmpp4moz';
 const ns_muc        = 'http://jabber.org/protocol/muc';
 const ns_roster     = 'jabber:iq:roster';
-const ns_disco_info = 'http://jabber.org/protocol/disco#info';    
+const ns_disco_info = 'http://jabber.org/protocol/disco#info';
 
 
 // DEVELOPER INTERFACE
@@ -318,40 +319,33 @@ function createChannel(features) {
         },
 
         observe: function(subject, topic, data) {
-            function asString(object) {
-                if(object instanceof Ci.nsISupportsString)
-                    return object.toString();
-                else if(typeof(object) == 'string')
-                    return object;
-                else
-                    throw new Exception('Bad argument.');
-            }
-
-            var match = topic.match(/^(stream|data|stanza|transport)-(in|out)$/);
-
+            var [_, event, direction] = topic.match(/^(stream|data|stanza|transport)-(in|out)$/);
             var sessionName = data.toString();
 
             var eventInfo = {
-                event     : match[1],
-                direction : match[2],
+                direction : direction,
                 session   : service.getSession(sessionName) || { name: sessionName }
             };
 
-            switch(eventInfo.event) {
+            switch(event) {
             case 'transport':
                 eventInfo.state = asString(subject);
+                eventInfo.event = event;
                 break;
             case 'stream':
                 eventInfo.state = asString(subject);
+                eventInfo.event = event;
                 break;
             case 'data':
                 eventInfo.content = asString(subject);
+                eventInfo.event = event;
                 break;
             case 'stanza':
                 eventInfo.stanza = dom2xml(subject.QueryInterface(Ci.nsIDOMElement));
                 eventInfo.event = eventInfo.stanza.name();
                 break;
             }
+            
             this.receive(wrapEvent(eventInfo));
         },
 
@@ -444,37 +438,32 @@ function match(object, template) {
 }
 
 /**
- * Add convenience methods to an event object.  Fill in direction if
- * necessary (and possible).
+ * Add convenience methods to an event object.
  *
  */
 
-function wrapEvent(eventObject) {
-    eventObject.__defineGetter__(
-        'account', function() {
-            return this.session.name;
+function wrapEvent(e) {
+    e.__defineGetter__('account', function() {
+        return (this.stanza ?
+                this.stanza.ns_x4m::meta.@account.toXMLString() :
+                this.session.name);
+    });
+
+    if(!e.event)
+        e.__defineGetter__('event', function() {
+            return (this.stanza ?
+                    this.stanza.localName() :
+                    null)
         });
 
-    if(!eventObject.event)
-        eventObject.__defineGetter__(
-            'event', function() {
-                if(this.stanza)
-                    return this.stanza.localName();
-                
-                return undefined;
-            });
+    if(!e.direction)
+        e.__defineGetter__('direction', function() {
+            return (this.stanza ?
+                    this.stanza.ns_x4m::meta.@direction.toString() :
+                    null)
+        });
 
-    if(!eventObject.direction)
-        eventObject.__defineGetter__(
-            'direction', function() {
-                if(this.stanza && stanza.localName() == 'presence')
-                    return (this.stanza.@from == undefined ?
-                            'out' : 'in');
-
-                return undefined;
-            });
-
-    return eventObject;
+    return e;
 }
 
 /**
@@ -961,6 +950,15 @@ function asDOM(object) {
     }
     
     return element;
+}
+
+function asString(object) {
+    if(object instanceof Ci.nsISupportsString)
+        return object.toString();
+    else if(typeof(object) == 'string')
+        return object;
+    else
+        throw new Exception('Bad argument.');
 }
 
 
