@@ -58,8 +58,6 @@ const Cu = Components.utils;
 
 const loader = Cc['@mozilla.org/moz/jssubscript-loader;1']
     .getService(Ci.mozIJSSubScriptLoader);
-const serializer = Cc['@mozilla.org/xmlextras/xmlserializer;1']
-    .getService(Ci.nsIDOMSerializer);
 
 const STREAM_PROLOGUE =
     '<?xml version="1.0"?>' +
@@ -84,27 +82,27 @@ function init() {
         return this._name;
     });
 
+    this._doc = Cc['@mozilla.org/xml/xml-document;1']
+    .createInstance(Ci.nsIDOMXMLDocument);
 
     this._parser = Cc['@mozilla.org/saxparser/xmlreader;1']
     .createInstance(Ci.nsISAXXMLReader);
     this._parser.parseAsync(null);
 
-    var _this = this;
+    var session = this;
     this._parser.contentHandler = {
         startDocument: function() {
-            this._doc = Cc['@mozilla.org/xml/xml-document;1']
-            .createInstance(Ci.nsIDOMXMLDocument);
-            _this._stream('in', 'open');
+            session._stream('in', 'open');
         },
         
         endDocument: function() {
-            _this._stream('in', 'close');
+            session._stream('in', 'close');
         },
         
         startElement: function(uri, localName, qName, attributes) {
             var e = (uri == 'jabber:client' ?
-                     this._doc.createElement(localName) :
-                     this._doc.createElementNS(uri, localName))
+                     session._doc.createElement(localName) :
+                     session._doc.createElementNS(uri, localName))
             for(var i=0; i<attributes.length; i++)
                 e.setAttribute(attributes.getQName(i),
                                attributes.getValue(i));
@@ -125,7 +123,7 @@ function init() {
                 this._element = this._element.parentNode;
             } else {
                 this._element.normalize();
-                 _this._element('in', this._element);
+                 session._element('in', this._element);
                 this._element = null;
             }
         },
@@ -134,7 +132,7 @@ function init() {
             if(!this._element)
                 return;
     
-            this._element.appendChild(this._doc.createTextNode(value));
+            this._element.appendChild(session._doc.createTextNode(value));
         },
         
         processingInstruction: function(target, data) {},
@@ -239,33 +237,43 @@ function _data(direction, data) {
     this.notifyObservers(data, 'data-' + direction, this.name);
 }
 
-// Currently would also receive non-stanza elements.
-
 function _element(direction, domStanza, replyObserver) {
+    var meta = this._doc.createElementNS('http://hyperstruct.net/xmpp4moz', 'meta');
+    meta.setAttribute('account', this.name);
+    meta.setAttribute('direction', direction);
+    
     switch(direction) {
     case 'in':
         var id = domStanza.getAttribute('id');
         if(this._pending[id]) {
-            var _this = this;
             try {
-                this._pending[id].observe(domStanza, 'reply-in', _this.name);
+                this._pending[id].observe(domStanza, 'reply-in', this.name);
             } catch(e) {
                 Cu.reportError(e);
             } finally {
                 delete this._pending[id];
             }
         }
-        this._data('in', serializer.serializeToString(domStanza));
+
+        this._data('in', serialize(domStanza));
+
+        domStanza.appendChild(meta);
+        this.notifyObservers(domStanza, 'stanza-' + direction, this.name);
+        
         break;
     case 'out':
         domStanza.setAttribute('id', this._idCounter++);
         if(replyObserver)
             this._pending[domStanza.getAttribute('id')] = replyObserver;
-        this._data('out', serializer.serializeToString(domStanza));
+
+        var data = serialize(domStanza);
+        
+        domStanza.appendChild(meta);
+        this.notifyObservers(domStanza, 'stanza-' + direction, this.name);
+        
+        this._data('out', data);
         break;
     }
-
-    this.notifyObservers(domStanza, 'stanza-' + direction, this.name);
 }
 
 function notifyObservers(subject, topic, data) {
@@ -284,3 +292,9 @@ function notifyObservers(subject, topic, data) {
         }    
 }
 
+function serialize(element) {
+    var _ = arguments.callee;
+    _.serializer = _.serializer ||
+        Cc['@mozilla.org/xmlextras/xmlserializer;1'].getService(Ci.nsIDOMSerializer);
+    return _.serializer.serializeToString(element);
+}
