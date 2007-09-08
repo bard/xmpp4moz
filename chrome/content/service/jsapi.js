@@ -92,22 +92,6 @@ const ns_disco_info = 'http://jabber.org/protocol/disco#info';
 // ----------------------------------------------------------------------
 
 var cache = {
-    get roster() {
-        return this.fetch({
-            event  : 'iq',
-            stanza : function(s) {
-                    return s.ns_roster::query != undefined;
-                }});
-    },
-
-    get presenceIn() {
-        return this.fetch({ event: 'presence', direction: 'in' });
-    },
-
-    get presenceOut() {
-        return this.fetch({ event: 'presence', direction: 'out' });
-    },
-
     fetch: function(pattern) {
         // parts of the pattern may have to be evaluated locally
         // (e.g. those that reason in E4X instead of DOM).  A better
