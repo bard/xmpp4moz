@@ -147,17 +147,10 @@ var inputHistoryCursor;
 function init(event) {
     channel = XMPP.createChannel();
 
-    channel.on(
-        {event: 'data'}, function(data) {
-            var content;
-            try {
-                content = new XML(data.content).toXMLString();
-            } catch(e if e.name == 'SyntaxError') {
-                content = data.content;
-            }
-
-            display(data.session.name, data.direction, content);
-        });
+    function logEvent(event) { display(event.account, event.direction, event.stanza.toXMLString());}
+    channel.on({event: 'message'}, logEvent);
+    channel.on({event: 'iq'}, logEvent)
+    channel.on({event: 'presence'}, logEvent)    
 
     channel.on(
         {event: 'presence', direction: 'in'}, function(presence) {
