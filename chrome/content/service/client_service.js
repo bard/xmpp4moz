@@ -311,6 +311,8 @@ function _openUserSession(jid, transport, streamObserver) {
         session   : { name: session.name },
         stanza    : asDOM('<iq from="' + jid + '" to="' + jid + '" type="result">' +
                           '<query xmlns="jabber:iq:roster"/>' +
+                          '<meta xmlns="http://hyperstruct.net/xmpp4moz" account="' + jid +
+                          '" direction="in"/>' +
                           '</iq>')
         });
 
