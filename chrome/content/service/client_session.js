@@ -89,6 +89,18 @@ function init() {
     .createInstance(Ci.nsISAXXMLReader);
     this._parser.parseAsync(null);
 
+    this._parser.errorHandler = {
+        error: function() { },
+        fatalError: function() { },
+        ignorableWarning: function() { },
+        QueryInterface: function(iid) {
+            if(!iid.equals(Ci.nsISupports) &&
+               !iid.equals(Ci.nsISAXErrorHandler))
+                throw Cr.NS_ERROR_NO_INTERFACE;
+            return this;
+        }
+    };
+
     var session = this;
     this._parser.contentHandler = {
         startDocument: function() {
