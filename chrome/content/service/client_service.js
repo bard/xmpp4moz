@@ -95,7 +95,7 @@ var sessions = {
 
 var cache;
 let(module = {}) {
-    loader.loadSubScript('chrome://xmpp4moz/content/lib/new-cache.js', module);
+    loader.loadSubScript('chrome://xmpp4moz/content/lib/cache.js', module);
     cache = new module.Cache();
     cache.addRule(module.presenceRules);
     cache.addRule(module.rosterRules);
