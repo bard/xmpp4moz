@@ -48,6 +48,16 @@
       </Description>
     </em:targetApplication>
 
+    <!-- toolkit -->
+
+    <em:targetApplication>
+      <Description>
+        <em:id>toolkit@mozilla.org</em:id>
+        <em:minVersion>1.8</em:minVersion>
+        <em:maxVersion>1.9.0.*</em:maxVersion>
+      </Description>
+    </em:targetApplication>
+
     <em:name>xmpp4moz (unstable branch)</em:name>
     <em:description>XMPP integration layer for Mozilla</em:description>
     <em:creator>Massimiliano Mirra</em:creator>
