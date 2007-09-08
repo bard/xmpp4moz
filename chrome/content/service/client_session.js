@@ -130,13 +130,14 @@ function init() {
         endElement: function(uri, localName, qName) {
             if(!this._element)
                 return;
-    
+
             if(this._element.parentNode) {
                 this._element = this._element.parentNode;
             } else {
                 this._element.normalize();
-                 session._element('in', this._element);
+                var e = this._element;
                 this._element = null;
+                session._element('in', e);
             }
         },
         
