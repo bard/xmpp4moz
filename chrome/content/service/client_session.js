@@ -255,10 +255,11 @@ function _element(direction, domStanza, replyObserver) {
             }
         }
 
-        this._data('in', serialize(domStanza));
+        var stampedStanza = domStanza.cloneNode(true);
+        stampedStanza.appendChild(meta);
 
-        domStanza.appendChild(meta);
-        this.notifyObservers(domStanza, 'stanza-' + direction, this.name);
+        this._data('in', serialize(domStanza));
+        this.notifyObservers(stampedStanza, 'stanza-' + direction, this.name);
         
         break;
     case 'out':
@@ -266,12 +267,12 @@ function _element(direction, domStanza, replyObserver) {
         if(replyObserver)
             this._pending[domStanza.getAttribute('id')] = replyObserver;
 
-        var data = serialize(domStanza);
+        var stampedStanza = domStanza.cloneNode(true);
+        stampedStanza.appendChild(meta);
         
-        domStanza.appendChild(meta);
-        this.notifyObservers(domStanza, 'stanza-' + direction, this.name);
+        this.notifyObservers(stampedStanza, 'stanza-' + direction, this.name);
         
-        this._data('out', data);
+        this._data('out', serialize(domStanza));
         break;
     }
 }
