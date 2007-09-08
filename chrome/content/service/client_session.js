@@ -269,7 +269,7 @@ function _element(direction, domStanza, replyObserver) {
         }
 
         var stampedStanza = domStanza.cloneNode(true);
-        stampedStanza.appendChild(meta);
+        stampedStanza.appendChild(stampedStanza.ownerDocument.importNode(meta, true));
 
         this._data('in', serialize(domStanza));
         this.notifyObservers(stampedStanza, 'stanza-' + direction, this.name);
@@ -281,8 +281,9 @@ function _element(direction, domStanza, replyObserver) {
             this._pending[domStanza.getAttribute('id')] = replyObserver;
 
         var stampedStanza = domStanza.cloneNode(true);
-        stampedStanza.appendChild(meta);
-        
+        stampedStanza.appendChild(stampedStanza.ownerDocument.importNode(meta, true));
+
+
         this.notifyObservers(stampedStanza, 'stanza-' + direction, this.name);
         
         this._data('out', serialize(domStanza));
