@@ -114,7 +114,11 @@ function asyncRead(listener) {
         },
         onStopRequest: function(request, context, status) {
             listener.onStopRequest.apply(null, arguments);
-            _this.closed();
+            if(status != 0)
+                dump('Error! ' + status);
+
+            if(_this.isConnected())
+                _this.closed();
         },
         onDataAvailable: function(request, context, inputStream, offset, count) {
            listener.onDataAvailable(request, context, inputStream, offset, count);

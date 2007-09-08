@@ -227,9 +227,6 @@ function onDataAvailable(request, context, inputStream, offset, count) {
 }
 
 function onStopRequest(request, context, status) {
-    if(status != 0)
-        dump('Error! ' + status);
-
     this._parser.onStopRequest(request, context, status);
 }
 
