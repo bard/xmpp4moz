@@ -93,6 +93,16 @@ var sessions = {
     }
 };
 
+var cache;
+let(module = {}) {
+    loader.loadSubScript('chrome://xmpp4moz/content/lib/new-cache.js', module);
+    cache = new module.Cache();
+    cache.addRule(module.presenceRules);
+    cache.addRule(module.rosterRules);
+    cache.addRule(module.bookmarkRules);
+}
+
+
 
 // PUBLIC FUNCTIONALITY
 // ----------------------------------------------------------------------
@@ -157,13 +167,12 @@ function _openUserSession(jid, transport, streamObserver) {
                 // bus; second, it will override the regular
                 // unavailable presence sent before an intentional
                 // disconnection.
-                 
-                cache.receive({
-                    direction : 'out',
-                    session   : { name: session.name },
-                    stanza    : asDOM('<presence type="unavailable"/>')
-                    });
 
+                cache.receive(asDOM(<presence type="unavailable">
+                                    <meta xmlns="http://hyperstruct.net/xmpp4moz"
+                                    account={session.name} direction="out"/>
+                                    </presence>));
+                 
                 if(session.isOpen()) 
                     session.close();
 
@@ -191,28 +200,17 @@ function _openUserSession(jid, transport, streamObserver) {
                     session.close();
 
             if(topic == 'stanza-in' && subject.nodeName == 'presence')
-                cache.receive({
-                    direction : 'in',
-                    session   : { name: data },
-                    stanza    : subject
-                    });
+                cache.receive(subject);
 
             if(topic == 'stanza-out' && subject.nodeName == 'presence' &&
                (subject.getAttribute('type') == undefined ||
                 subject.getAttribute('type') == 'unavailable'))
-                cache.receive({
-                    direction : 'out',
-                    session   : { name: data },
-                    stanza    : subject
-                    });
+                cache.receive(subject);
 
             if(topic == 'stanza-in' &&
                subject.nodeName == 'iq' &&
                subject.getElementsByTagName('query').length > 0)
-                    cache.receive({
-                        direction : 'in',
-                        session   : { name: data },
-                        stanza    : subject });
+                cache.receive(subject);
 
             service.notifyObservers(subject, topic, data);
 
@@ -287,11 +285,7 @@ function _openUserSession(jid, transport, streamObserver) {
                         function(presence) {
                             var inverse = syntheticClone(presence.stanza);
                             inverse.setAttribute('type', 'unavailable');
-                            cache.receive({
-                                direction : 'in',
-                                session   : { name: data },
-                                stanza    : inverse
-                                });
+                            cache.receive(inverse);
                         });
 
                 transport.disconnect();
@@ -299,22 +293,18 @@ function _openUserSession(jid, transport, streamObserver) {
         }
     }
 
-    session.addObserver(sessionObserver, null, false);
-    transport.addObserver(transportObserver, null, false);
-
     // Initializing roster cache for session, so that it will be
     // available for hybrid applications even before we receive the
     // roster (or if we don't receive it at all).
 
-    cache.receive({
-        direction : 'in',
-        session   : { name: session.name },
-        stanza    : asDOM('<iq from="' + jid + '" to="' + jid + '" type="result">' +
-                          '<query xmlns="jabber:iq:roster"/>' +
-                          '<meta xmlns="http://hyperstruct.net/xmpp4moz" account="' + jid +
-                          '" direction="in"/>' +
-                          '</iq>')
-        });
+    cache.receive(
+        asDOM(<iq from={jid} to={jid} type="result">
+              <query xmlns="jabber:iq:roster"/>
+              <meta xmlns="http://hyperstruct.net/xmpp4moz" account={jid} direction="in"/>
+              </iq>));
+
+    session.addObserver(sessionObserver, null, false);
+    transport.addObserver(transportObserver, null, false);
 
     if(transport.isConnected()) 
         session.open(JID(jid).hostname);
@@ -390,12 +380,6 @@ function arrayOfObjectsToEnumerator(array) {
     }
     return enumerator;
 }
-
-cache = (function() {
-             var pkg = {};
-             loader.loadSubScript('chrome://xmpp4moz/content/lib/cache.js', pkg);
-             return new pkg.Cache();
-         })();
 
 
 // UTILITIES

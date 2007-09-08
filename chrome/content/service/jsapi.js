@@ -92,30 +92,29 @@ const ns_disco_info = 'http://jabber.org/protocol/disco#info';
 // ----------------------------------------------------------------------
 
 var cache = {
-    fetch: function(pattern) {
+    _splitPattern: function(pattern) {
         // parts of the pattern may have to be evaluated locally
         // (e.g. those that reason in E4X instead of DOM).  A better
         // strategy has to be found for this.
 
         var remotePattern = {}, localPattern = {};
         for(var member in pattern)
-            if(typeof(pattern[member]) == 'function')
+            if(member == 'stanza') {
                 localPattern[member] = pattern[member];
-            else
+            } else {
                 remotePattern[member] = pattern[member];
+            }
+
+        return [remotePattern, localPattern];
+    },
+
+    fetch: function(pattern) {
+        var [remotePattern, localPattern] = this._splitPattern(pattern);
         
         return service.wrappedJSObject.cache
-        .fetch(remotePattern)
-        .map(function(internalObject) {
-                 return wrapEvent({
-                     stanza: dom2xml(internalObject.stanza),
-                     session: internalObject.session,
-                     direction: internalObject.direction 
-                     });
-             })
-        .filter(function(event) {
-                    return match(event, localPattern);
-                });
+        .fetch  (remotePattern)
+        .map    (function(result) { result.stanza = dom2xml(result.stanza); return result; })
+        .filter (function(event) { return match(event, localPattern); });
     },
 
     find: function(pattern) {
