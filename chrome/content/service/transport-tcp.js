@@ -117,8 +117,7 @@ function asyncRead(listener) {
             if(status != 0)
                 dump('Error! ' + status);
 
-            if(_this.isConnected())
-                _this.closed();
+            _this.closed();
         },
         onDataAvailable: function(request, context, inputStream, offset, count) {
            listener.onDataAvailable(request, context, inputStream, offset, count);
@@ -127,11 +126,7 @@ function asyncRead(listener) {
 }
 
 function disconnect() {
-    if(!this._connected)
-        return;
-
     this.closed();
-    this._connected = false;
 }
 
 // XXX implement "topic" and "ownsWeak" parameters as per IDL interface
@@ -172,9 +167,13 @@ function startKeepAlive() {
 }
 
 function closed() {
+    if(!this._connected)
+        return;
+
     this._instream.close();
     this._outstream.close();
     this._keepAliveTimer.cancel();
+    this._connected = false;
     this.notifyObservers(_xpcomize('stub'), 'stop', null);
 }
 
