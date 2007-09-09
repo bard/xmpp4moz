@@ -280,9 +280,10 @@ Query.prototype = {
             attrs.push('@type="' + this._type + '"');
         if(this._from)
             attrs.push(this._from.indexOf('/') == -1 ?
-                       // since "from" doesn't contain a resource,
-                       // make it a substring check.
-                       'starts-with(@from, "' + this._from + '/")' :
+                       // "from" doesn't contain a resource, so we're
+                       // either asking the bare jid itself, or for
+                       // the jid with any resource.
+                       '(@from = "' + this._from + '" or starts-with(@from, "' + this._from + '/"))' :
                        '@from="' + this._from + '"');
         if(this._to)
             attrs.push(this._to.indexOf('/') == -1 ?
@@ -665,6 +666,33 @@ function verify() {
                     <meta xmlns={ns_x4m} account="arthur@earth.org/Test" direction="in"/>
                     <show>away</show>
                     </presence>);
+        },
+
+        'contact (without resource) sends available presence, presence from contact is already in cache: replace': function() {
+            // Presence from entities comes from JIDs with resource,
+            // but presence from components (e.g. transports) does
+            // not, that's why this test is needed.
+            var cache = new Cache();
+            cache.addRule(presenceRules);
+            
+            cache.receive(
+                asDOM(<presence from="transport.earth.org"
+                      to="arthur@earth.org/Test">
+                      <meta xmlns={ns_x4m} account="arthur@earth.org/Test" direction="in"/>
+                     </presence>));
+            cache.receive(
+                asDOM(<presence from="transport.earth.org" type="unavailable"
+                      to="arthur@earth.org/Test">
+                      <meta xmlns={ns_x4m} account="arthur@earth.org/Test" direction="in"/>
+                      </presence>));
+
+            var stanzas = cache.all('//presence');
+            assert.equals(1, stanzas.snapshotLength);
+            assert.isEquivalentXML(
+                    <presence from="transport.earth.org" type="unavailable" to="arthur@earth.org/Test">
+                    <meta xmlns={ns_x4m} account="arthur@earth.org/Test" direction="in"/>
+                    </presence>,
+                    asXML(stanzas.snapshotItem(0)));
         },
 
         'contact sends unavailable presence, presence from contact is not in cache: ignore': function() {
