@@ -112,6 +112,11 @@ function init() {
         },
         
         startElement: function(uri, localName, qName, attributes) {
+            // Filter out.  These are supposed to be local only --
+            // accepting them from outside can cause serious mess.
+            if(uri == 'http://hyperstruct.net/xmpp4moz' && localName == 'meta')
+                return;
+
             var e = (uri == 'jabber:client' ?
                      session._doc.createElement(localName) :
                      session._doc.createElementNS(uri, localName))
@@ -128,9 +133,12 @@ function init() {
         },
         
         endElement: function(uri, localName, qName) {
-            if(!this._element)
+            if(uri == 'http://hyperstruct.net/xmpp4moz' && localName == 'meta')
                 return;
 
+            if(!this._element)
+                return;
+            
             if(this._element.parentNode) {
                 this._element = this._element.parentNode;
             } else {
@@ -265,15 +273,17 @@ function _element(direction, domStanza, replyObserver) {
             }
         }
 
-        var stampedStanza = domStanza.cloneNode(true);
         // In certain cases (e.g. synthentic presences) the stanza
-        // will already have a meta element, since it's built from an
-        // existing stanza.  So, make sure we don't add one more.
-        if(stampedStanza.getElementsByTagNameNS('http://hyperstruct.net/xmpp4moz', 'meta').length == 0)
-            stampedStanza.appendChild(stampedStanza.ownerDocument.importNode(meta, true));
+        // will already have a meta element, so normalize it first by
+        // stripping it.
+        var cleanStanza = stripMeta(domStanza);
+        var data = serialize(domStanza);
 
-        this._data('in', serialize(domStanza));
-        this.notifyObservers(stampedStanza, 'stanza-' + direction, this.name);
+        this._data('in', data);
+
+        cleanStanza.appendChild(
+            cleanStanza.ownerDocument.importNode(meta, true));
+        this.notifyObservers(cleanStanza, 'stanza-' + direction, this.name);
         
         break;
     case 'out':
@@ -281,14 +291,14 @@ function _element(direction, domStanza, replyObserver) {
         if(replyObserver)
             this._pending[domStanza.getAttribute('id')] = replyObserver;
 
-        var stampedStanza = domStanza.cloneNode(true);
-        if(stampedStanza.getElementsByTagNameNS('http://hyperstruct.net/xmpp4moz', 'meta').length == 0)
-            stampedStanza.appendChild(stampedStanza.ownerDocument.importNode(meta, true));
+        var cleanStanza = stripMeta(domStanza);
+        var data = serialize(domStanza);
 
+        cleanStanza.appendChild(
+            cleanStanza.ownerDocument.importNode(meta, true));
+        this.notifyObservers(cleanStanza, 'stanza-' + direction, this.name);
 
-        this.notifyObservers(stampedStanza, 'stanza-' + direction, this.name);
-        
-        this._data('out', serialize(domStanza));
+        this._data('out', data);
         break;
     }
 }
@@ -314,4 +324,25 @@ function serialize(element) {
     _.serializer = _.serializer ||
         Cc['@mozilla.org/xmlextras/xmlserializer;1'].getService(Ci.nsIDOMSerializer);
     return _.serializer.serializeToString(element);
+}
+
+
+function getStackTrace() {
+    var frame = Components.stack.caller;
+    var str = "<top>";
+
+    while (frame) {
+        str += '\n' + frame;
+        frame = frame.caller;
+    }
+
+    return str;
+}
+
+function stripMeta(domStanza) {
+    var outDomStanza = domStanza.cloneNode(true);
+    var metas = outDomStanza.getElementsByTagNameNS('http://hyperstruct.net/xmpp4moz', 'meta');
+    for(var i=0; i<metas.length; i++)
+        outDomStanza.removeChild(metas[i]);
+    return outDomStanza;
 }
