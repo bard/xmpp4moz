@@ -457,11 +457,9 @@ function isMUCPresence(domStanza) {
 }
 
 function isMUCUserPresence(domStanza) {
-    if(domStanza.nodeName == 'presence' &&
-       domStanza.hasAttribute('to')) {
-        var x = domStanza.getElementsByTagName('x')[0];
-        return (x && x.getAttribute('xmlns') == 'http://jabber.org/protocol/muc#user');
-    }
+    return (domStanza.nodeName == 'presence' &&
+            domStanza.hasAttribute('to') &&
+            domStanza.getElementsByTagNameNS('http://jabber.org/protocol/muc#user', 'x').length > 0);
 }
 
 /**
