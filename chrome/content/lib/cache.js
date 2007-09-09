@@ -417,7 +417,7 @@ Cache.prototype.fetch = function(pattern) {
         var meta = stanza.getElementsByTagNameNS(ns_x4m, 'meta')[0];
 
         if(!test(stanza, additionalTests))
-            return false;
+            continue;
 
         wrappedResults.push({
             stanza    : stanza,
