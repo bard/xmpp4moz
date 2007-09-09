@@ -38,6 +38,10 @@
 // GLOBAL DEFINITIONS
 // ----------------------------------------------------------------------
 
+var Cc = Components.classes;
+var Ci = Components.interfaces;
+
+
 var xmpp = xmpp || {};
 xmpp.ui = xmpp.ui || {};
 
@@ -152,28 +156,6 @@ function init(event) {
     channel.on({event: 'iq'}, logEvent)
     channel.on({event: 'presence'}, logEvent)    
 
-    channel.on(
-        {event: 'presence', direction: 'in'}, function(presence) {
-            refreshPresenceInCache();
-        });
-
-    channel.on(
-        {event: 'presence', direction: 'out'}, function(presence) {
-            refreshPresenceOutCache();
-        });
-
-    channel.on(
-        {event: 'iq', direction: 'in', stanza: function(s) {
-                return s.ns_roster::query.length() > 0;
-            }},
-        function(iq) {
-            refreshRosterCache();
-        });
-
-    refreshPresenceInCache();
-    refreshPresenceOutCache();
-    refreshRosterCache();
-
     fillTemplateMenu();
 
     xmpp.ui.refreshAccounts(_('xmpp-popup-accounts'));
@@ -231,51 +213,40 @@ function getDescendantByAttribute(element, attrName, attrValue) {
 // GUI ACTIONS
 // ----------------------------------------------------------------------
 
-function refreshPresenceInCache() {
-    _('cache-presence-in').value = '';
-
-    var presencesByAccount = {};
-    XMPP.cache.fetch({event: 'presence', direction: 'in'}).forEach(
-        function(presence) {
-            if(!presencesByAccount[presence.session.name])
-                presencesByAccount[presence.session.name] = [];
-            presencesByAccount[presence.session.name].push(presence);
-        });
-
-    var lines = [];
-    for(var account in presencesByAccount) {
-        lines.push('**** ACCOUNT: ' + account + ' ****');
-        for each(var presence in presencesByAccount[account])
-            lines.push(presence.stanza.toXMLString());
+function tryQuery(textbox) {
+    var q = textbox.value;
+    var results;
+    try {
+        switch(q[0]) {
+        case '/':
+            results = XMPP.service.wrappedJSObject.cache.all(q);
+            break;
+        case '{':
+            results = XMPP.service.wrappedJSObject.cache.fetch(eval('(' + q + ')'));
+            break;
+        default:
+            results = XMPP.service.wrappedJSObject.cache.all(
+                eval('(new Query()).' + q + '.compile()'));
+        }
+        textbox.style.color = '';
+    } catch(e) {
+        textbox.style.color = 'red';
     }
 
-    _('cache-presence-in').value = lines.join('\n');
-}
+    if(results) {
+        var entries;
+        if('length' in results) {
+            entries = results.map(function(result) {
+                return new XML(serialize(result.stanza)).toXMLString();
+            });
+        } else {
+            entries = [];
+            for(var i=0; i<results.snapshotLength; i++)
+                entries.push((new XML(serialize(results.snapshotItem(i)))).toXMLString());
+        }
 
-function refreshPresenceOutCache() {
-    _('cache-presence-out').value =
-        XMPP.cache.fetch({
-            event: 'presence',
-            direction: 'out'})
-        .map(
-            function(presence) {
-                return presence.stanza.toXMLString();
-            })
-        .join('\n');
-}
-
-function refreshRosterCache() {
-    _('cache-roster').value =
-        XMPP.cache.fetch({
-            event: 'iq', direction: 'in',
-            stanza: function(s) {
-                    return s.ns_roster::query != undefined;
-                }})
-        .map(
-            function(iq) {
-                return iq.stanza.toXMLString();
-            })
-        .join('\n');
+        _('query-results').value = entries.join('\n\n');
+    }
 }
 
 function fillTemplateMenu() {
@@ -390,3 +361,12 @@ function sendStanza(account, xml) {
     inputHistory.push(xml.toXMLString());
 }
 
+
+// UTILITIES
+// ----------------------------------------------------------------------
+
+function serialize(node) {
+    return (Cc['@mozilla.org/xmlextras/xmlserializer;1']
+            .getService(Ci.nsIDOMSerializer)
+            .serializeToString(node));
+}

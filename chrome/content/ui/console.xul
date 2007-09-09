@@ -81,22 +81,15 @@
         <iframe src="log.xhtml" id="log" flex="5" class="box-inset"/>
       </tabpanel>
 
-      <tabpanel>
-        <vbox flex="1">
-          <label class="header" value="Presence In"/>
-          <textbox id="cache-presence-in" flex="9"
-                   multiline="true" readonly="true" style="font-family: monospace;"/>
-
-          <label class="header" value="Presence Out"/>
-          <textbox id="cache-presence-out" flex="1"
-                   multiline="true" readonly="true" style="font-family: monospace;"/>
-        </vbox>
-        <splitter/>
-        <vbox flex="1">
-          <label class="header" value="Roster"/>
-          <textbox id="cache-roster" flex="1"
-                   multiline="true" readonly="true" style="font-family: monospace;"/>
-        </vbox>
+      <tabpanel orient="vertical">
+        <script type="application/x-javascript" src="chrome://xmpp4moz/content/lib/query.js"/>
+        <toolbar>
+          <toolbaritem align="center" flex="1">
+            <label value="Query"/>
+            <textbox flex="1" oninput="tryQuery(this);"/>
+          </toolbaritem>
+        </toolbar>
+        <textbox readonly="true" multiline="true" id="query-results" flex="1"/>
       </tabpanel>
     </tabpanels>
   </tabbox>
