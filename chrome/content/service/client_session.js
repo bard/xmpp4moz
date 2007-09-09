@@ -266,7 +266,11 @@ function _element(direction, domStanza, replyObserver) {
         }
 
         var stampedStanza = domStanza.cloneNode(true);
-        stampedStanza.appendChild(stampedStanza.ownerDocument.importNode(meta, true));
+        // In certain cases (e.g. synthentic presences) the stanza
+        // will already have a meta element, since it's built from an
+        // existing stanza.  So, make sure we don't add one more.
+        if(stampedStanza.getElementsByTagNameNS('http://hyperstruct.net/xmpp4moz', 'meta').length == 0)
+            stampedStanza.appendChild(stampedStanza.ownerDocument.importNode(meta, true));
 
         this._data('in', serialize(domStanza));
         this.notifyObservers(stampedStanza, 'stanza-' + direction, this.name);
@@ -278,7 +282,8 @@ function _element(direction, domStanza, replyObserver) {
             this._pending[domStanza.getAttribute('id')] = replyObserver;
 
         var stampedStanza = domStanza.cloneNode(true);
-        stampedStanza.appendChild(stampedStanza.ownerDocument.importNode(meta, true));
+        if(stampedStanza.getElementsByTagNameNS('http://hyperstruct.net/xmpp4moz', 'meta').length == 0)
+            stampedStanza.appendChild(stampedStanza.ownerDocument.importNode(meta, true));
 
 
         this.notifyObservers(stampedStanza, 'stanza-' + direction, this.name);
