@@ -50,6 +50,8 @@ const pref = Cc['@mozilla.org/preferences-service;1']
 
 const ns_disco_info = 'http://jabber.org/protocol/disco#info';    
 
+var [Query] = load('chrome://xmpp4moz/content/lib/query.js', 'Query');
+
 
 // GLOBAL STATE
 // ----------------------------------------------------------------------
@@ -229,25 +231,27 @@ function _openUserSession(jid, transport, streamObserver) {
                subject.hasAttribute('to') && 
                subject.getAttribute('type') == 'unavailable' &&
                isMUCUserPresence(subject) &&
-               cache.fetch({
-                   event     : 'presence',
-                   direction : 'out',
-                   session   : { name: data },
-                   stanza    : function(s) {
-                           return s.getAttribute('to') == subject.getAttribute('from');
-                       }}).length > 0)
-                cache.fetch({
-                    event: 'presence',
-                    account: data,
-                    from: { address: JID(subject.getAttribute('from')).address },
-                    direction: 'in',
-                    }).forEach(
-                        function(presence) {
-                            var inverse = syntheticClone(presence.stanza);
-                            inverse.setAttribute('type', 'unavailable');
-                            session.receive(inverse);
-                        });
-                
+               cache.first(q()
+                           .event('presence')
+                           .direction('out')
+                           .account(data)
+                           .to(subject.getAttribute('from'))
+                           .compile())) {
+
+                let(stanzas = cache.all(q()
+                                        .event('presence')
+                                        .direction('in')
+                                        .account(data)
+                                        .from(JID(subject.getAttribute('from')).address)
+                                        .compile())) {
+                    for(var i=0; i<stanzas.snapshotLength; i++) {
+                        var inverse = syntheticClone(stanzas.snapshotItem(i));
+                        inverse.setAttribute('type', 'unavailable');
+                        session.receive(inverse);
+                    }
+                }
+            }
+            
             if(topic == 'stanza-in' && subject.nodeName == 'iq' &&
                subject.getAttribute('type') == 'get') {
                 var query = subject.getElementsByTagName('query')[0];
@@ -267,27 +271,29 @@ function _openUserSession(jid, transport, streamObserver) {
 
             
             if(topic == 'stream-out' && asString(subject) == 'close') {
-                cache.fetch({
-                    event     : 'presence',
-                    session   : { name: data },
-                    direction : 'in',
-                    }).forEach(
-                        function(presence) {
-                            var inverse = syntheticClone(presence.stanza);
-                            inverse.setAttribute('type', 'unavailable');
-                            session.receive(inverse);
-                        });
+                let(stanzas = cache.all(q()
+                                        .event('presence')
+                                        .account(data)
+                                        .direction('in')
+                                        .compile())) {
+                    for(var i=0; i<stanzas.snapshotLength; i++) {
+                        var inverse = syntheticClone(stanzas.snapshotItem(i));
+                        inverse.setAttribute('type', 'unavailable');
+                        session.receive(inverse);
+                    }
+                }
 
-                cache.fetch({
-                    event     : 'presence',
-                    direction : 'out',
-                    session   : { name: data },                    
-                    }).forEach(
-                        function(presence) {
-                            var inverse = syntheticClone(presence.stanza);
-                            inverse.setAttribute('type', 'unavailable');
-                            cache.receive(inverse);
-                        });
+                let(stanzas = cache.all(q()
+                                        .event('presence')
+                                        .direction('out')
+                                        .account(data)
+                                        .compile())) {
+                    for(var i=0; i<stanzas.snapshotLength; i++) {
+                        var inverse = syntheticClone(stanzas.snapshotItem(i));
+                        inverse.setAttribute('type', 'unavailable');
+                        cache.receive(inverse);
+                    }
+                } 
 
                 transport.disconnect();
             }
@@ -385,6 +391,21 @@ function arrayOfObjectsToEnumerator(array) {
 
 // UTILITIES
 // ----------------------------------------------------------------------
+
+function q() {
+    return new Query();
+}
+
+function load(url) {
+    var loader = (Cc['@mozilla.org/moz/jssubscript-loader;1']
+                  .getService(Ci.mozIJSSubScriptLoader));
+
+    var context = {};
+    loader.loadSubScript(url, context);
+    
+    var names = Array.slice(arguments, 1);
+    return names.map(function(name) { return context[name]; });
+}
 
 function xpcomize(thing) {
     if(typeof(thing) == 'string') {
