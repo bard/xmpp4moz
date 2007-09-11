@@ -237,7 +237,8 @@ function _openUserSession(jid, transport, streamObserver) {
                            return s.getAttribute('to') == subject.getAttribute('from');
                        }}).length > 0)
                 cache.fetch({
-                    session: { name: data },
+                    event: 'presence',
+                    account: data,
                     from: { address: JID(subject.getAttribute('from')).address },
                     direction: 'in',
                     }).forEach(
