@@ -158,6 +158,7 @@ var cache = {
     }
 };
 
+// http://dev.hyperstruct.net/xmpp4moz/wiki/DocLocalAPI#XMPP.nickFor
 
 function nickFor(account, address) {
     var roster = cache.find({
@@ -175,6 +176,8 @@ function nickFor(account, address) {
 
     return name || JID(address).username || address;
 }
+
+// http://dev.hyperstruct.net/xmpp4moz/wiki/DocLocalAPI#XMPP.JID
 
 function JID(string) {
     var memo = arguments.callee.memo || (arguments.callee.memo = {});
@@ -199,57 +202,7 @@ function JID(string) {
     return jid;    
 }
 
-/**
- * Establishes a client session with an XMPP server.
- *
- * _account_ can be null, a string, or an object.
- *
- * Scenarios:
- *
- * _account_ is a null-equivalent.  User will be prompted to select an
- * account.  Accounts come through the in-scope "accounts" object.
- *
- *     XMPP.up();
- *     XMPP.up(null);
- *
- * _account_ is a string.  The corresponding account object is looked
- * up in the in-scope "accounts" object.
- *
- *     XMPP.up('arthur@earth.org/Guide');
- *     XMPP.up('ford@betelgeuse.org/Towel');
- *
- * _account_ is an empty object.  User will be prompted to select an
- * account like when _account_ is a null-equivalent, but in this case
- * _account_ will retain the JID selected by the user:
- *
- *     var account = {};
- *     XMPP.up(account);
- *     alert(account.jid); // will display "arthur@earth.org/Guide"
- *
- * _account_ is an object containing an account definition.
- *
- *     var account = {
- *         jid                : 'arthur@earth.org/Guide',
- *         password           : '42',
- *         connectionSecurity : 1
- *     }
- *     XMPP.up(account);
- *
- * Following fields are available for the account object:
- *
- *     jid                : full JID, including resource
- *     password           : password
- *     connectionHost     : host, if different from the domain part of the JID
- *     connectionPort     : port, if different from 5223
- *     connectionSecurity : 0 = no SSL, 1 = SSL (default)
- *
- *
- * The second parameter, _opts_, is deprecated.  Don't use it.
- *
- * (*) This will be soon deprecated in favour of the in-scope
- * "accounts" object.
- *
- */
+// http://dev.hyperstruct.net/xmpp4moz/wiki/DocLocalAPI#XMPP.up
 
 function up(account, extra) {
     // Normalize arguments (including deprecated ones) so that _up()
@@ -286,6 +239,8 @@ function up(account, extra) {
             });
 }
 
+// http://dev.hyperstruct.net/xmpp4moz/wiki/DocLocalAPI#XMPP.down
+
 function down(account) {
     if(isDown(account))
         return;
@@ -298,14 +253,20 @@ function down(account) {
     service.close(jid);
 }
 
+// http://dev.hyperstruct.net/xmpp4moz/wiki/DocLocalAPI#XMPP.isUp
+
 function isUp(account) {
     return service.isUp(
         typeof(account) == 'object' ? account.jid : account);
 }
 
+// http://dev.hyperstruct.net/xmpp4moz/wiki/DocLocalAPI#XMPP.isDown
+
 function isDown(account) {
     return !isUp(account);
 }
+
+// http://dev.hyperstruct.net/xmpp4moz/wiki/DocLocalAPI#XMPP.send
 
 function send(account, stanza, handler) {
     if(isUp(account))
@@ -315,6 +276,8 @@ function send(account, stanza, handler) {
                _send(jid, stanza, handler);
            });
 }
+
+// http://dev.hyperstruct.net/xmpp4moz/wiki/DocLocalAPI#XMPP.createChannel
 
 function createChannel(features) {
     var _this = this;
@@ -399,6 +362,8 @@ function createChannel(features) {
     return channel;
 }
 
+// http://dev.hyperstruct.net/xmpp4moz/wiki/DocLocalAPI#XMPP.open
+
 function open(jid, opts, continuation) {
     var connectionHost = opts.host || JID(jid).hostname;
     var connectionPort = opts.port || 5223;
@@ -416,6 +381,8 @@ function open(jid, opts, continuation) {
 
     service.open(jid, transport, streamReplyObserver);
 }
+
+// http://dev.hyperstruct.net/xmpp4moz/wiki/DocLocalAPI#XMPP.close
 
 function close(jid) {
     service.close(jid);
