@@ -241,6 +241,7 @@ function changeStatus(type) {
                 else {
                     var existingPresenceStanza =
                         XMPP.cache.fetch({
+                            event     : 'presence',
                             account   : account.jid,
                             direction : 'out',
                             stanza    : function(s) {
