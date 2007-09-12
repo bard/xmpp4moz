@@ -81,37 +81,6 @@ function q() {
     return new Query();
 }
 
-function patternToQuery(pattern) {
-    var query = q();
-    var additionalTests = {};
-    for(var ruleName in pattern) {
-        switch(typeof(pattern[ruleName])) {
-        case 'function':
-            additionalTests[ruleName] = pattern[ruleName];
-            break;
-        case 'string':
-            query = query[ruleName](pattern[ruleName]);
-            break;
-        case 'object':
-            if(ruleName == 'session' && pattern[ruleName].name)
-                query = query.account(pattern[ruleName].name);
-            else if(ruleName == 'from' && pattern[ruleName].address)
-                query = query.from(pattern[ruleName].address)
-            else if(ruleName == 'from' && pattern[ruleName].full)
-                query = query.from(pattern[ruleName].address)                
-            else
-                throw new Error('Unhandled case when converting pattern to query. (' +
-                                ruleName + ': ' + pattern[ruleName].toSource() + ')');
-                
-            break;
-        default:
-            throw new Error('Unhandled type when converting pattern to query. (' +
-                            typeof(pattern[ruleName]) + ')');
-        }
-    }
-    return [query, additionalTests];
-}
-
 function resolver(prefix) {
     switch(prefix) {
     case 'x4m':
@@ -282,52 +251,6 @@ Cache.prototype.replace = function(newElement, oldElement) {
 
 Cache.prototype.remove = function(element) {
     this._doc.documentElement.removeChild(element);
-}
-
-Cache.prototype.fetch = function(pattern) {
-    var [query, additionalTests] = patternToQuery(pattern);
-    var stanzas = this.all(query.compile());
-
-    function test(stanza, tests) {
-        var meta = stanza.getElementsByTagNameNS(ns_x4m, 'meta')[0];
-        for(var testName in tests) {
-            var test = tests[testName];
-            switch(testName) {
-            case 'stanza':
-                if(!test(stanza))
-                    return false;
-                break;
-            case 'account':
-                if(!test(meta.getAttribute('account')))
-                    return false;
-                break;
-            case 'session':
-                if(!test({name: meta.getAttribute('account')}))
-                    return false;
-                break;
-            default:
-                throw new Error('Unhandled pattern: ' + testName);
-            }
-        }
-        return true;
-    }
-
-    var wrappedResults = [];
-    for(var i=0; i<stanzas.snapshotLength; i++) {
-        var stanza = stanzas.snapshotItem(i);
-        var meta = stanza.getElementsByTagNameNS(ns_x4m, 'meta')[0];
-
-        if(!test(stanza, additionalTests))
-            continue;
-
-        wrappedResults.push({
-            stanza    : stanza,
-            direction : meta.getAttribute('direction'),
-            account   : meta.getAttribute('account'),
-            session   : { name: meta.getAttribute('account')}
-        });
-    }
-    return wrappedResults;
 }
 
 
@@ -1233,6 +1156,9 @@ function verify() {
         }
     };
 
+    // Compatibility layer no longer here.  Leaving these for
+    // documentation (for now).
+
     var compatibilityTests = {
         'return wrapped objects': function() {
             var cache = new Cache();
@@ -1365,8 +1291,7 @@ function verify() {
     return [
         presenceTests,
         rosterTests,
-        bookmarkTests,
-        compatibilityTests
+        bookmarkTests
     ].map(runTests).join('\n');
 }
 

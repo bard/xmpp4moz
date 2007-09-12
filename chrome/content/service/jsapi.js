@@ -87,40 +87,77 @@ const ns_muc        = 'http://jabber.org/protocol/muc';
 const ns_roster     = 'jabber:iq:roster';
 const ns_disco_info = 'http://jabber.org/protocol/disco#info';
 
+var [Query] = load('chrome://xmpp4moz/content/lib/query.js', 'Query');
+
 
 // DEVELOPER INTERFACE
 // ----------------------------------------------------------------------
 
 var cache = {
-    _splitPattern: function(pattern) {
-        // parts of the pattern may have to be evaluated locally
-        // (e.g. those that reason in E4X instead of DOM).  A better
-        // strategy has to be found for this.
+    find: function(pattern) {
+        return this.fetch(pattern)[0];
+    },
 
-        var remotePattern = {}, localPattern = {};
-        for(var member in pattern)
-            if(member == 'stanza') {
-                localPattern[member] = pattern[member];
-            } else {
-                remotePattern[member] = pattern[member];
-            }
-
-        return [remotePattern, localPattern];
+    all: function(query) {
+        return service.wrappedJSObject.cache.all(
+            (typeof(query.compile) == 'function') ? query.compile() : query);
     },
 
     fetch: function(pattern) {
-        var [remotePattern, localPattern] = this._splitPattern(pattern);
+        var remotePattern = {}, localPattern = {};
+        for(var member in pattern)
+            if(typeof(pattern[member]) == 'function') {
+                localPattern[member] = pattern[member];
+            } else {
+                remotePattern[member] = pattern[member];
+            } 
         
-        return service.wrappedJSObject.cache
-        .fetch  (remotePattern)
-        .map    (function(result) { result.stanza = dom2xml(result.stanza); return result; })
-        .filter (function(event) { return match(event, localPattern); });
+        var stanzas = this.all(
+            this._patternToQuery(remotePattern).compile());
+        
+        var wrappedPartialResults = [];
+        for(var i=0; i<stanzas.snapshotLength; i++) { 
+            var stanza = stanzas.snapshotItem(i);
+            var meta = stanza.getElementsByTagNameNS(ns_x4m, 'meta')[0];
+            
+            wrappedPartialResults.push({
+                stanza    : dom2xml(stanza),
+                direction : meta.getAttribute('direction'),
+                account   : meta.getAttribute('account'),
+                session   : { name: meta.getAttribute('account')}
+            });
+        }
+        
+        return wrappedPartialResults.filter(function(event) { return match(event, localPattern); });
     },
 
-    find: function(pattern) {
-        return this.fetch(pattern)[0];
+    _patternToQuery: function(pattern) {
+        var query = q();
+        for(var ruleName in pattern) {
+            switch(typeof(pattern[ruleName])) {
+            case 'string':
+                query = query[ruleName](pattern[ruleName]);
+                break;
+            case 'object':
+                if(ruleName == 'session' && pattern[ruleName].name)
+                    query = query.account(pattern[ruleName].name);
+                else if(ruleName == 'from' && pattern[ruleName].address)
+                    query = query.from(pattern[ruleName].address)
+                else if(ruleName == 'from' && pattern[ruleName].full)
+                    query = query.from(pattern[ruleName].address)                
+                else
+                    throw new Error('Unhandled case when converting pattern to query. (' +
+                                    ruleName + ': ' + pattern[ruleName].toSource() + ')');
+                break;
+            default:
+                throw new Error('Unhandled type when converting pattern to query. (' +
+                                typeof(pattern[ruleName]) + ')');
+            }
+        }
+        return query;
     }
 };
+
 
 function nickFor(account, address) {
     var roster = cache.find({
@@ -387,6 +424,21 @@ function close(jid) {
 
 // UTILITIES
 // ----------------------------------------------------------------------
+
+function q() {
+    return new Query();
+}
+
+function load(url) {
+    var loader = (Cc['@mozilla.org/moz/jssubscript-loader;1']
+                  .getService(Ci.mozIJSSubScriptLoader));
+
+    var context = {};
+    loader.loadSubScript(url, context);
+    
+    var names = Array.slice(arguments, 1);
+    return names.map(function(name) { return context[name]; });
+}
 
 /**
  * Pattern matcher as used in channel.on().
