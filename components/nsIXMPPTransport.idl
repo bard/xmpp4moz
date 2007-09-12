@@ -17,8 +17,6 @@ interface nsIXMPPTransport: nsISupports
 
     void asyncRead(in nsIStreamListener listener);
 
-    AUTF8String read(in unsigned long aCount);
-    
     void reload();
 
     void connect();
