@@ -507,6 +507,32 @@ function verify() {
                     </presence>);
         },
 
+        'contact sends available presence to user-without resource; presence from contact is already in cache: replace': function() {
+            // Like previous test, but covering the case where
+            // presence is sent to our bare jid
+
+            var cache = new Cache();
+            cache.addRule(presenceRules);
+            
+            cache.receive(
+                asDOM(<presence from="arthur@server.org/Test" to="ford@betelgeuse.org" id="1003">
+                      <status>test</status>
+                      <meta account="ford@betelgeuse.org/Firefox" direction="in" xmlns="http://hyperstruct.net/xmpp4moz"/>
+                      </presence>));
+            cache.receive(
+                asDOM(<presence from="arthur@server.org/Test" to="ford@betelgeuse.org" id="1004">
+                      <show>away</show>
+                      <meta account="ford@betelgeuse.org/Firefox" direction="in" xmlns="http://hyperstruct.net/xmpp4moz"/>
+                      </presence>));
+            cache.receive(
+                asDOM(<presence from="arthur@server.org/Test" to="ford@betelgeuse.org" id="1005">
+                      <meta account="ford@betelgeuse.org/Firefox" direction="in" xmlns="http://hyperstruct.net/xmpp4moz"/>
+                      </presence>));
+            
+            var stanzas = cache.all('//presence');
+            assert.equals(1, stanzas.snapshotLength);
+        },
+
         'contact (without resource) sends available presence, presence from contact is already in cache: replace': function() {
             // Presence from entities comes from JIDs with resource,
             // but presence from components (e.g. transports) does

@@ -69,7 +69,7 @@ Query.prototype = {
             attrs.push(this._to.indexOf('/') == -1 ?
                        // since "to" doesn't contain a resource,
                        // make it a substring check.
-                       'starts-with(@to, "' + this._to + '/")' :
+                       '(@to = "' + this._to + '" or starts-with(@to, "' + this._to + '/"))' :
                        '@to="' + this._to + '"');
         if(attrs.length > 0)
             q += '[' + attrs.join(' and ') + ']'
