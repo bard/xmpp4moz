@@ -80,86 +80,98 @@ function initOverlay() {
 
     // Show progress bar when waiting for connection
 
-    channel.on(
-        { event: 'stream', direction: 'out', state: 'open' },
-        function(stream) {
-            document
-                .getElementById('xmpp-connecting-account').value = stream.session.name;
-            document
-                .getElementById('xmpp-status').hidden = false;
-        });
+    channel.on({
+        event     : 'stream',
+        direction : 'out',
+        state     : 'open'
+    }, function(stream) {
+        document
+        .getElementById('xmpp-connecting-account').value = stream.session.name;
+        document
+        .getElementById('xmpp-status').hidden = false;
+    });
 
     // Hiding progress bar when transport is stopped for any reason
 
-    channel.on(
-        { event: 'transport', state: 'stop' },
-        function(transport) {
-            if(document)
-                document.getElementById('xmpp-status').hidden = true;
-        });
+    channel.on({
+        event: 'transport',
+        state: 'stop'
+    }, function(transport) {
+        if(document)
+            document.getElementById('xmpp-status').hidden = true;
+    });
     
     // Hiding progress bar when stream is closed
 
-    channel.on(
-        { event: 'stream', state: 'close' },
-        function(stream) {
-            if(document)
-                document
-                    .getElementById('xmpp-status').hidden = true;
-        });
+    channel.on({
+        event: 'stream',
+        state: 'close'
+    }, function(stream) {
+        if(document)
+            document
+        .getElementById('xmpp-status').hidden = true;
+    });
 
     // Hiding progress bar when authentication is accepted
 
-    channel.on(
-        { event: 'iq', direction: 'out', stanza: function(s) {
-                return s.@type == 'set' && s.ns_auth::query != undefined; }},
-        function(request) {
+    channel.on({
+        event     : 'iq',
+        direction : 'out',
+        stanza: function(s) { return s.@type == 'set' && s.ns_auth::query != undefined; }
+    }, function(request) {
 
-            // To know whether authentication was successful or not,
-            // we must track the response iq.  However, we cannot
-            // track by means of a <query xmlns="jabber:iq:auth"/>
-            // because it has none, so we catch the outgoing auth
-            // request instead, note its "id", and register a one-time
-            // reaction to handle the response to it.
-
-            var authReaction = channel.on({
-                event: 'iq', direction: 'in', session: request.session,
-                stanza: function(s) { return s.@id == request.stanza.@id; }},
-                function(response) {
-                    channel.forget(authReaction);
-
-                    document.
-                        getElementById('xmpp-status').hidden = true;
-
-                    if(response.stanza.@type == 'error' &&
-                       window == Cc["@mozilla.org/appshell/window-mediator;1"]
-                       .getService(Ci.nsIWindowMediator)
-                       .getMostRecentWindow('navigator:browser')) {
-                        var message =
-                            'Error during Jabber authentication: ' +
-                            response.stanza.error.*[0].name().localName.replace(/-/g, ' ') +
-                            ' (' + response.stanza.error.@code + ')';
-                        prompts.alert(null, 'Error', message);
-                        response.session.close();
-                    }
-                });
+        // To know whether authentication was successful or not,
+        // we must track the response iq.  However, we cannot
+        // track by means of a <query xmlns="jabber:iq:auth"/>
+        // because it has none, so we catch the outgoing auth
+        // request instead, note its "id", and register a one-time
+        // reaction to handle the response to it.
+        
+        var authReaction = channel.on({
+            event  : 'iq', direction: 'in', session: request.session,
+            stanza : function(s) { return s.@id == request.stanza.@id; }
+        }, function(response) {
+            channel.forget(authReaction);
+            
+            document.getElementById('xmpp-status').hidden = true;
+            
+            if(response.stanza.@type == 'error' &&
+               window == Cc["@mozilla.org/appshell/window-mediator;1"]
+               .getService(Ci.nsIWindowMediator)
+               .getMostRecentWindow('navigator:browser')) {
+                var message =
+                    'Error during Jabber authentication: ' +
+                    response.stanza.error.*[0].name().localName.replace(/-/g, ' ') +
+                    ' (' + response.stanza.error.@code + ')';
+                prompts.alert(null, 'Error', message);
+                response.session.close();
+            }
         });
+    });
 
     // Changing availability and show attributes on toolbar button based
     // on a summary of presences of connected accounts.
 
-    channel.on(
-        { event: 'presence', direction: 'out', stanza: function(s) {
-                return s.@type == undefined && s.ns_muc::x == undefined;
-            }},
-        function(presence) { updateStatusIndicator(); });
+    channel.on({
+        event: 'presence',
+        direction: 'out',
+        stanza: function(s) {
+            return s.@type == undefined && s.ns_muc::x == undefined;
+        }
+    }, function(presence) {
+        updateStatusIndicator();
+    });
 
     // Reset main button to unavailable icon when every account is
     // offline.
 
-    channel.on(
-        { event: 'stream', direction: 'out', state: 'close' },
-        function(stream) { updateStatusIndicator(); });
+    channel.on({
+        event: 'stream',
+        direction: 'out',
+        state: 'close'
+    }, function(stream) {
+        updateStatusIndicator();
+    });
 
     connectAutologinAccounts();
     updateStatusIndicator();
@@ -219,12 +231,12 @@ function requestedChangeStatus(event) {
 
 function connectAutologinAccounts() {
     XMPP.accounts
-        .filter(function(a) {
-                    return a.autoLogin && !XMPP.isUp(a);
-                })
-        .forEach(function(a) {
-                     XMPP.up(a);
-                 });
+    .filter(function(a) {
+        return a.autoLogin && !XMPP.isUp(a);
+    })
+    .forEach(function(a) {
+        XMPP.up(a);
+    });
 }
 
 function changeStatus(type) {
@@ -233,7 +245,7 @@ function changeStatus(type) {
     if(accountsUp.length == 0) {
         if(type == 'available')
             XMPP.accounts.forEach(XMPP.up);
-    } else
+    } else {
         accountsUp.forEach(
             function(account) {
                 if(type == 'unavailable')
@@ -245,9 +257,10 @@ function changeStatus(type) {
                             account   : account.jid,
                             direction : 'out',
                             stanza    : function(s) {
-                                    return s.ns_muc::x == undefined;
-                                }})[0];
-
+                                return s.ns_muc::x == undefined;
+                            }
+                        })[0];
+                    
                     var newPresenceStanza = (existingPresenceStanza ?
                                              existingPresenceStanza.stanza.copy() :
                                              <presence/>);
@@ -265,6 +278,7 @@ function changeStatus(type) {
                     XMPP.send(account, newPresenceStanza);
                 }
             });
+    }
 }
 
 
@@ -310,11 +324,10 @@ if(typeof(getBrowser) == 'function' && getBrowser().selectedBrowser) {
         'load', function(event) {
             getBrowser().addProgressListener(locationChangeListener);
 
-            getBrowser().addEventListener(
-                'DOMAttrModified', function(event) {
-                    if(event.attrName == 'address')
-                        refresh();
-                }, false);
+            getBrowser().addEventListener('DOMAttrModified', function(event) {
+                if(event.attrName == 'address')
+                    refresh();
+            }, false);
         }, false);
 
 
