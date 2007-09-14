@@ -98,9 +98,19 @@ var cache = {
         return this.fetch(pattern)[0];
     },
 
+    first: function(query) {
+        return this._wrapResult(
+            service.wrappedJSObject.cache.first(
+                (typeof(query.compile) == 'function') ? query.compile() : query));
+    },
+
     all: function(query) {
-        return service.wrappedJSObject.cache.all(
+        var stanzas = service.wrappedJSObject.cache.all(
             (typeof(query.compile) == 'function') ? query.compile() : query);
+        var results = [];
+        for(var i=0; i<stanzas.snapshotLength; i++)
+            results.push(this._wrapResult(stanzas.snapshotItem(i)));
+        return results;
     },
 
     fetch: function(pattern) {
@@ -111,24 +121,28 @@ var cache = {
             } else {
                 remotePattern[member] = pattern[member];
             } 
-        
-        var stanzas = this.all(
+
+        var stanzas = service.wrappedJSObject.cache.all(
             this._patternToQuery(remotePattern).compile());
         
         var wrappedPartialResults = [];
         for(var i=0; i<stanzas.snapshotLength; i++) { 
             var stanza = stanzas.snapshotItem(i);
-            var meta = stanza.getElementsByTagNameNS(ns_x4m, 'meta')[0];
             
-            wrappedPartialResults.push({
-                stanza    : dom2xml(stanza),
-                direction : meta.getAttribute('direction'),
-                account   : meta.getAttribute('account'),
-                session   : { name: meta.getAttribute('account')}
-            });
+            wrappedPartialResults.push(this._wrapResult(stanza));
         }
         
         return wrappedPartialResults.filter(function(event) { return match(event, localPattern); });
+    },
+
+    _wrapResult: function(stanza) {
+        var meta = stanza.getElementsByTagNameNS(ns_x4m, 'meta')[0];
+        return {
+            stanza    : dom2xml(stanza),
+            direction : meta.getAttribute('direction'),
+            account   : meta.getAttribute('account'),
+            session   : { name: meta.getAttribute('account')}
+        };
     },
 
     _patternToQuery: function(pattern) {
@@ -573,8 +587,10 @@ function enableContentDocument(panel, account, address, type, createSocket) {
        panel.getAttribute('address') != address)
         throw new Error('Contact panel already attached to different address. (' + address + ')');
 
-    if(panel.xmppChannel)
+    if(panel.xmppChannel) {
+        log('Content panel already connected.');
         return;
+    }
 
     var appDoc = panel.contentDocument;
     if(createSocket) 
@@ -587,73 +603,61 @@ function enableContentDocument(panel, account, address, type, createSocket) {
             }
     
     if(!(appDoc.getElementById('xmpp-incoming') &&
-         appDoc.getElementById('xmpp-outgoing')))
+         appDoc.getElementById('xmpp-outgoing'))) {
+        log('Missing xmpp sockets in shared application.');
         return;
+    }
+        
 
-    function gotDataFromPage(text) {
-        XML.prettyPrinting = false;
-        XML.ignoreWhitespace = false;
-        var stanza = new XML(text);
-
-        // Fill in defaults and enforce security policy.  Rules are:
-        //
-        // - If stanza contains no "type" attribute, use the one
-        //   provided at connection time (this allows some apps to
-        //   work both 1-1 and in muc with minimal fuss).
-        //
-        // - If app is remote, remove "from" attribute (if provided).
-        //
-        // - If app is remote and "to" looks like "/Resource", set
-        //   address part of "to" attribute to address provided at
-        //   connection time plus "/Resource", otherwise just replace
-        //   it with the address provided at connection. (In other
-        //   words, hybrid app can at most decide what resource of the
-        //   connected contact to send a stanza to.)
-        //
-        // - If app is local and "to" is set, don't touch it,
-        //   otherwise fill it in as for remote apps.
+    function gotDataFromPage(stanza) {
+        var caps = {
+            set_type     : true,
+            set_resource : true,
+            set_address  : /^(file|chrome):\/\//.test(panel.currentURI.spec),
+            track_iq     : /^(file|chrome):\/\//.test(panel.currentURI.spec)
+        }
 
         if(stanza.@type == undefined)
             stanza.@type = type;
+        else if(caps.set_type)
+            true;
+        else
+            throw new Error('Shared application tried to set message type.');
 
-        if(/^(file|chrome):\/\//.test(panel.currentURI.spec)) {
-            if(/^\/.+$/.test(stanza.@to.toString()))
-                stanza.@to = address + stanza.@to;
-            else if(stanza.@to == undefined)
-                stanza.@to = address;
+        if(stanza.@to == undefined)
+            stanza.@to = address;
+        else if(/^\/.+$/.test(stanza.@to.toString()) && caps.set_resource)
+            stanza.@to = address + stanza.@to;
+        else if(caps.set_address)
+            true;
+        else
+            throw new Error('Shared application does not have enough privileges for requested operation');
 
-            if(stanza.localName() == 'iq') {
-                // iq's are traced for unrestricted applications, so that
-                // they can find their way back to the application.
-                    
-                // Allow XMPP bus to take care of id, but remember of
-                // the one set by the application, so that it can be
-                // set on the response.
+        if(stanza.@from != undefined)
+            throw new Error('Shared application tried to set @from attribute in outgoing stanza.');
 
-                var requestId = stanza.@id.toString();
-                delete stanza.@id;
+        var replyHandler;
+        if(stanza.localName() == 'iq' && caps.track_iq) {
+            // When tracking IQs, remove id as set by remote
+            // application by remember it, so that it can be set again
+            // on the response.
+            
+            var requestId = stanza.@id.toString();
+            delete stanza.@id;
+
+            replyHandler = function(reply) {
+                var s = reply.stanza.copy();
                 
-                send(account, stanza, function(reply) {
-                         var s = reply.stanza.copy();
-
-                         if(requestid)
-                             s.@id = requestid;
-                         else
-                             delete s.@id;
-
-                         gotDataFromXMPP(s);
-                     });
-            } else
-                send(account, stanza);
-        } else {
-            delete stanza.@from;
-            if(/^\/.+$/.test(stanza.@to.toString()))
-                stanza.@to = address + stanza.@to;
-            else
-                stanza.@to = address;
-
-            send(account, stanza);
+                if(requestId)
+                    s.@id = requestid;
+                else
+                    delete s.@id;
+                
+                gotDataFromXMPP(s);
+            };
         }
+
+        send(account, stanza, replyHandler);
     }
 
     function gotDataFromXMPP(stanza) {
@@ -665,26 +669,26 @@ function enableContentDocument(panel, account, address, type, createSocket) {
 
     panel.setAttribute('account', account);
     panel.setAttribute('address', address);
-    panel.contentWindow.addEventListener(
-        'unload', function(event) {
-            if(event.target == panel.contentDocument) 
-                disableContentDocument(panel);
-        }, true);
+    panel.contentWindow.addEventListener('unload', function(event) {
+        if(event.target == panel.contentDocument) 
+            disableContentDocument(panel);
+    }, true);
 
     // The contact sub-roster is a roster where the only entry is the
     // contact we are connecting to (if in roster, otherwise it's
     // empty).
 
-    var roster = cache.find({
-        event     : 'iq',
-        direction : 'in',
-        account   : account,
-        stanza    : function(s) { return s.ns_roster::query != undefined; }});
-    
-    var contactSubRoster = <iq type="result"><query xmlns="jabber:iq:roster"/></iq>;
-    contactSubRoster.@to = roster.stanza.@to.toString() || account;
-    contactSubRoster.@from = roster.stanza.@from.toString() || account;
-    contactSubRoster.ns_roster::query.item = roster.stanza..ns_roster::item.(@jid == address);
+    var contactSubRoster =
+        let(roster = cache.first(q()
+                                 .event('iq')
+                                 .direction('in')
+                                 .account(account)
+                                 .query('roster')))
+            (<iq type="result" from={account} to={account}>
+             <query xmlns={ns_roster}>
+             {roster.stanza..ns_roster::item.(@jid == address)}
+             </query>
+             </iq>);
 
     // Presence from contact
 
@@ -695,18 +699,18 @@ function enableContentDocument(panel, account, address, type, createSocket) {
 
     var mucPresences;
     if(type == 'groupchat') {
-        var mucPresencesOut = 
-            cache.fetch({
-                event     : 'presence',
-                direction : 'out',
-                session   : function(s) { return s.name == account; },
-                stanza    : function(s) { return s.@to != undefined && JID(s.@to).address == address; }});
-        var mucPresencesIn = 
-            cache.fetch({
-                event     : 'presence',
-                direction : 'in',
-                session   : function(s) { return s.name == account; },
-                stanza    : function(s) { return JID(s.@from).address == address; }});
+        var mucPresencesOut =
+            cache.all(q()
+                      .event('presence')
+                      .direction('out')
+                      .account(account)
+                      .to(address)); 
+       var mucPresencesIn = 
+            cache.all(q()
+                      .event('presence')
+                      .direction('in')
+                      .account(account)
+                      .from(address));
         mucPresences = mucPresencesIn.concat(mucPresencesOut);
     }
 
@@ -714,7 +718,9 @@ function enableContentDocument(panel, account, address, type, createSocket) {
 
     appDoc.getElementById('xmpp-outgoing').addEventListener(
         'DOMNodeInserted', function(event) {
-            gotDataFromPage(event.target.textContent);
+            XML.prettyPrinting = false;
+            XML.ignoreWhitespace = false;
+            gotDataFromPage(new XML(event.target.textContent));
         }, false);
 
     // Select subset of XMPP traffic to listen to
@@ -990,7 +996,9 @@ function getStackTrace() {
 }
 
 function log(msg) {
-    Cc[ "@mozilla.org/consoleservice;1" ]
-        .getService(Ci.nsIConsoleService)
-        .logStringMessage(msg);
+    var _ = arguments.callee;
+    _.console = _.console ||
+        Cc['@mozilla.org/consoleservice;1'].getService(Ci.nsIConsoleService);
+
+    _.console.logStringMessage('xmpp4moz: ' + msg);
 }
