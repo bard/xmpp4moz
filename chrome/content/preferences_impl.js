@@ -75,7 +75,7 @@ function v(id) {
 // ----------------------------------------------------------------------
 
 function openServerMap() {
-    window.open('https://www.xmpp.net/map/node', 'xmpp-servers-map', '');
+    window.open('https://xmpp.net/servers', 'xmpp-servers-map', '');
 }
 
 function refreshAccountList() {
