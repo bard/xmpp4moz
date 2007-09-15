@@ -88,6 +88,7 @@ const ns_roster     = 'jabber:iq:roster';
 const ns_disco_info = 'http://jabber.org/protocol/disco#info';
 
 var [Query] = load('chrome://xmpp4moz/content/lib/query.js', 'Query');
+var [Channel] = load('chrome://xmpp4moz/content/lib/channel.js', 'Channel');
 
 
 // DEVELOPER INTERFACE
@@ -294,85 +295,22 @@ function send(account, stanza, handler) {
 // http://dev.hyperstruct.net/xmpp4moz/wiki/DocLocalAPI#XMPP.createChannel
 
 function createChannel(features) {
-    var _this = this;
-
-    var channel = {
-        _watchers: [],
-
-        on: function(pattern, handler) {
-            var reaction = {pattern: pattern, handler: handler};
-            this._watchers.push(reaction);
-            return reaction;
-        },
-
-        forget: function(watcher) {
-            var index = this._watchers.indexOf(watcher);
-            if(index != -1) 
-                this._watchers.splice(index, 1);
-        },
-
-        receive: function(event) {
-            this._handle1(event, this._watchers, match);
-        },
-
-        observe: function(subject, topic, data) {
-            var [_, event, direction] = topic.match(/^(stream|data|stanza|transport)-(in|out)$/);
-            var sessionName = data.toString();
-
-            var eventInfo = {
-                direction : direction,
-                session   : service.getSession(sessionName) || { name: sessionName }
-            };
-
-            switch(event) {
-            case 'transport':
-                eventInfo.state = asString(subject);
-                eventInfo.event = event;
-                break;
-            case 'stream':
-                eventInfo.state = asString(subject);
-                eventInfo.event = event;
-                break;
-            case 'data':
-                eventInfo.content = asString(subject);
-                eventInfo.event = event;
-                break;
-            case 'stanza':
-                eventInfo.stanza = dom2xml(subject.QueryInterface(Ci.nsIDOMElement));
-                eventInfo.event = eventInfo.stanza.name();
-                break;
+    var channel = new Channel();
+    
+    channel.onRelease = function() {
+        service.removeObserver(this, null, null);
+        if(features)
+            for each(var feature in features.ns_disco_info::feature) {
+                service.removeFeature(feature.toXMLString());
             }
-            
-            this.receive(wrapEvent(eventInfo));
-        },
-
-        release: function() {
-            _this.service.removeObserver(this, null, null);
-            if(features)
-                for each(var feature in features.ns_disco_info::feature) {
-                    _this.service.removeFeature(feature.toXMLString()); }
-        },
-
-        // not relying on non-local state
-
-        _handle1: function(object, watches, matcher) {
-            for each(var watch in watches)
-                try {
-                    if(matcher(object, watch.pattern))
-                        watch.handler(object);
-                } catch(e) {
-                    Cu.reportError(e);
-                }
-        }
-    };
-
-    // PROVIDE TOPIC!
-    service.addObserver(channel, null, null);
+    }
 
     if(features)
-        for each(var feature in features.ns_disco_info::feature) 
+        for each(var feature in features.ns_disco_info::feature) {
             service.addFeature(feature.toXMLString());
-        
+        }
+
+    service.addObserver(channel, null, null);
     return channel;
 }
 
@@ -451,35 +389,6 @@ function match(object, template) {
     } 
 
     return true;
-}
-
-/**
- * Add convenience methods to an event object.
- *
- */
-
-function wrapEvent(e) {
-    e.__defineGetter__('account', function() {
-        return (this.stanza ?
-                this.stanza.ns_x4m::meta.@account.toXMLString() :
-                this.session.name);
-    });
-
-    if(!e.event)
-        e.__defineGetter__('event', function() {
-            return (this.stanza ?
-                    this.stanza.localName() :
-                    null)
-        });
-
-    if(!e.direction)
-        e.__defineGetter__('direction', function() {
-            return (this.stanza ?
-                    this.stanza.ns_x4m::meta.@direction.toString() :
-                    null)
-        });
-
-    return e;
 }
 
 /**
@@ -958,15 +867,6 @@ function asDOM(object) {
     }
     
     return element;
-}
-
-function asString(object) {
-    if(object instanceof Ci.nsISupportsString)
-        return object.toString();
-    else if(typeof(object) == 'string')
-        return object;
-    else
-        throw new Exception('Bad argument.');
 }
 
 
