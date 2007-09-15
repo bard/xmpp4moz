@@ -128,7 +128,8 @@ function initOverlay() {
         // reaction to handle the response to it.
         
         var authReaction = channel.on({
-            event  : 'iq', direction: 'in', session: request.session,
+            event  : 'iq', direction: 'in',
+            account: request.account,
             stanza : function(s) { return s.@id == request.stanza.@id; }
         }, function(response) {
             channel.forget(authReaction);
