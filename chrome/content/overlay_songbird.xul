@@ -44,8 +44,8 @@
 <overlay id="xmpp4moz-overlay"
          xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
 
-  <script type="application/x-javascript" src="chrome://xmpp4moz/content/xmpp.js"/>
-  <script type="application/x-javascript" src="overlay.js"/>
+  <script type="application/x-javascript;version=1.7" src="chrome://xmpp4moz/content/xmpp.js"/>
+  <script type="application/x-javascript;version=1.7" src="overlay.js"/>
 
   <hbox id="frame_control_pane">
     <toolbarbutton id="xmpp-button"
