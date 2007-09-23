@@ -302,8 +302,8 @@ function _openUserSession(jid, transport, streamObserver) {
     if(transport.isConnected()) 
         session.open(JID(jid).hostname);
     else {
-        transport.connect();
         transport.asyncRead(session);
+        transport.connect();
     }
 
     return session;
