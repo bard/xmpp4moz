@@ -50,9 +50,9 @@
                         'chrome://xmpp4moz/content/ui/disco.xul',
                         'xmpp-disco', 'chrome');"/>
     <command id="xmpp-command-open-preferences"
-             label="Configure Accounts..."
+             label="Configure..."
              accesskey="C"
-             oncommand="window.openPreferences('xmpp-pane');"/>
+             oncommand="xmpp4moz.openPreferences();"/>
   </commandset>
 
   <!-- KEYS -->
