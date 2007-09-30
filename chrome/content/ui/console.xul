@@ -62,8 +62,54 @@
     </tabs>
 
     <tabpanels flex="1">
-      <tabpanel>
-        <iframe src="log.xhtml" id="log" flex="5" class="box-inset"/>
+      <tabpanel orient="horizontal">
+        <tree id="templates" flex="1" onclick="clickedTemplate(event);" persist="width">
+          <treecols>
+            <treecol id="element" label="Template" primary="true" flex="1"/>
+          </treecols>
+          <treechildren/>
+        </tree>
+
+        <splitter orient="horizontal"/>
+
+        <vbox flex="3">
+          <toolbox>
+            <menubar>
+              <menu label="View" accesskey="V">
+                <menupopup>
+                  <menuitem label="Clear" accesskey="C" oncommand="clearLog();"/>
+                </menupopup>
+              </menu>
+              
+              <menu label="History" accesskey="H">
+                <menupopup>
+                  <menuitem command="history-prev" key="key-history-prev"/>
+                  <menuitem command="history-next" key="key-history-next"/>
+                </menupopup>
+              </menu>
+            </menubar>
+          </toolbox>
+          
+          <iframe src="log.xhtml" id="log" flex="5" class="box-inset"/>
+
+          <splitter/>
+
+          <textbox id="input"  multiline="true" flex="1"
+                   onkeypress="pressedKeyInInputArea(event);"/>
+
+          <toolbox>
+            <toolbar>
+              <toolbarbutton command="send"/>
+              <toolbarspring/>
+              <toolbaritem align="center">
+                <label value="Sending as:" accesskey="a" control="accounts"/>
+                <menulist minwidth="100" id="accounts" flex="1" label="" sizetopopup="none">
+                  <menupopup id="xmpp-popup-accounts"/>
+                </menulist>
+              </toolbaritem>
+            </toolbar>
+          </toolbox>
+        </vbox>
       </tabpanel>
 
       <tabpanel orient="vertical">
@@ -78,57 +124,6 @@
       </tabpanel>
     </tabpanels>
   </tabbox>
-
-  <splitter/>
-
-  <vbox flex="1">
-    <toolbox>
-      <menubar>
-        <menu label="Message" accesskey="M"
-              oncommand="requestedTemplateInsertion('message', event);">
-          <menupopup id="templates-message"/>
-        </menu>
-
-        <menu label="Iq" accesskey="I"
-              oncommand="requestedTemplateInsertion('iq', event);">
-          <menupopup id="templates-iq"/>
-        </menu>
-
-        <menu label="Presence" accesskey="P"
-              oncommand="requestedTemplateInsertion('presence', event);">
-          <menupopup id="templates-presence"/>
-        </menu>
-
-        <menu label="View" accesskey="V">
-          <menupopup>
-            <menuitem label="Clear" accesskey="C" oncommand="clearLog();"/>
-          </menupopup>
-        </menu>
-
-        <menu label="History" accesskey="H">
-          <menupopup>
-            <menuitem command="history-prev" key="key-history-prev"/>
-            <menuitem command="history-next" key="key-history-next"/>
-          </menupopup>
-        </menu>
-      </menubar>
-    </toolbox>
-
-    <textbox id="input"  multiline="true" flex="1" onkeypress="pressedKeyInInputArea(event);"/>
-
-    <toolbox>
-      <toolbar>
-        <toolbarbutton command="send"/>
-        <toolbarspring/>
-        <toolbaritem align="center">
-          <label value="Sending as:" accesskey="a" control="accounts"/>
-          <menulist id="accounts" flex="1" label="" sizetopopup="none">
-            <menupopup id="xmpp-popup-accounts"/>
-          </menulist>
-        </toolbaritem>
-      </toolbar>
-    </toolbox>
-  </vbox>
 
   <box hidden="true" id="blueprints"/>
 </window>

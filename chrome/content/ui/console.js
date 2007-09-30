@@ -33,94 +33,139 @@ xmpp.ui = xmpp.ui || {};
 
 const ns_roster = new Namespace('jabber:iq:roster');
 
-const stanzaTemplates = {
-    message: {
-        'Plain':     <message type="normal" to=""/>,
-
-        'Groupchat': <message type="groupchat" to=""/>
+var gTemplates = [
+    {
+        type: 'Contact Management',
+        name: 'Request roster',
+        data:
+            <iq type="get">
+            <query xmlns="jabber:iq:roster"/>
+            </iq>
+    },
+    {
+        type: 'Contact Management',
+        name: 'Add contact',
+        data:
+            <presence to="[CONTACT_JID]" type="subscribe"/>
+    },
+    {
+        type: 'Multi-User Chat',
+        name: 'Join room',
+        data:
+            <presence to="[ROOM_JID]">
+            <x xmlns="http://jabber.org/protocol/muc"/>
+            </presence>
     },
 
-    iq: {
-        'Plain': <iq/>,
-
-        'Disco/Info': 
-        <iq type="get" to="">
-        <query xmlns="http://jabber.org/protocol/disco#info"/>
-        </iq>,
-
-        'Disco/Items': 
-        <iq type="get" to="">
-        <query xmlns="http://jabber.org/protocol/disco#items"/>
-        </iq>,
-
-        'vCard': <iq to="" type="get"><vCard xmlns="vcard-temp"/></iq>,
-
-        'Roster': <iq type="get"><query xmlns="jabber:iq:roster"/></iq>,
-
-        'Password Change':
-        <iq type="set">
-        <query xmlns="jabber:iq:register">
-        <username>USERNAME</username>
-        <password>NEW PASSWORD</password>
-        </query>
-        </iq>,
-
-        'Time':
-        <iq type="get" to=""><query xmlns="jabber:iq:time"/></iq>,
-
-        'Set Bookmarks':
-        <iq type="set">
-        <query xmlns="jabber:iq:private">
-        <storage xmlns="storage:bookmarks">
-        <conference name="ROOM NAME" autojoin="true OR false" jid="ROOM JID">
-        <nick>NICK TO USE IN ROOM (OPTIONAL)</nick>
-        <password>PASSWORD (OPTIONAL)</password>
-        </conference>
-        </storage>
-        </query>
-        </iq>,
-
-        'Get Bookmarks':
-        <iq type="get">
-        <query xmlns="jabber:iq:private">
-        <storage xmlns="storage:bookmarks"/>
-        </query>
-        </iq>,
-
-        'PEP/Create Collection Node':
-        <iq type="set">
-        <pubsub xmlns="http://jabber.org/protocol/pubsub">
-        <create node="NODE NAME"/>
-        <configure>
-        <x type="submit" xmlns="jabber:x:data">
-        <field var="FORM_TYPE" type="hidden">
-        <value>http://jabber.org/protocol/pubsub#node_config</value>
-        </field>
-        <field var="pubsub#node_type">
-        <value>collection</value>
-        </field>
-        </x>
-        </configure>
-        </pubsub>
-        </iq>,
-
-        'PEP/Delete Node':
-        <iq type="set">
-        <pubsub xmlns="http://jabber.org/protocol/pubsub#owner">
-        <delete node="NODE NAME"/>
-        </pubsub>
-        </iq>,
-
-        'Get room configuration':
-        <iq type="get" to="ROOM ID">
-        <query xmlns="http://jabber.org/protocol/muc#owner"/>
-        </iq>
+    {
+        type: 'Multi-User Chat',
+        name: 'Retrieve room configuration',
+        data:
+            <iq type="get" to="[ROOM_JID]">
+            <query xmlns="http://jabber.org/protocol/muc#owner"/>
+            </iq>
     },
 
-    presence: {
-        'Plain': <presence/>
+    {
+        type: 'Multi-User Chat',
+        name: 'Store bookmarks',
+        data:
+            <iq type="set">
+            <query xmlns="jabber:iq:private">
+            <storage xmlns="storage:bookmarks">
+            <conference name="[ROOM_NAME]" autojoin="[BOOLEAN]" jid="[ROOM_JID]">
+            <nick>[NICK]</nick>
+            <password>[PASSWORD]</password>
+            </conference>
+            </storage>
+            </query>
+            </iq>
+    },
+
+    {
+        type: 'Multi-User Chat',
+        name: 'Retrieve bookmarks',
+        data:
+            <iq type="get">
+            <query xmlns="jabber:iq:private">
+            <storage xmlns="storage:bookmarks"/>
+            </query>
+            </iq>
+    },
+
+    {
+        type: 'Discover information',
+        name: 'Query entity about itself',
+        data:
+            <iq type="get" to="[ENTITY_JID]">
+            <query xmlns="http://jabber.org/protocol/disco#info"/>
+            </iq>,
+    },
+
+    {
+        type: 'Discover information',
+        name: 'Query entity about its items',
+        data:
+            <iq type="get" to="">
+            <query xmlns="http://jabber.org/protocol/disco#items"/>
+            </iq>
+    },
+
+    {
+        type: 'Discover information',
+        name: 'Query entity about its time',
+        data:
+            <iq type="get" to="">
+            <query xmlns="jabber:iq:time"/>
+            </iq>
+    },
+
+    {
+        type: 'Account management',
+        name: 'Change password',
+        data:
+            <iq type="set">
+            <query xmlns="jabber:iq:register">
+            <username>[USER_JID]</username>
+            <password>[PASSWORD]</password>
+            </query>
+            </iq>
+    },
+
+    {
+        type: 'Publish/Subscribe',
+        name: 'Create collection node',
+        data:
+            <iq type="set">
+            <pubsub xmlns="http://jabber.org/protocol/pubsub">
+            <create node="[NODE_NAME]"/>
+            <configure>
+            <x type="submit" xmlns="jabber:x:data">
+            <field var="FORM_TYPE" type="hidden">
+            <value>http://jabber.org/protocol/pubsub#node_config</value>
+            </field>
+            <field var="pubsub#node_type">
+            <value>collection</value>
+            </field>
+            </x>
+            </configure>
+            </pubsub>
+            </iq>
+    },
+
+    {
+        type: 'Publish/Subscribe',
+        name: 'Delete node',
+        data:
+            <iq type="set">
+            <pubsub xmlns="http://jabber.org/protocol/pubsub#owner">
+            <delete node="[NODE_NAME]"/>
+            </pubsub>
+            </iq>
     }
-};
+];
+
+
 
 
 // GLOBAL STATE
@@ -135,14 +180,15 @@ var inputHistoryCursor;
 // ----------------------------------------------------------------------
 
 function init(event) {
+    if(!event.target)
+        return;
+    
     channel = XMPP.createChannel();
 
     function logEvent(event) { display(event.account, event.direction, event.stanza.toXMLString());}
     channel.on({event: 'message'}, logEvent);
     channel.on({event: 'iq'}, logEvent)
     channel.on({event: 'presence'}, logEvent)    
-
-    fillTemplateMenu();
 
     xmpp.ui.refreshAccounts(_('xmpp-popup-accounts'));
 
@@ -157,6 +203,9 @@ function init(event) {
     if(result)
         _('accounts').value = result.jid;
 
+
+    gTemplateTreeView.init(gTemplates);
+    _('templates').view = gTemplateTreeView;
 
     _('input').focus();
 }
@@ -235,15 +284,6 @@ function tryQuery(textbox) {
     }
 }
 
-function fillTemplateMenu() {
-    for(var templateType in stanzaTemplates) 
-        for(var templateName in stanzaTemplates[templateType]) {
-            var menuItem = document.createElement('menuitem');
-            menuItem.setAttribute('label', templateName);
-            _('templates-' + templateType).appendChild(menuItem);
-        }    
-}
-
 function clearLog() {
     var logEntries = _('log').contentDocument.getElementById('entries');
     while(logEntries.firstChild)
@@ -269,14 +309,113 @@ function display(account, direction, content) {
         });
 }
 
+var gTemplateTreeView = {
+    init: function(templates) {
+        for each(var template in templates) {
+            this.childData[template.type] = this.childData[template.type] || [];
+            this.childData[template.type].push(template.name);
+        }
+        
+        for(var name in this.childData) {
+            this.visibleData.push([name, true, false]);
+        }
+    },
+
+    childData : {},
+    visibleData: [],
+
+    treeBox: null,
+    selection: null,
+    
+    get rowCount()              { return this.visibleData.length; },
+    setTree: function(treeBox)         { this.treeBox = treeBox; },
+    getCellText: function(idx, column) { return this.visibleData[idx][0]; },
+    isContainer: function(idx)         { return this.visibleData[idx][1]; },
+    isContainerOpen: function(idx)     { return this.visibleData[idx][2]; },
+    isContainerEmpty: function(idx)    { return false; },
+    isSeparator: function(idx)         { return false; },
+    isSorted: function()               { return false; },
+    isEditable: function(idx, column)  { return false; },
+    
+    getParentIndex: function(idx) {
+        if(this.isContainer(idx))
+            return -1;
+        for(var t = idx - 1; t >= 0 ; t--)
+            if(this.isContainer(t))
+                return t;
+    },
+    getLevel: function(idx) {
+        if(this.isContainer(idx))
+            return 0;
+        return 1;
+    },
+    hasNextSibling: function(idx, after) {
+        var thisLevel = this.getLevel(idx);
+        for (var t = idx + 1; t < this.visibleData.length; t++) {
+            var nextLevel = this.getLevel(t)
+            return (nextLevel == thisLevel)
+        }
+    },
+    toggleOpenState: function(idx) {
+        var item = this.visibleData[idx];
+        if(!item[1]) return;
+        
+        if(item[2]) {
+            item[2] = false;
+            
+            var thisLevel = this.getLevel(idx);
+            var deletecount = 0;
+            for (var t = idx + 1; t < this.visibleData.length; t++) {
+                if(this.getLevel(t) > thisLevel) deletecount++;
+                else break;
+            }
+            if(deletecount) {
+                this.visibleData.splice(idx + 1, deletecount);
+                this.treeBox.rowCountChanged(idx + 1, -deletecount);
+            }
+        } else {
+            item[2] = true;
+            
+            var label = this.visibleData[idx][0];
+            var toinsert = this.childData[label];
+            for (var i = 0; i < toinsert.length; i++) {
+                this.visibleData.splice(idx + i + 1, 0, [toinsert[i], false]);
+            }
+            this.treeBox.rowCountChanged(idx + 1, toinsert.length);
+        }
+    },
+    
+    getImageSrc: function(idx, column) {},
+    getProgressMode : function(idx,column) {},
+    getCellValue: function(idx, column) {},
+    cycleHeader: function(col, elem) {},
+    selectionChanged: function() {},
+    cycleCell: function(idx, column) {},
+    performAction: function(action) {},
+    performActionOnCell: function(action, index, column) {},
+    getRowProperties: function(idx, column, prop) {},
+    getCellProperties: function(idx, column, prop) {},
+    getColumnProperties: function(column, element, prop) {},
+};
+
 
 // ----------------------------------------------------------------------
 // GUI REACTIONS
 
-function requestedTemplateInsertion(templateType, event) {
-    var templateName = event.target.getAttribute('label');
-    _('input').value += 
-        stanzaTemplates[templateType][templateName].toXMLString();
+function clickedTemplate(event){
+    var tree = event.target.parentNode;
+    var row = { }, col = { }, child = { };
+    tree.treeBoxObject.getCellAt(event.clientX, event.clientY, row, col, child);
+    
+    var parentIndex = tree.view.getParentIndex(row.value);
+    if(parentIndex != -1)
+        selectedTemplate(getTemplate(
+            tree.view.getCellText(parentIndex, col.value),
+            tree.view.getCellText(row.value, col.value)));
+}
+
+function selectedTemplate(template) {
+    _('input').value += template.data.toXMLString();
 }
 
 function gotoHistoryPrevious() {
@@ -350,6 +489,14 @@ function sendStanza(account, xml) {
 
 // UTILITIES
 // ----------------------------------------------------------------------
+
+function getTemplate(type, name) {
+    for each(var template in gTemplates) {
+        if(template.type == type && template.name == name)
+            return template;
+    }
+    return null;
+}
 
 function serialize(node) {
     return (Cc['@mozilla.org/xmlextras/xmlserializer;1']
