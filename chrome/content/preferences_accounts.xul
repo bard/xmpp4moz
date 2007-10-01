@@ -3,7 +3,8 @@
 <overlay xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
   <prefpane id="accounts-pane"
             onpaneload="xmppPrefs.refreshAccountList();"
-            orient="vertical">
+            orient="vertical"
+            style="overflow: auto;">
 
     <script type="application/x-javascript;version=1.7" src="xmpp.js"/>
     <script type="application/x-javascript;version=1.7" src="preferences_accounts.js"/>
