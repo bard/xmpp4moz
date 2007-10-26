@@ -37,18 +37,6 @@
   <!-- COMMANDS -->
 
   <commandset id="mailCommands">
-    <command id="xmpp-command-open-console"
-             label="Console"
-             accesskey="C"
-             oncommand="window.open(
-                        'chrome://xmpp4moz/content/ui/console.xul',
-                        'xmpp-console', 'chrome');"/>
-    <command id="xmpp-command-open-disco"
-             label="Service Discovery"
-             accesskey="D"
-             oncommand="window.open(
-                        'chrome://xmpp4moz/content/ui/disco.xul',
-                        'xmpp-disco', 'chrome');"/>
     <command id="xmpp-command-open-preferences"
              label="Configure..."
              accesskey="C"
@@ -70,9 +58,6 @@
             <menuitem class="menuitem-iconic" command="xmpp-command-open-preferences"/>
           </menupopup>
         </menu>
-        <menuseparator id="xmpp-menu-applications-separator"/>
-        <menuitem class="menuitem-iconic" command="xmpp-command-open-console"/>
-        <menuitem class="menuitem-iconic" command="xmpp-command-open-disco"/>
       </menupopup>
     </menu>
   </menubar>
