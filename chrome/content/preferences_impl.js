@@ -60,10 +60,6 @@ function v(id) {
 // GUI ACTIONS
 // ----------------------------------------------------------------------
 
-function openServerMap() {
-    window.open('https://xmpp.net/servers', 'xmpp-servers-map', '');
-}
-
 function refreshAccountList() {
     for(var i=_('xmpp-accounts').getRowCount()-1; i>=0; i--) 
         _('xmpp-accounts').removeItemAt(i);
