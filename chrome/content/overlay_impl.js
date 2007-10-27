@@ -298,18 +298,6 @@ function changeStatus(type) {
 }
 
 
-// GUI REACTIONS
-// ----------------------------------------------------------------------
-
-function selectedAccount(event) {
-    var accountJid = event.target.value;
-    if(XMPP.isUp(accountJid))
-        XMPP.down(accountJid);
-    else
-        XMPP.up(accountJid);
-};
-
-
 // BROWSER HANDLING
 // ----------------------------------------------------------------------
 

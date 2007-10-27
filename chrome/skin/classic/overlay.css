@@ -28,7 +28,7 @@
 
 [command="xmpp-command-open-preferences"]
 {
-  list-style-image: url("preferences.png");
+/*  list-style-image: url("preferences.png");*/
   }
 
 #xmpp-popup-accounts-secondary [role="offline"]

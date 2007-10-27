@@ -38,8 +38,8 @@
 
   <commandset id="mailCommands">
     <command id="xmpp-command-open-preferences"
-             label="Configure..."
-             accesskey="C"
+             label="XMPP Preferences"
+             accesskey="r"
              oncommand="xmpp4moz.openPreferences();"/>
   </commandset>
 
@@ -48,20 +48,12 @@
   <keyset id="mailKeys"/>
 
   <!-- MENUS -->
-
-  <menubar id="mail-menubar">
-    <menu label="Jabber" accesskey="J" position="1" insertbefore="tasksMenu">
-      <menupopup id="xmpp-menu-main">
-        <menu label="Connect" accesskey="C" oncommand="xmpp4moz.selectedAccount(event);">
-          <menupopup id="xmpp-popup-accounts">
-            <menuseparator/>
-            <menuitem class="menuitem-iconic" command="xmpp-command-open-preferences"/>
-          </menupopup>
-        </menu>
-      </menupopup>
-    </menu>
-  </menubar>
-
+  
+  <menupopup id="taskPopup">
+    <menuitem class="menuitem-iconic"
+              command="xmpp-command-open-preferences"/>
+  </menupopup>
+  
   <!-- TOOLBAR -->
  
   <toolbox id="mail-toolbox"/>
