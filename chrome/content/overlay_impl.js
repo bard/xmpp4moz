@@ -154,7 +154,6 @@ function initOverlay() {
 
     channel.on({
         event: 'stream',
-        direction: 'out',
         state: 'close'
     }, function(stream) {
         updateStatusIndicator();
