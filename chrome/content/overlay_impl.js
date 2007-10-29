@@ -221,7 +221,8 @@ function openPreferences(paneID) {
     
     var wm = Cc['@mozilla.org/appshell/window-mediator;1']
     .getService(Ci.nsIWindowMediator);
-    
+
+
     var win = wm.getMostRecentWindow('XMPP:Preferences');
     
     if(win) {
@@ -295,6 +296,18 @@ function changeStatus(type) {
                 }
             });
     }
+}
+
+
+// GUI REACTIONS
+// ----------------------------------------------------------------------
+
+function selectedAccount(event) {
+    var accountJid = event.target.value;
+    if(XMPP.isUp(accountJid))
+        XMPP.down(accountJid);
+    else
+        XMPP.up(accountJid);
 }
 
 
