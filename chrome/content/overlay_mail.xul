@@ -80,7 +80,6 @@
             <menuitem class="menuitem-iconic" role="offline" label="Offline" value="unavailable"/>
           </menupopup>
         </menu>
-        <menuitem class="menuitem-iconic" command="xmpp-command-open-preferences"/>
       </menupopup>
     </toolbarbutton>
   </toolbarpalette>
