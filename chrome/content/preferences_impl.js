@@ -139,59 +139,6 @@ function deleteAccount(accountKey) {
     _('xmpp-account-settings').hidden = true;
 }
 
-function registerAccount(address, host, port, ssl) {
-    var jid = address;
-
-    var request = {
-        confirm: false,
-        query: undefined
-    };
-
-    XMPP.open(
-        jid, { host: host, port: port, ssl: ssl },
-        function() {
-            XMPP.send(
-                jid,
-                <iq to={XMPP.JID(jid).hostname} type="get">
-                <query xmlns="jabber:iq:register"/>
-                </iq>,
-                function(reply) {
-                    request.query = reply.stanza.ns_register::query;
-                    if(request.query.ns_register::username.text() == undefined)
-                        request.query.ns_register::username = XMPP.JID(jid).username;
-                    if(request.query.ns_register::password.text() == undefined)
-                        request.query.ns_register::password = v('xmpp-password');
-
-                    window.openDialog(
-                        'chrome://xmpp4moz/content/ui/registration.xul',
-                        'xmpp4moz-registration', 'modal,centerscreen',
-                        request);
-                    
-                    if(request.confirm) {
-                        var iq = <iq to={XMPP.JID(jid).hostname} type="set"/>;
-                        iq.query = request.query;
-                        XMPP.send(
-                            jid, iq, function(reply) {
-                                if(reply.stanza.@type == 'result') 
-                                    prompts.alert(
-                                        null, 'Registration successful',
-                                        'Account successfully registered.');
-                                else
-                                    prompts.alert(
-                                        null, 'Registration error', 
-                                        reply.stanza.error.*[0].name().localName.replace(/-/g, ' ') +
-                                        ' (' + reply.stanza.error.@code + ')');
-                                    
-                                XMPP.close(jid);
-                            });
-                        
-                    } else {
-                        XMPP.close(jid);
-                    }
-                });
-        });
-}
-
 
 // GUI REACTIONS
 // ----------------------------------------------------------------------
@@ -228,11 +175,26 @@ function modifiedAddress(address) {
         (server == 'gmail.com' ? 'talk.google.com' : server);
 }
 
+
 function requestedRegisterAccount() {
-    registerAccount(v('xmpp-address'),
-                    v('xmpp-connection-host'),
-                    v('xmpp-connection-port') || 5223,
-                    v('xmpp-connection-security') == 1 ? true : false)
+    registerAccount({
+        address: v('xmpp-address'),
+        password: v('xmpp-password'),
+        connectionHost: v('xmpp-connection-host'),
+        connectionPort: v('xmpp-connection-port') || 5223,
+        connectionSecurity: v('xmpp-connection-security')
+    }, {
+        onSuccess: function(query) {
+            prompts.alert(
+                null, 'Registration successful',
+                'Account successfully registered.')
+        },
+        onFailure: function(errorDescription) {
+            prompts.alert(
+                null, 'Registration error',
+                errorDescription);
+        }
+    });
 }
 
 function selectedAccount() {
@@ -240,4 +202,72 @@ function selectedAccount() {
     if(!addressItem)
         return;
     showAccount(addressItem.value);
+}
+
+
+// NETWORK ACTIONS
+// ----------------------------------------------------------------------
+
+function registerAccount(account, callbacks) {
+    var username = XMPP.JID(account.address).username || '';
+    var hostname = XMPP.JID(account.address).hostname;
+    var password = account.password || '';
+    var ssl = account.connectionSecurity == 1;
+    var connectionHost = account.connectionHost;
+    var connectionPort = account.connectionPort;
+
+    var request = {
+        confirm: false,
+        query: undefined
+    };
+
+    XMPP.open(
+        hostname, { host: connectionHost, port: connectionPort, ssl: ssl },
+        function() {
+            XMPP.send(
+                hostname,
+                <iq to={hostname} type="get">
+                <query xmlns="jabber:iq:register"/>
+                </iq>,
+                function(reply) {
+                    request.query = reply.stanza.ns_register::query;
+                    if(request.query.ns_register::username.text() == undefined)
+                        request.query.ns_register::username = username;
+                    if(request.query.ns_register::password.text() == undefined)
+                        request.query.ns_register::password = password;
+
+                    // Only bring up registration requester if more
+                    // information is required.
+                    if(request.query.ns_register::username != undefined &&
+                       request.query.ns_register::password != undefined &&
+                       request.query.ns_register::instructions != undefined &&
+                       request.query.ns_register::*.length() == 3)
+                        request.confirm = true;
+                    else
+                        window.openDialog(
+                            'chrome://xmpp4moz/content/ui/registration.xul',
+                            'xmpp4moz-registration', 'modal,centerscreen',
+                            request);
+                    
+                    if(request.confirm) {
+                        var iq = <iq to={hostname} type="set"/>;
+                        iq.query = request.query;
+                        XMPP.send(
+                            hostname, iq, function(reply) {
+                                if(reply.stanza.@type == 'result')
+                                    callbacks.onSuccess(reply.stanza.ns_register::query);
+                                else
+                                    callbacks.onFailure(reply
+                                                        .stanza.error.*[0]
+                                                        .name().localName.replace(/-/g, ' ') +
+                                                        ' (' + reply.stanza.error.@code + ')');
+                                    
+                                XMPP.close(hostname);
+                            });
+                        
+                    } else {
+                        XMPP.close(hostname);
+                    }
+                });
+        });
 }
