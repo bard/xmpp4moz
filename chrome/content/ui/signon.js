@@ -135,6 +135,9 @@ function selectedAccount(jid) {
     } else {        
         _('password-area').hidden = false;
         _('already-connected').hidden = true;
+        _('password').value = XMPP.accounts.filter(function(a) {
+            return a.jid == jid;
+        })[0].password;
     }
 }
 
