@@ -425,7 +425,7 @@ function rosterSegment(account, address) {
 
     var item = roster.stanza..ns_roster::item.(@jid == address);
     if(item != undefined)
-        segment.ns_roster::query.ns_roster::item = rosterItem;
+        segment.ns_roster::query.ns_roster::item = item;
     else
         segment.ns_roster::query.ns_roster::item = <item jid={address} subscription="none"/>
 
