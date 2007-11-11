@@ -408,6 +408,30 @@ function uniq(array) {
         });
 }
 
+// The roster segment is a roster where the only entry is the
+// contact we are connecting to (if in roster, otherwise it's
+// empty).
+
+function rosterSegment(account, address) {
+    var roster = cache.first(q()
+                             .event('iq')
+                             .direction('in')
+                             .account(account)
+                             .query('roster'));
+    var segment =
+        <iq type="result" from={account} to={account}>
+        <query xmlns={ns_roster}/>
+        </iq>;
+
+    var item = roster.stanza..ns_roster::item.(@jid == address);
+    if(item != undefined)
+        segment.ns_roster::query.ns_roster::item = rosterItem;
+    else
+        segment.ns_roster::query.ns_roster::item = <item jid={address} subscription="none"/>
+
+    return segment;
+}
+
 function presenceSummary(account, address) {
     function presenceDegree(stanza) {
         var weight;
@@ -568,23 +592,7 @@ function enableContentDocument(panel, account, address, type, createSocket) {
         if(event.target == panel.contentDocument) 
             disableContentDocument(panel);
     }, true);
-
-    // The contact sub-roster is a roster where the only entry is the
-    // contact we are connecting to (if in roster, otherwise it's
-    // empty).
-
-    var contactSubRoster =
-        let(roster = cache.first(q()
-                                 .event('iq')
-                                 .direction('in')
-                                 .account(account)
-                                 .query('roster')))
-            (<iq type="result" from={account} to={account}>
-             <query xmlns={ns_roster}>
-             {roster.stanza..ns_roster::item.(@jid == address)}
-             </query>
-             </iq>);
-
+    
     // Presence from contact
 
     var contactPresence = presenceSummary(account, address);
@@ -645,7 +653,7 @@ function enableContentDocument(panel, account, address, type, createSocket) {
             stanza    : function(s) { return JID(s.@to).address == address; }
             }, function(message) { gotDataFromXMPP(message.stanza); });
 
-    gotDataFromXMPP(contactSubRoster);
+    gotDataFromXMPP(rosterSegment(account, address));
 
     if(contactPresence)
         gotDataFromXMPP(contactPresence.stanza);
