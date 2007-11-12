@@ -556,7 +556,9 @@ function enableContentDocument(panel, account, address, type, createSocket) {
             throw new Error('Shared application tried to set @from attribute in outgoing stanza.');
 
         var replyHandler;
-        if(stanza.localName() == 'iq' && caps.track_iq) {
+        if(stanza.localName() == 'iq' &&
+           JID(stanza.@to).address != address &&
+           caps.track_iq) {
             // When tracking IQs, remove id as set by remote
             // application by remember it, so that it can be set again
             // on the response.
@@ -652,6 +654,16 @@ function enableContentDocument(panel, account, address, type, createSocket) {
             session   : function(s) { return s.name == account; },
             stanza    : function(s) { return JID(s.@to).address == address; }
             }, function(message) { gotDataFromXMPP(message.stanza); });
+
+    channel.on({
+        event     : 'iq',
+        direction : 'in',
+        session   : function(s) { return s.name == account; },
+        stanza    : function(s) { return JID(s.@from).address == address; }
+    }, function(iq) {
+        gotDataFromXMPP(iq.stanza);
+    });
+
 
     gotDataFromXMPP(rosterSegment(account, address));
 
