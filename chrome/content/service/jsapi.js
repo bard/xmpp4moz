@@ -634,35 +634,18 @@ function enableContentDocument(panel, account, address, type, createSocket) {
     panel.xmppChannel = channel;
 
     channel.on({
-        event     : 'message',
         direction : 'in',
-        session   : function(s) { return s.name == account; },
-        stanza    : function(s) { return (JID(s.@from).address == address); }
-        }, function(message) { gotDataFromXMPP(message.stanza); });
+        account   : account,
+        stanza    : function(s) { return s != undefined && (JID(s.@from).address == address); }
+    }, function(event) { gotDataFromXMPP(event.stanza); });
     
-    channel.on({
-        event     : 'presence',
-        direction : 'in',
-        session   : function(s) { return s.name == account; },
-        stanza    : function(s) { return JID(s.@from).address == address; }
-        }, function(presence) { gotDataFromXMPP(presence.stanza); });
-
     if(type != 'groupchat')
         channel.on({
             direction : 'out',
             event     : 'message',
-            session   : function(s) { return s.name == account; },
+            account   : account,
             stanza    : function(s) { return JID(s.@to).address == address; }
-            }, function(message) { gotDataFromXMPP(message.stanza); });
-
-    channel.on({
-        event     : 'iq',
-        direction : 'in',
-        session   : function(s) { return s.name == account; },
-        stanza    : function(s) { return JID(s.@from).address == address; }
-    }, function(iq) {
-        gotDataFromXMPP(iq.stanza);
-    });
+        }, function(message) { gotDataFromXMPP(message.stanza); });
 
 
     gotDataFromXMPP(rosterSegment(account, address));
