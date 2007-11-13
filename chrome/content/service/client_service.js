@@ -32,7 +32,8 @@ const loader = Cc['@mozilla.org/moz/jssubscript-loader;1']
     .getService(Ci.mozIJSSubScriptLoader);
 const pref = Cc['@mozilla.org/preferences-service;1']
     .getService(Ci.nsIPrefService)
-    .getBranch('xmpp.');
+    .getBranch('xmpp.')
+    .QueryInterface(Ci.nsIPrefBranch2);
 
 const ns_disco_info = 'http://jabber.org/protocol/disco#info';    
 
@@ -441,19 +442,26 @@ function getStackTrace() {
     return str;
 }
 
-function log(msg) {
-    for each(var target in pref.getCharPref('logTargets').split(',')) {
-        switch(target) {
-        case 'console':
-            Cc[ "@mozilla.org/consoleservice;1" ]
-                .getService(Ci.nsIConsoleService)
-                .logStringMessage('XMPP ' + msg);
-            break;
-        case 'sysconsole':
-            dump('XMPP ' + msg + '\n');
-            break;
-        }
+function defineLogger(strategy) {
+    const srvConsole = Cc['@mozilla.org/consoleservice;1']
+        .getService(Ci.nsIConsoleService);
+
+    switch(strategy) {
+    case 'console':
+        log = function(msg) { srvConsole.logStringMessage('XMPP ' + msg); }
+        break;
+    case 'sysconsole':
+        log = function(msg) { dump('XMPP ' + msg + '\n'); }
+        break;
+    default:
+        log = function(msg) {}
     }
+}
+
+function log(msg) {
+    // this is dynamically redefined by defineLogger(), called once
+    // during initialization and then whenever the xmpp.logTarget
+    // pref changes.
 }
 
 function isMUCPresence(domStanza) {
@@ -524,3 +532,24 @@ function asDOM(object) {
     
     return element;
 }
+
+
+// INITIALIZATION
+// ----------------------------------------------------------------------
+
+pref.addObserver('', {
+    observe: function(subject, topic, data) {
+        if(topic != 'nsPref:changed')
+            return;
+        
+        switch(data) {
+        case 'logTarget':
+            defineLogger(pref.getCharPref('logTarget'));
+            break;
+        default:
+        }
+     }
+}, false);
+
+defineLogger(pref.getCharPref('logTarget'));
+
