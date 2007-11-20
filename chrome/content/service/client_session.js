@@ -104,8 +104,8 @@ function init() {
                 return;
 
             var e = (uri == 'jabber:client' ?
-                     session._doc.createElement(localName) :
-                     session._doc.createElementNS(uri, localName))
+                     session._doc.createElement(qName) :
+                     session._doc.createElementNS(uri, qName))
             for(var i=0; i<attributes.length; i++)
                 e.setAttribute(attributes.getQName(i),
                                attributes.getValue(i));
