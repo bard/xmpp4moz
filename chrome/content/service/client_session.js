@@ -263,9 +263,6 @@ function _element(direction, domStanza, replyObserver) {
         // will already have a meta element, so normalize it first by
         // stripping it.
         var cleanStanza = stripMeta(domStanza);
-        var data = serialize(domStanza);
-
-        this._data('in', data);
 
         cleanStanza.appendChild(
             cleanStanza.ownerDocument.importNode(meta, true));
@@ -284,7 +281,6 @@ function _element(direction, domStanza, replyObserver) {
             cleanStanza.ownerDocument.importNode(meta, true));
         this.notifyObservers(cleanStanza, 'stanza-' + direction, this.name);
 
-        this._data('out', data);
         break;
     }
 }

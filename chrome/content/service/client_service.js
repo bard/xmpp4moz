@@ -181,6 +181,16 @@ function _openUserSession(jid, transport, streamObserver) {
             if(topic == 'data-out' && transport.isConnected())
                 transport.write(asString(subject));
 
+            if(topic == 'stanza-in')
+                log('{' + session.name + ',' + topic + '}    ' + serialize(subject));
+
+            if(topic == 'stanza-out')
+                let(data = serialize(stripMeta(subject))) {
+                    log('{' + session.name + ',' + topic + '}    ' + data);
+                    if(transport.isConnected())
+                        transport.write(serialize(stripMeta(subject)));
+                }
+
             if(topic == 'stream-in' && asString(subject) == 'open' && streamObserver)
                 streamObserver.observe(subject, topic, data);
             
@@ -355,6 +365,21 @@ function removeFeature(discoInfoFeature) {
 
 // UTILITIES
 // ----------------------------------------------------------------------
+
+function serialize(element) {
+    var _ = arguments.callee;
+    _.serializer = _.serializer ||
+        Cc['@mozilla.org/xmlextras/xmlserializer;1'].getService(Ci.nsIDOMSerializer);
+    return _.serializer.serializeToString(element);
+}
+
+function stripMeta(domStanza) {
+    var outDomStanza = domStanza.cloneNode(true);
+    var metas = outDomStanza.getElementsByTagNameNS('http://hyperstruct.net/xmpp4moz', 'meta');
+    for(var i=0; i<metas.length; i++)
+        outDomStanza.removeChild(metas[i]);
+    return outDomStanza;
+}
 
 function q() {
     return new Query();
