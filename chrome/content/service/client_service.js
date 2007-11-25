@@ -353,29 +353,6 @@ function removeFeature(discoInfoFeature) {
 }
 
 
-// INTERNALS
-// ----------------------------------------------------------------------
-
-function arrayOfObjectsToEnumerator(array) {
-    var i=0;
-
-    var enumerator = {
-        getNext: function() {
-            var object = array[i++];
-            var prop = Cc['@mozilla.org/properties;1'].createInstance(Ci.nsIProperties);
-            for(var name in object) 
-                prop.set(name, xpcomize(object[name]))
-            return prop
-        },
-
-        hasMoreElements: function() {
-            return i < array.length;
-        }
-    }
-    return enumerator;
-}
-
-
 // UTILITIES
 // ----------------------------------------------------------------------
 
