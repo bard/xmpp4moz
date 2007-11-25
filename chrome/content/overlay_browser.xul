@@ -61,7 +61,8 @@
   <toolbarpalette id="BrowserToolbarPalette">
     <toolbarbutton id="xmpp-button"
                    class="toolbarbutton-1 chromeclass-toolbar-additional"
-                   label="SamePlace"
+                   label="SP"
+                   tooltiptext="SamePlace"
                    availability="unavailable">
     </toolbarbutton>
   </toolbarpalette>

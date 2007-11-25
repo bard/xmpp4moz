@@ -61,26 +61,9 @@
   <toolbarpalette id="MailToolbarPalette">
     <toolbarbutton id="xmpp-button"
                    class="toolbarbutton-1 chromeclass-toolbar-additional"
-                   type="menu-button"
-                   label="Jabber"
-                   availability="unavailable"
-                   oncommand="if(event.target != this)
-                              xmpp4moz.selectedAccount(event);">
-      <menupopup id="xmpp-popup-accounts-secondary">
-        <menuseparator/>
-        
-        <menu id="xmpp-menu-set-status"
-              label="Set Status" accesskey="S"
-              oncommand="xmpp4moz.requestedChangeStatus(event);
-                         event.stopPropagation();">
-          <menupopup>
-            <menuitem class="menuitem-iconic" role="online" label="Online" value="available"/>
-            <menuitem class="menuitem-iconic" role="away" label="Away" value="away"/>
-            <menuitem class="menuitem-iconic" role="dnd" label="Busy" value="dnd"/>
-            <menuitem class="menuitem-iconic" role="offline" label="Offline" value="unavailable"/>
-          </menupopup>
-        </menu>
-      </menupopup>
+                   label="SP"
+                   tooltiptext="SamePlace"
+                   availability="unavailable">
     </toolbarbutton>
   </toolbarpalette>
 
