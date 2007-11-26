@@ -11,8 +11,6 @@ interface nsISimpleEnumerator;
 [scriptable, uuid(6dd44497-a4d9-4590-a629-5116a30b54b3)]
 interface nsIXMPPClientService: nsISupports
 {
-    void reload();
-
     nsIXMPPClientSession open(in string accountJid,
                               in nsIXMPPTransport transport,
                               in nsIObserver streamObserver);

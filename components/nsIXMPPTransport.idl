@@ -17,8 +17,6 @@ interface nsIXMPPTransport: nsISupports
 
     void asyncRead(in nsIStreamListener listener);
 
-    void reload();
-
     void connect();
 
     void disconnect();

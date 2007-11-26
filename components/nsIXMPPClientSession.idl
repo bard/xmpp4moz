@@ -9,8 +9,6 @@ interface nsIObserver;
 [scriptable, uuid(0fa2417d-60a7-4d53-ba9a-b63cfbee96a4)]
 interface nsIXMPPClientSession: nsIStreamListener
 {
-    void reload();
-
     void open(in string hostName);
 
     void close();
