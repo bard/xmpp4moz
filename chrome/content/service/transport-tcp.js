@@ -39,7 +39,8 @@ var srvIO = Cc['@mozilla.org/network/io-service;1']
 // INITIALIZATION
 // ----------------------------------------------------------------------
 
-function init(host, port, ssl) {
+function init(streamHost, host, port, ssl) {
+    this._streamHost      = streamHost;
     this._host            = host;
     this._port            = port;
     this._ssl             = ssl;
@@ -95,6 +96,7 @@ function asyncRead(listener) {
 }
 
 function disconnect() {
+    this.write('</stream>');
     this.onClose();
 }
 
@@ -128,6 +130,13 @@ function notifyObservers(subject, topic, data) {
 
 function onConnect() {
     this._connected = true;
+    const STREAM_PROLOGUE =
+    '<?xml version="1.0"?>' +
+    '<stream:stream xmlns="jabber:client" ' +
+    'xmlns:stream="http://etherx.jabber.org/streams" ' +
+    'to="<SERVER>">';
+
+    this.write(STREAM_PROLOGUE.replace('<SERVER>', this._streamHost));
     this.notifyObservers(xpWrapped('stub'), xpWrapped('start'), null);
     this.startKeepAlive();
 }

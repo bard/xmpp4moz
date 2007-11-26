@@ -49,25 +49,13 @@ var sessions = {
     _list: {},
 
     activated: function(session) {
-        var existingSession;
-        
-        for(var i=0, l=this._list.length; i<l; i++) 
-            if(this._list[i].name == session.name) {
-                existingSession = this._list[i];
-                break;
-            }
-
-        if(this._list[session.name] &&
-           this._list[session.name].isOpen())
-            this._list[session.name].close();
-            
+        if(this._list[session.name])
+            throw new Error('Session already in session list. (' + session.name + ')');
         this._list[session.name] = session;
     },
 
     closed: function(thing) {
-        var session = (typeof(thing) == 'string' ?
-                       this.get(thing) : thing);
-
+        var session = (typeof(thing) == 'string' ? this.get(thing) : thing);
         delete this._list[session.name];
     },
 
@@ -98,120 +86,94 @@ let(module = {}) {
 
 function isUp(jid) {
     var session = sessions.get(jid);
-    return (session && session.isOpen());
+    return (session && session.wrappedJSObject.transport.isConnected());
 }
 
 function open(jid, transport, streamObserver) {
-    var session;
-    // if(requestedStartTLS)
-    //     _openSecuringSession(
-    //         jid, transport, function(transport) {
-    //             session = _openUserSession(jid, transport, streamObserver);
-    //             sessions.activated(session);
-    //         });
-    // else {
-    session = _openUserSession(jid, transport, streamObserver);
-    sessions.activated(session);
-    // }
-}
-
-function _openSecuringSession(jid, transport, continuation) {
-    var session = Cc['@hyperstruct.net/xmpp4moz/xmppsession;1']
-        .createInstance(Ci.nsIXMPPClientSession);
-
-    var sessionObserver = {};
-    var transportObserver = {};
-
-    session.addObserver(sessionObserver, null, false);
-    transport.addObserver(transportObserver, null, false);
-
-    session.removeObserver(sessionObserver, null);
-    transport.removeObserver(transportObserver, null);
-    continuation(transport);
-}
-
-function _openUserSession(jid, transport, streamObserver) {
-    var session = Cc['@hyperstruct.net/xmpp4moz/xmppsession;1']
+    var session = sessions.get(jid);
+    if(session)
+        return session;
+    
+    session = Cc['@hyperstruct.net/xmpp4moz/xmppsession;1']
         .createInstance(Ci.nsIXMPPClientSession);
     session.setName(jid);
 
-    var transportObserver = {
-        observe: function(subject, topic, data) {
-            switch(topic) {
-                case 'start':
-                log('{' + session.name + ',transport-out}    start');
-                service.notifyObservers(xpcomize('start'), 'transport-out', session.name);
-                session.open(JID(jid).hostname);
-                break;
-                case 'stop':
-                log('{' + session.name + ',transport-out}    stop');
-                service.notifyObservers(xpcomize('stop'), 'transport-out', session.name);
+    var transportObserver = { observe: function(subject, topic, data) {
+        switch(topic) {
+        case 'start':
+            log('{' + session.name + ',transport-out}    start');
+            service.notifyObservers(xpcomize('start'), 'transport-out', session.name);
+            service.notifyObservers(xpcomize('open'), 'stream-out', session.name);
+            break;
+        case 'stop':
+            log('{' + session.name + ',transport-out}    stop');
 
-                // For unexpected disconnections, we still need to
-                // reflect the fact that we are no longer available.
-                //
-                // This has drawbacks: first, only those who listen to
-                // transport events and then poll the cache will know,
-                // because there is no corresponding event sent on the
-                // bus; second, it will override the regular
-                // unavailable presence sent before an intentional
-                // disconnection.
+            // Synthesize events
 
-                cache.receive(asDOM(<presence type="unavailable">
-                                    <meta xmlns="http://hyperstruct.net/xmpp4moz"
-                                    account={session.name} direction="out"/>
-                                    </presence>));
-                 
-                if(session.isOpen()) 
-                    session.close();
-
-                sessions.closed(session);
-                break;
+            var stanzas = cache.all(q()
+                                    .event('presence')
+                                    .account(session.name)
+                                    .compile());
+            for(var i=0; i<stanzas.snapshotLength; i++) {
+                var inverse = syntheticClone(stanzas.snapshotItem(i));
+                inverse.setAttribute('type', 'unavailable');
+                
+                if(inverse.getElementsByTagNameNS('http://hyperstruct.net/xmpp4moz', 'meta')[0].getAttribute('direction') == 'in')
+                    session.receive(inverse);
+                else
+                    cache.receive(inverse);
             }
+        
+            service.notifyObservers(xpcomize('close'), 'stream-out', session.name);
+            service.notifyObservers(xpcomize('stop'), 'transport-out', session.name);
+            
+            sessions.closed(session);
+            break;
+        default:
+            dump('WARNING - unexpected transport event -- ' + topic + '\n');
         }
-    };
-
+    } };
+    
     var service = this;
     var sessionObserver = {
         observe: function(subject, topic, data) {
+
+            // Log
+
             if(topic == 'data-in' || topic == 'data-out' ||
                topic == 'stream-in' || topic == 'stream-out')
                 log('{' + session.name + ',' + topic + '}    ' + asString(subject));
 
-            if(topic == 'data-out' && transport.isConnected())
-                transport.write(asString(subject));
+            if(topic == 'stanza-out' || topic == 'stanza-in')
+                log('{' + session.name + ',' + topic + '}    ' + serialize(stripMeta(subject)));
 
-            if(topic == 'stanza-in')
-                log('{' + session.name + ',' + topic + '}    ' + serialize(subject));
+            // Deliver data to physical transport
 
-            if(topic == 'stanza-out')
-                let(data = serialize(stripMeta(subject))) {
-                    log('{' + session.name + ',' + topic + '}    ' + data);
-                    if(transport.isConnected())
-                        transport.write(serialize(stripMeta(subject)));
+            if(topic == 'stanza-out' && transport.isConnected())
+                transport.write(serialize(stripMeta(subject)));
+
+            // React to stream open/close
+            
+            if(topic == 'stream-in')
+                switch(asString(subject)) {
+                case 'open':
+                    if(streamObserver)
+                        streamObserver.observe(subject, topic, data);
+                    break;
+                case 'close':
+                    transport.disconnect();
+                    break;
                 }
 
-            if(topic == 'stream-in' && asString(subject) == 'open' && streamObserver)
-                streamObserver.observe(subject, topic, data);
+            // Submit data to cache (which will decide what to keep
+            // and what to throw away)
             
-            if(topic == 'stream-in' && asString(subject) == 'close') 
-                if(session.isOpen()) 
-                    session.close();
-
-            if(topic == 'stanza-in' && subject.nodeName == 'presence')
-                cache.receive(subject);
-
-            if(topic == 'stanza-out' && subject.nodeName == 'presence' &&
-               (subject.getAttribute('type') == undefined ||
-                subject.getAttribute('type') == 'unavailable'))
-                cache.receive(subject);
-
-            if(topic == 'stanza-in' &&
-               subject.nodeName == 'iq' &&
-               subject.getElementsByTagName('query').length > 0)
+            if(topic == 'stanza-in' || topic == 'stanza-out')
                 cache.receive(subject);
 
             service.notifyObservers(subject, topic, data);
+
+            // Synthesize some events for consistency
 
             // When an unavailable presence with a muc#user payload
             // comes in, that might be due to us exiting a room.  So
@@ -265,35 +227,6 @@ function _openUserSession(jid, transport, streamObserver) {
                     session.send(asDOM(stanza), null);
                 }
             }
-
-            
-            if(topic == 'stream-out' && asString(subject) == 'close') {
-                let(stanzas = cache.all(q()
-                                        .event('presence')
-                                        .account(data)
-                                        .direction('in')
-                                        .compile())) {
-                    for(var i=0; i<stanzas.snapshotLength; i++) {
-                        var inverse = syntheticClone(stanzas.snapshotItem(i));
-                        inverse.setAttribute('type', 'unavailable');
-                        session.receive(inverse);
-                    }
-                }
-
-                let(stanzas = cache.all(q()
-                                        .event('presence')
-                                        .direction('out')
-                                        .account(data)
-                                        .compile())) {
-                    for(var i=0; i<stanzas.snapshotLength; i++) {
-                        var inverse = syntheticClone(stanzas.snapshotItem(i));
-                        inverse.setAttribute('type', 'unavailable');
-                        cache.receive(inverse);
-                    }
-                } 
-
-                transport.disconnect();
-            }
         }
     }
 
@@ -308,20 +241,19 @@ function _openUserSession(jid, transport, streamObserver) {
               </iq>));
 
     session.addObserver(sessionObserver, null, false);
-    transport.addObserver(transportObserver, null, false);
 
-    if(transport.isConnected()) 
-        session.open(JID(jid).hostname);
-    else {
-        transport.asyncRead(session);
-        transport.connect();
-    }
+    transport.addObserver(transportObserver, null, false);
+    session.wrappedJSObject.transport = transport;
+
+    transport.asyncRead(session);
+    transport.connect();
+    sessions.activated(session);
 
     return session;
 }
 
 function close(jid) {
-    sessions.get(jid).close();
+    sessions.get(jid).wrappedJSObject.transport.disconnect();
 }
 
 function send(sessionName, element, observer) {
@@ -348,10 +280,6 @@ function removeObserver(observer) {
     var index = observers.indexOf(observer);
     if(index != -1) 
         observers.splice(index, 1);
-}
-
-function getSession(jid) {
-    return sessions.get(jid);
 }
 
 function addFeature(discoInfoFeature) {
@@ -534,6 +462,39 @@ function asDOM(object) {
     
     return element;
 }
+
+
+// SNIPPETS
+// ----------------------------------------------------------------------
+
+// function open(jid, transport, streamObserver) {
+//     var session;
+//     // if(requestedStartTLS)
+//     //     _openSecuringSession(
+//     //         jid, transport, function(transport) {
+//     //             session = _openUserSession(jid, transport, streamObserver);
+//     //             sessions.activated(session);
+//     //         });
+//     // else {
+//     session = _openUserSession(jid, transport, streamObserver);
+//     sessions.activated(session);
+//     // }
+// }
+
+// function _openSecuringSession(jid, transport, continuation) {
+//     var session = Cc['@hyperstruct.net/xmpp4moz/xmppsession;1']
+//         .createInstance(Ci.nsIXMPPClientSession);
+
+//     var sessionObserver = {};
+//     var transportObserver = {};
+
+//     session.addObserver(sessionObserver, null, false);
+//     transport.addObserver(transportObserver, null, false);
+
+//     session.removeObserver(sessionObserver, null);
+//     transport.removeObserver(transportObserver, null);
+//     continuation(transport);
+// }
 
 
 // INITIALIZATION

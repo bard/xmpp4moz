@@ -267,7 +267,8 @@ var bookmarkRules = {
 var rosterRules = {
     appliesTo: function(element) {
         return (element.nodeName == 'iq' &&
-                element.getElementsByTagNameNS(ns_roster, 'query').length > 0);
+                element.getElementsByTagNameNS(ns_roster, 'query').length > 0 &&
+                element.getElementsByTagNameNS(ns_x4m, 'meta')[0].getAttribute('direction') == 'in');
     },
 
     doApply: function(stanza, cache) {

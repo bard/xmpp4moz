@@ -315,7 +315,7 @@ function open(jid, opts, continuation) {
 
     var transport = Cc['@hyperstruct.net/xmpp4moz/xmpptransport;1?type=tcp']
         .createInstance(Ci.nsIXMPPTransport);
-    transport.init(connectionHost, connectionPort, ssl);
+    transport.init(JID(jid).hostname, connectionHost, connectionPort, ssl);
 
     service.open(jid, transport, streamReplyObserver);
 }

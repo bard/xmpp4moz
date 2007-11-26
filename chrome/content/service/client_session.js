@@ -45,14 +45,6 @@ const Cu = Components.utils;
 const loader = Cc['@mozilla.org/moz/jssubscript-loader;1']
     .getService(Ci.mozIJSSubScriptLoader);
 
-const STREAM_PROLOGUE =
-    '<?xml version="1.0"?>' +
-    '<stream:stream xmlns="jabber:client" ' +
-    'xmlns:stream="http://etherx.jabber.org/streams" ' +
-    'to="<SERVER>">';
-const STREAM_EPILOGUE =
-    '</stream>';
-
 
 // INITIALIZATION
 // ----------------------------------------------------------------------
@@ -167,27 +159,12 @@ function setName(string) {
 // PUBLIC INTERFACE - SESSION MANAGEMENT AND DATA EXCHANGE
 // ----------------------------------------------------------------------
 
-// XXX should it really be the session's responsibility to manage the
-// stream?  A separate stream handler is probably a better choice, and
-// would make uncommon streams (e.g. http-binding) transparent to the
-// session.
-
 function open(server) {
-    if(this._isOpen)
-        // XXX replace with XPCOM exception
-        throw new Error('Session already opened.');
-
-    this._data('out', STREAM_PROLOGUE.replace('<SERVER>', server));
-    this._stream('out', 'open');
+    throw new Error('Deprecated!');
 }
 
 function close() {
-    if(!this._isOpen)
-        // XXX replace with XPCOM exception
-        throw new Error('Session already closed.');
-
-    this._stream('out', 'close');
-    this._data('out', STREAM_EPILOGUE);
+    throw new Error('Deprecated!');
 }
 
 function isOpen() {

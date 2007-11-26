@@ -7,7 +7,7 @@ interface nsIObserver;
 [scriptable, uuid(b8a71ae4-8419-4768-9255-3735126f69a9)]
 interface nsIXMPPTransport: nsISupports
 {
-    void init(in string host, in long port, in boolean ssl);
+    void init(in string streamHost, in string host, in long port, in boolean ssl);
 
     boolean write(in AUTF8String data);
 
