@@ -63,96 +63,8 @@ function init(streamHost, host, port, ssl) {
     this.onDataAvailable = this._proxyInfo ?
         this.onDataAvailable_prepareProxy :
         this.onDataAvailable_normalOperation;
-
-
-    var doc = Cc['@mozilla.org/xml/xml-document;1']
-    .createInstance(Ci.nsIDOMXMLDocument);
-    this._parser = Cc['@mozilla.org/saxparser/xmlreader;1']
-    .createInstance(Ci.nsISAXXMLReader);
-    this._parser.parseAsync(null);
-
-    this._parser.errorHandler = {
-        error: function() { },
-        fatalError: function() { },
-        ignorableWarning: function() { },
-        QueryInterface: function(iid) {
-            if(!iid.equals(Ci.nsISupports) &&
-               !iid.equals(Ci.nsISAXErrorHandler))
-                throw Cr.NS_ERROR_NO_INTERFACE;
-            return this;
-        }
-    };
-
-    var _this = this;
-    this._parser.contentHandler = {
-        startDocument: function() {
-            _this.notifyObservers('open', 'stream-in', null);
-        },
-        
-        endDocument: function() {
-            _this.notifyObservers('close', 'stream-in', null);
-        },
-        
-        startElement: function(uri, localName, qName, attributes) {
-            // Filter out.  These are supposed to be local only --
-            // accepting them from outside can cause serious mess.
-            if(uri == 'http://hyperstruct.net/xmpp4moz' && localName == 'meta')
-                return;
-
-            var e = (uri == 'jabber:client' ?
-                     doc.createElement(qName) :
-                     doc.createElementNS(uri, qName))
-            for(var i=0; i<attributes.length; i++)
-                e.setAttribute(attributes.getQName(i),
-                               attributes.getValue(i));
-    
-            if(this._element) {
-                this._element.appendChild(e);
-                this._element = e;
-            }
-            else if(['message', 'iq', 'presence'].indexOf(localName) != -1)
-                this._element = e;
-        },
-        
-        endElement: function(uri, localName, qName) {
-            if(uri == 'http://hyperstruct.net/xmpp4moz' && localName == 'meta')
-                return;
-
-            if(!this._element)
-                return;
-            
-            if(this._element.parentNode) {
-                this._element = this._element.parentNode;
-            } else {
-                this._element.normalize();
-                var e = this._element;
-                this._element = null;
-                _this._session.receive(e);
-            }
-        },
-        
-        characters: function(value) {
-            if(!this._element)
-                return;
-    
-            this._element.appendChild(doc.createTextNode(value));
-        },
-        
-        processingInstruction: function(target, data) {},
-        
-        ignorableWhitespace: function(whitespace) {},
-        
-        startPrefixMapping: function(prefix, uri) {},
-        
-        endPrefixMapping: function(prefix) {},
-    
-        QueryInterface: function(iid) {
-            if(!iid.equals(Ci.nsISupports) &&
-               !iid.equals(Ci.nsISAXContentHandler))
-                throw Cr.NS_ERROR_NO_INTERFACE;
-            return this;
-        }
-    };    
+    this._doc = Cc['@mozilla.org/xml/xml-document;1']
+        .createInstance(Ci.nsIDOMXMLDocument);
 }
 
 
@@ -173,7 +85,7 @@ function write(data) {
     try {
         return this._outstream.writeString(data);
     } catch(e if e.name == 'NS_BASE_STREAM_CLOSED') {
-        this.onClose();
+        this.disconnectedBaseTransport();
     }
 }
 
@@ -200,7 +112,7 @@ function connect() {
 
 function disconnect() {
     this.write(STREAM_EPILOGUE);
-    this.onClose();
+    this.disconnectedBaseTransport();
 }
 
 // XXX implement "topic" and "ownsWeak" parameters as per IDL interface
@@ -231,32 +143,139 @@ function notifyObservers(subject, topic, data) {
 // INTERNALS
 // ----------------------------------------------------------------------
 
-function onConnect() {
+function connectedBaseTransport() {
     this._connected = true;
     this.notifyObservers('start', 'transport', null);
-
-    this.write(STREAM_PROLOGUE.replace('<SERVER>', this._streamHost));
-    this.notifyObservers('open', 'stream-out', null);
-
-    this.startKeepAlive();
+    this.openStream(function() { this.startKeepAlive(); });
 }
 
-function onClose() {
+function disconnectedBaseTransport() {
     if(!this._connected)
         return;
 
     this._instream.close();
     this._outstream.close();
-    this._keepAliveTimer.cancel();
     this._connected = false;
     this.notifyObservers('stop', 'transport', null);
 }
+
+function openedIncomingStream() {
+    this.notifyObservers('open', 'stream-in', null);
+}
+
+function closedIncomingStream() {
+    this.stopKeepAlive();
+    this.notifyObservers('close', 'stream-in', null);    
+}
+
+function receivedElement(element) {
+    this._session.receive(element);
+}
+
+function openStream(continuation) {
+    this._parser = Cc['@mozilla.org/saxparser/xmlreader;1']
+        .createInstance(Ci.nsISAXXMLReader);
+    this._parser.parseAsync(null);
+
+    this._parser.errorHandler = {
+        error: function() { },
+        fatalError: function() { },
+        ignorableWarning: function() { },
+        QueryInterface: function(iid) {
+            if(!iid.equals(Ci.nsISupports) &&
+               !iid.equals(Ci.nsISAXErrorHandler))
+                throw Cr.NS_ERROR_NO_INTERFACE;
+            return this;
+        }
+    };
+
+    var transport = this, doc = this._doc;
+
+    this._parser.contentHandler = {
+        startDocument: function() {
+            transport.openedIncomingStream();
+        },
+        
+        endDocument: function() {
+            transport.closedIncomingStream();
+        },
+        
+        startElement: function(uri, localName, qName, attributes) {
+            // Filter out.  These are supposed to be local only --
+            // accepting them from outside can cause serious mess.
+            // Should probably be filtered by session.
+            if(uri == 'http://hyperstruct.net/xmpp4moz' && localName == 'meta')
+                return;
+
+            var e = (uri == 'jabber:client' ?
+                     doc.createElement(qName) :
+                     doc.createElementNS(uri, qName))
+            for(var i=0; i<attributes.length; i++)
+                e.setAttribute(attributes.getQName(i),
+                               attributes.getValue(i));
+    
+            if(this._element) {
+                this._element.appendChild(e);
+                this._element = e;
+            }
+            else if(['message', 'iq', 'presence'].indexOf(localName) != -1)
+                this._element = e;
+            else
+                dump('--- xmpp4moz: started non-stanza element: ' + localName + '\n');
+        },
+        
+        endElement: function(uri, localName, qName) {
+            if(!this._element)
+                return;
+            
+            if(this._element.parentNode) {
+                this._element = this._element.parentNode;
+            } else {
+                this._element.normalize();
+                transport.receivedElement(this._element);
+                this._element = null;
+            }
+        },
+        
+        characters: function(value) {
+            if(!this._element)
+                return;
+    
+            this._element.appendChild(doc.createTextNode(value));
+        },
+        
+        processingInstruction: function(target, data) {},
+        
+        ignorableWhitespace: function(whitespace) {},
+        
+        startPrefixMapping: function(prefix, uri) {},
+        
+        endPrefixMapping: function(prefix) {},
+    
+        QueryInterface: function(iid) {
+            if(!iid.equals(Ci.nsISupports) &&
+               !iid.equals(Ci.nsISAXContentHandler))
+                throw Cr.NS_ERROR_NO_INTERFACE;
+            return this;
+        }
+    };
+    
+    this.write(STREAM_PROLOGUE.replace('<SERVER>', this._streamHost));
+    this.notifyObservers('open', 'stream-out', null);
+    continuation.call(this);
+}
+
+
 
 function startKeepAlive() {
     var transport = this;
     this._keepAliveTimer.initWithCallback({
         notify: function(timer) { transport.write(' '); }
     }, 30000, Ci.nsITimer.TYPE_REPEATING_SLACK);
+}
+
+function stopKeepAlive() {
+    this._keepAliveTimer.cancel();
 }
 
 function serialize(element) {
@@ -297,7 +316,7 @@ function onTransportStatus(transport, status, progress, progressMax) {
         if(this._proxyInfo) {
             this.write('CONNECT ' + this._host + ':' + this._port + ' HTTP/1.0\r\n\r\n');
         } else {
-            this.onConnect();
+            this.connectedBaseTransport();
         }
         break;
     }
@@ -316,7 +335,7 @@ function onStopRequest(request, context, status) {
     if(status != 0)
         dump('Error! ' + status);
     
-    this.onClose();
+    this.disconnectedBaseTransport();
 }
 
 // nsIStreamListener
@@ -331,7 +350,7 @@ function onDataAvailable_prepareProxy(request, context, inputStream, offset, cou
             this._socketTransport.securityInfo.QueryInterface(Ci.nsISSLSocketControl);
             this._socketTransport.securityInfo.proxyStartSSL();
         }
-        this.onConnect();
+        this.connectedBaseTransport();
     } else {
         throw new Error('proxy negotiation failed.');
     }
