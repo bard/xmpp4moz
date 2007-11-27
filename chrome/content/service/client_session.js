@@ -21,20 +21,6 @@
  */
 
 
-/**
- * The session component sits between the network and the XMPP
- * service, mediating exchange of XMPP stanzas and doing some
- * bookkeeping in the meanwhile, such as stamping outgoing stanzas
- * with unique IDs and remembering what handler to run when a reply to
- * a specific stanza is received.
- *
- * Input from the network is expected to be fed to the receive()
- * method.  It resurfaces in session and can be listened through an
- * observer, watching for the 'data-out' topic.
- *
- */
-
-
 // GLOBAL DEFINITIONS
 // ----------------------------------------------------------------------
 
@@ -49,110 +35,16 @@ const loader = Cc['@mozilla.org/moz/jssubscript-loader;1']
 // INITIALIZATION
 // ----------------------------------------------------------------------
 
-function init() {
+function init(name) {
     this._isOpen = false;
     this._idCounter = 1000;
     this._pending = {};
-    this._observers = [];
-    this._buffer = '';
+    this._observer = null;
+    this._name = name;
 
     this.__defineGetter__('name', function() {
         return this._name;
     });
-
-    this._doc = Cc['@mozilla.org/xml/xml-document;1']
-    .createInstance(Ci.nsIDOMXMLDocument);
-
-    this._parser = Cc['@mozilla.org/saxparser/xmlreader;1']
-    .createInstance(Ci.nsISAXXMLReader);
-    this._parser.parseAsync(null);
-
-    this._parser.errorHandler = {
-        error: function() { },
-        fatalError: function() { },
-        ignorableWarning: function() { },
-        QueryInterface: function(iid) {
-            if(!iid.equals(Ci.nsISupports) &&
-               !iid.equals(Ci.nsISAXErrorHandler))
-                throw Cr.NS_ERROR_NO_INTERFACE;
-            return this;
-        }
-    };
-
-    var session = this;
-    this._parser.contentHandler = {
-        startDocument: function() {
-            session._stream('in', 'open');
-        },
-        
-        endDocument: function() {
-            session._stream('in', 'close');
-        },
-        
-        startElement: function(uri, localName, qName, attributes) {
-            // Filter out.  These are supposed to be local only --
-            // accepting them from outside can cause serious mess.
-            if(uri == 'http://hyperstruct.net/xmpp4moz' && localName == 'meta')
-                return;
-
-            var e = (uri == 'jabber:client' ?
-                     session._doc.createElement(qName) :
-                     session._doc.createElementNS(uri, qName))
-            for(var i=0; i<attributes.length; i++)
-                e.setAttribute(attributes.getQName(i),
-                               attributes.getValue(i));
-    
-            if(this._element) {
-                this._element.appendChild(e);
-                this._element = e;
-            }
-            else if(['message', 'iq', 'presence'].indexOf(localName) != -1)
-                this._element = e;
-        },
-        
-        endElement: function(uri, localName, qName) {
-            if(uri == 'http://hyperstruct.net/xmpp4moz' && localName == 'meta')
-                return;
-
-            if(!this._element)
-                return;
-            
-            if(this._element.parentNode) {
-                this._element = this._element.parentNode;
-            } else {
-                this._element.normalize();
-                var e = this._element;
-                this._element = null;
-                session._element('in', e);
-            }
-        },
-        
-        characters: function(value) {
-            if(!this._element)
-                return;
-    
-            this._element.appendChild(session._doc.createTextNode(value));
-        },
-        
-        processingInstruction: function(target, data) {},
-        
-        ignorableWhitespace: function(whitespace) {},
-        
-        startPrefixMapping: function(prefix, uri) {},
-        
-        endPrefixMapping: function(prefix) {},
-    
-        QueryInterface: function(iid) {
-            if(!iid.equals(Ci.nsISupports) &&
-               !iid.equals(Ci.nsISAXContentHandler))
-                throw Cr.NS_ERROR_NO_INTERFACE;
-            return this;
-        }
-    };    
-}
-
-function setName(string) {
-    this._name = string;
 }
 
 
@@ -168,121 +60,58 @@ function close() {
 }
 
 function isOpen() {
-    return this._isOpen;
+    throw new Error('Deprecated!');
 }
 
 function send(element, replyObserver) {
-    this._element('out', element, replyObserver);
+    element.setAttribute('id', this._idCounter++);
+
+    if(replyObserver)
+        this._pending[element.getAttribute('id')] = replyObserver;
+    
+    this.notifyObservers(setMeta(element, this.name, 'out'),
+                         'stanza-out',
+                         this.name);
 }
 
 function receive(element) {
-    this._element('in', element);
+    var id = element.getAttribute('id');
+    if(this._pending[id])
+        try {
+            this._pending[id].observe(element, 'reply-in', this.name);
+        } catch(e) {
+            Cu.reportError(e);
+        } finally {
+            delete this._pending[id];
+        }
+
+    this.notifyObservers(setMeta(element, this.name, 'in'),
+                         'stanza-in',
+                         this.name);
 }
 
 function addObserver(observer) {
-    this._observers.push(observer);    
+    if(this._observer)
+        throw new Error('Only one observer allowed.');
+    this._observer = observer;
 }
 
 function removeObserver(observer) {
-    var index = this._observers.indexOf(observer);
-    if(index != -1) 
-        this._observers.splice(index, 1);    
-}
-
-function onStartRequest(request, context) {
-    this._parser.onStartRequest(request, context);
-}
-        
-function onDataAvailable(request, context, inputStream, offset, count) {
-    this._parser.onDataAvailable(request, context, inputStream, offset, count);
-}
-
-function onStopRequest(request, context, status) {
-    this._parser.onStopRequest(request, context, status);
+    if(observer != this._observer)
+        throw new Error('Observer not recognized.');
+    this._observer = null;
 }
 
 
 // INTERNALS
 // ----------------------------------------------------------------------
 
-function _stream(direction, state) {
-    if(direction == 'in' && state == 'open')
-        this._isOpen = true;
-    else if(direction =='out' && state == 'close')
-        this._isOpen = false;
-
-    this.notifyObservers(state, 'stream-' + direction, this.name);
-}
-
-function _data(direction, data) {
-    this.notifyObservers(data, 'data-' + direction, this.name);
-}
-
-function _element(direction, domStanza, replyObserver) {
-    var meta = this._doc.createElementNS('http://hyperstruct.net/xmpp4moz', 'meta');
-    meta.setAttribute('account', this.name);
-    meta.setAttribute('direction', direction);
-    
-    switch(direction) {
-    case 'in':
-        var id = domStanza.getAttribute('id');
-        if(this._pending[id]) {
-            try {
-                this._pending[id].observe(domStanza, 'reply-in', this.name);
-            } catch(e) {
-                Cu.reportError(e);
-            } finally {
-                delete this._pending[id];
-            }
-        }
-
-        // In certain cases (e.g. synthentic presences) the stanza
-        // will already have a meta element, so normalize it first by
-        // stripping it.
-        var cleanStanza = stripMeta(domStanza);
-
-        cleanStanza.appendChild(
-            cleanStanza.ownerDocument.importNode(meta, true));
-        this.notifyObservers(cleanStanza, 'stanza-' + direction, this.name);
-        
-        break;
-    case 'out':
-        domStanza.setAttribute('id', this._idCounter++);
-        if(replyObserver)
-            this._pending[domStanza.getAttribute('id')] = replyObserver;
-
-        var cleanStanza = stripMeta(domStanza);
-        var data = serialize(domStanza);
-
-        cleanStanza.appendChild(
-            cleanStanza.ownerDocument.importNode(meta, true));
-        this.notifyObservers(cleanStanza, 'stanza-' + direction, this.name);
-
-        break;
-    }
-}
-
 function notifyObservers(subject, topic, data) {
-    if(typeof(subject) == 'string') {
-        var xpcString = Cc["@mozilla.org/supports-string;1"]
-            .createInstance(Ci.nsISupportsString);
-        xpcString.data = subject;
-        subject = xpcString;
+    try {
+        this._observer.observe(subject, topic, data);
+    } catch(e) {
+        Cu.reportError(e);
     }
-    
-    for each(var observer in this._observers) 
-        try {
-            observer.observe(subject, topic, data);
-        } catch(e) {
-            Cu.reportError(e);
-        }    
-}
-
-function serialize(element) {
-    var _ = arguments.callee;
-    _.serializer = _.serializer ||
-        Cc['@mozilla.org/xmlextras/xmlserializer;1'].getService(Ci.nsIDOMSerializer);
-    return _.serializer.serializeToString(element);
 }
 
 
@@ -296,6 +125,19 @@ function getStackTrace() {
     }
 
     return str;
+}
+
+function setMeta(domStanza, account, direction) {
+    var outDomStanza = stripMeta(domStanza);
+
+    var meta = domStanza
+        .ownerDocument
+        .createElementNS('http://hyperstruct.net/xmpp4moz', 'meta');
+    meta.setAttribute('account', account);
+    meta.setAttribute('direction', direction);
+    outDomStanza.appendChild(
+        outDomStanza.ownerDocument.importNode(meta, true));
+    return outDomStanza;
 }
 
 function stripMeta(domStanza) {

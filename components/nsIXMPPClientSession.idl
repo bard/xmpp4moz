@@ -1,13 +1,10 @@
 #include "nsISupports.idl"
 #include "nsIObserver.idl"
 #include "nsIXMPPTransport.idl"
-#include "nsIStreamListener.idl"
 #include "nsIDOMElement.idl"
 
-interface nsIObserver;
-
 [scriptable, uuid(0fa2417d-60a7-4d53-ba9a-b63cfbee96a4)]
-interface nsIXMPPClientSession: nsIStreamListener
+interface nsIXMPPClientSession: nsIObserver
 {
     void open(in string hostName);
 
@@ -18,14 +15,14 @@ interface nsIXMPPClientSession: nsIStreamListener
     void send(in nsIDOMElement element, in nsIObserver replyObserver);
 
     void receive(in nsIDOMElement element);
-    
+
  	void addObserver(in nsIObserver anObserver, in string aTopic, in boolean ownsWeak);
 
     void removeObserver(in nsIObserver anObserver, in string aTopic);
 
     void notifyObservers(in nsISupports aSubject, in string aTopic, in wstring someData);
 
-    void setName(in string name);
+    void init(in string name);
 
     attribute string name;
 };  

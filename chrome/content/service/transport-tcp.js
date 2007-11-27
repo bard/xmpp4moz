@@ -35,6 +35,13 @@ var srvProxy = Cc['@mozilla.org/network/protocol-proxy-service;1']
 var srvIO = Cc['@mozilla.org/network/io-service;1']
 .getService(Ci.nsIIOService);
 
+const STREAM_PROLOGUE =
+    '<?xml version="1.0"?>' +
+    '<stream:stream xmlns="jabber:client" ' +
+    'xmlns:stream="http://etherx.jabber.org/streams" ' +
+    'to="<SERVER>">';
+const STREAM_EPILOGUE =
+    '</stream>';
 
 // INITIALIZATION
 // ----------------------------------------------------------------------
@@ -56,11 +63,111 @@ function init(streamHost, host, port, ssl) {
     this.onDataAvailable = this._proxyInfo ?
         this.onDataAvailable_prepareProxy :
         this.onDataAvailable_normalOperation;
+
+
+    var doc = Cc['@mozilla.org/xml/xml-document;1']
+    .createInstance(Ci.nsIDOMXMLDocument);
+    this._parser = Cc['@mozilla.org/saxparser/xmlreader;1']
+    .createInstance(Ci.nsISAXXMLReader);
+    this._parser.parseAsync(null);
+
+    this._parser.errorHandler = {
+        error: function() { },
+        fatalError: function() { },
+        ignorableWarning: function() { },
+        QueryInterface: function(iid) {
+            if(!iid.equals(Ci.nsISupports) &&
+               !iid.equals(Ci.nsISAXErrorHandler))
+                throw Cr.NS_ERROR_NO_INTERFACE;
+            return this;
+        }
+    };
+
+    var _this = this;
+    this._parser.contentHandler = {
+        startDocument: function() {
+            _this.notifyObservers('open', 'stream-in', null);
+        },
+        
+        endDocument: function() {
+            _this.notifyObservers('close', 'stream-in', null);
+        },
+        
+        startElement: function(uri, localName, qName, attributes) {
+            // Filter out.  These are supposed to be local only --
+            // accepting them from outside can cause serious mess.
+            if(uri == 'http://hyperstruct.net/xmpp4moz' && localName == 'meta')
+                return;
+
+            var e = (uri == 'jabber:client' ?
+                     doc.createElement(qName) :
+                     doc.createElementNS(uri, qName))
+            for(var i=0; i<attributes.length; i++)
+                e.setAttribute(attributes.getQName(i),
+                               attributes.getValue(i));
+    
+            if(this._element) {
+                this._element.appendChild(e);
+                this._element = e;
+            }
+            else if(['message', 'iq', 'presence'].indexOf(localName) != -1)
+                this._element = e;
+        },
+        
+        endElement: function(uri, localName, qName) {
+            if(uri == 'http://hyperstruct.net/xmpp4moz' && localName == 'meta')
+                return;
+
+            if(!this._element)
+                return;
+            
+            if(this._element.parentNode) {
+                this._element = this._element.parentNode;
+            } else {
+                this._element.normalize();
+                var e = this._element;
+                this._element = null;
+                _this._session.receive(e);
+            }
+        },
+        
+        characters: function(value) {
+            if(!this._element)
+                return;
+    
+            this._element.appendChild(doc.createTextNode(value));
+        },
+        
+        processingInstruction: function(target, data) {},
+        
+        ignorableWhitespace: function(whitespace) {},
+        
+        startPrefixMapping: function(prefix, uri) {},
+        
+        endPrefixMapping: function(prefix) {},
+    
+        QueryInterface: function(iid) {
+            if(!iid.equals(Ci.nsISupports) &&
+               !iid.equals(Ci.nsISAXContentHandler))
+                throw Cr.NS_ERROR_NO_INTERFACE;
+            return this;
+        }
+    };    
 }
 
 
 // PUBLIC INTERFACE
 // ----------------------------------------------------------------------
+
+function setSession(session) {
+    this._session = session;
+}
+
+function deliver(element) {
+    // XXX metadata could arrive up to here as it might contain info
+    // useful to the transport (so will need to be stripped here)
+    this.write(serialize(element));
+}
 
 function write(data) {
     try {
@@ -91,12 +198,8 @@ function connect() {
     inputPump.asyncRead(this, null);
 }
 
-function asyncRead(listener) {
-    this._listener = listener;
-}
-
 function disconnect() {
-    this.write('</stream>');
+    this.write(STREAM_EPILOGUE);
     this.onClose();
 }
 
@@ -130,14 +233,11 @@ function notifyObservers(subject, topic, data) {
 
 function onConnect() {
     this._connected = true;
-    const STREAM_PROLOGUE =
-    '<?xml version="1.0"?>' +
-    '<stream:stream xmlns="jabber:client" ' +
-    'xmlns:stream="http://etherx.jabber.org/streams" ' +
-    'to="<SERVER>">';
+    this.notifyObservers('start', 'transport', null);
 
     this.write(STREAM_PROLOGUE.replace('<SERVER>', this._streamHost));
-    this.notifyObservers(xpWrapped('stub'), xpWrapped('start'), null);
+    this.notifyObservers('open', 'stream-out', null);
+
     this.startKeepAlive();
 }
 
@@ -149,7 +249,7 @@ function onClose() {
     this._outstream.close();
     this._keepAliveTimer.cancel();
     this._connected = false;
-    this.notifyObservers(xpWrapped('stub'), xpWrapped('stop'), null);
+    this.notifyObservers('stop', 'transport', null);
 }
 
 function startKeepAlive() {
@@ -157,6 +257,13 @@ function startKeepAlive() {
     this._keepAliveTimer.initWithCallback({
         notify: function(timer) { transport.write(' '); }
     }, 30000, Ci.nsITimer.TYPE_REPEATING_SLACK);
+}
+
+function serialize(element) {
+    var _ = arguments.callee;
+    _.serializer = _.serializer ||
+        Cc['@mozilla.org/xmlextras/xmlserializer;1'].getService(Ci.nsIDOMSerializer);
+    return _.serializer.serializeToString(element);
 }
 
 function xpWrapped(string) {
@@ -199,13 +306,13 @@ function onTransportStatus(transport, status, progress, progressMax) {
 // nsIStreamListener
 
 function onStartRequest(request, context) {
-    this._listener.onStartRequest.apply(null, arguments);
+    this._parser.onStartRequest.apply(null, arguments);
 }
 
 // nsIStreamListener
 
 function onStopRequest(request, context, status) {
-    this._listener.onStopRequest.apply(null, arguments);
+    this._parser.onStopRequest.apply(null, arguments);
     if(status != 0)
         dump('Error! ' + status);
     
@@ -237,5 +344,5 @@ function onDataAvailable_prepareProxy(request, context, inputStream, offset, cou
 // nsIStreamListener
 
 function onDataAvailable_normalOperation(request, context, inputStream, offset, count) {
-    this._listener.onDataAvailable.apply(null, arguments);
+    this._parser.onDataAvailable.apply(null, arguments);
 }

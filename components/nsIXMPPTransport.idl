@@ -1,6 +1,7 @@
 #include "nsISupports.idl"
 #include "nsIObserver.idl"
-#include "nsIStreamListener.idl"
+#include "nsIDOMElement.idl"
+#include "nsIXMPPClientSession.idl"
 
 interface nsIObserver;
 
@@ -11,11 +12,13 @@ interface nsIXMPPTransport: nsISupports
 
     boolean write(in AUTF8String data);
 
+    void deliver(in nsIDOMElement element);
+
     boolean isConnected();
 
     boolean isOpen();
 
-    void asyncRead(in nsIStreamListener listener);
+    void setSession(in nsIXMPPClientSession sess);
 
     void connect();
 

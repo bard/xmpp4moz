@@ -96,39 +96,77 @@ function open(jid, transport, streamObserver) {
     
     session = Cc['@hyperstruct.net/xmpp4moz/xmppsession;1']
         .createInstance(Ci.nsIXMPPClientSession);
-    session.setName(jid);
+    session.init(jid);
+
+
 
     var transportObserver = { observe: function(subject, topic, data) {
         switch(topic) {
-        case 'start':
-            log('{' + session.name + ',transport-out}    start');
-            service.notifyObservers(xpcomize('start'), 'transport-out', session.name);
-            service.notifyObservers(xpcomize('open'), 'stream-out', session.name);
-            break;
-        case 'stop':
-            log('{' + session.name + ',transport-out}    stop');
+        case 'stream-in':
+            switch(asString(subject)) {
+            case 'open':
+                log('{' + session.name + ',stream-in}    open');
+                service.notifyObservers(xpcomize('open'), 'stream-in', session.name);
 
-            // Synthesize events
+                if(streamObserver)
+                    streamObserver.observe(subject, topic, data);
 
-            var stanzas = cache.all(q()
-                                    .event('presence')
-                                    .account(session.name)
-                                    .compile());
-            for(var i=0; i<stanzas.snapshotLength; i++) {
-                var inverse = syntheticClone(stanzas.snapshotItem(i));
-                inverse.setAttribute('type', 'unavailable');
-                
-                if(inverse.getElementsByTagNameNS('http://hyperstruct.net/xmpp4moz', 'meta')[0].getAttribute('direction') == 'in')
-                    session.receive(inverse);
-                else
-                    cache.receive(inverse);
+                break;
+            case 'close':
+                log('{' + session.name + ',stream-in}    close');
+                service.notifyObservers(xpcomize('close'), 'stream-in', session.name);
+
+                transport.disconnect();
+
+                break;
             }
-        
-            service.notifyObservers(xpcomize('close'), 'stream-out', session.name);
-            service.notifyObservers(xpcomize('stop'), 'transport-out', session.name);
-            
-            sessions.closed(session);
             break;
+        case 'stream-out':
+            switch(asString(subject)) {
+            case 'open':
+                log('{' + session.name + ',stream-out}    open');
+                service.notifyObservers(xpcomize('open'), 'stream-out', session.name);
+
+                break;
+            case 'close':
+                log('{' + session.name + ',stream-out}    close');
+                service.notifyObservers(xpcomize('close'), 'stream-out', session.name);
+
+                break;
+            }
+            break;
+        case 'transport':
+            switch(asString(subject)) {
+            case 'start':
+                log('{' + session.name + ',transport-out}    start');
+                service.notifyObservers(subject, 'transport-out', session.name);
+                break;
+            case 'stop':
+
+                // Synthesize events
+                
+                var stanzas = cache.all(q()
+                                        .event('presence')
+                                        .account(session.name)
+                                        .compile());
+                for(var i=0; i<stanzas.snapshotLength; i++) {
+                    var inverse = syntheticClone(stanzas.snapshotItem(i));
+                    inverse.setAttribute('type', 'unavailable');
+                    
+                    if(inverse.getElementsByTagNameNS('http://hyperstruct.net/xmpp4moz', 'meta')[0].getAttribute('direction') == 'in')
+                        session.receive(inverse);
+                    else
+                        cache.receive(inverse);
+                }
+                
+                log('{' + session.name + ',transport-out}    stop');
+                service.notifyObservers(xpcomize('stop'), 'transport-out', session.name);
+                sessions.closed(session);
+
+                break;
+            }
+            break;
+
         default:
             dump('WARNING - unexpected transport event -- ' + topic + '\n');
         }
@@ -140,31 +178,14 @@ function open(jid, transport, streamObserver) {
 
             // Log
 
-            if(topic == 'data-in' || topic == 'data-out' ||
-               topic == 'stream-in' || topic == 'stream-out')
-                log('{' + session.name + ',' + topic + '}    ' + asString(subject));
-
             if(topic == 'stanza-out' || topic == 'stanza-in')
                 log('{' + session.name + ',' + topic + '}    ' + serialize(stripMeta(subject)));
 
             // Deliver data to physical transport
 
             if(topic == 'stanza-out' && transport.isConnected())
-                transport.write(serialize(stripMeta(subject)));
-
-            // React to stream open/close
+                transport.deliver(stripMeta(subject));
             
-            if(topic == 'stream-in')
-                switch(asString(subject)) {
-                case 'open':
-                    if(streamObserver)
-                        streamObserver.observe(subject, topic, data);
-                    break;
-                case 'close':
-                    transport.disconnect();
-                    break;
-                }
-
             // Submit data to cache (which will decide what to keep
             // and what to throw away)
             
@@ -245,7 +266,7 @@ function open(jid, transport, streamObserver) {
     transport.addObserver(transportObserver, null, false);
     session.wrappedJSObject.transport = transport;
 
-    transport.asyncRead(session);
+    transport.setSession(session);
     transport.connect();
     sessions.activated(session);
 
