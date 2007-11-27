@@ -536,7 +536,7 @@ function enableContentDocument(panel, account, address, type, createSocket) {
             track_iq     : /^(file|chrome):\/\//.test(panel.currentURI.spec)
         }
 
-        if(stanza.@type == undefined)
+        if(stanza.@type == undefined && stanza.name() == 'message')
             stanza.@type = type;
         else if(caps.set_type)
             true;
