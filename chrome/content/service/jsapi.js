@@ -685,10 +685,15 @@ function _promptAccount(jid) {
 }
 
 function _up(account, continuation) {
-    var jid, password, connectionHost, connectionPort, connectionSecurity;
+    var jid, password, connectionHost, connectionPort, connectionSecurity, connector;
     if(account) {
         jid = account.jid;
         password = account.password;
+
+        connectionSecurity = account.connectionSecurity;
+        connectionHost = account.connectionHost;
+        connectionPort = account.connectionPort;
+        connector = account.connector;
     }
 
     if(!((jid && password) || (jid && this.isUp(jid)))) {
@@ -707,7 +712,8 @@ function _up(account, continuation) {
             password: password,
             connectionHost: connectionHost,
             connectionPort: connectionPort,
-            connectionSecurity: connectionSecurity
+            connectionSecurity: connectionSecurity,
+            connector: connector
         }, function() {
             send(jid,
                  <iq type="get">
