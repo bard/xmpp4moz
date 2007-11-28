@@ -303,11 +303,12 @@ function createChannel(features) {
 // http://dev.hyperstruct.net/xmpp4moz/wiki/DocLocalAPI#XMPP.open
 
 function open(jid, opts, continuation) {
-    var connectionHost = opts.host || JID(jid).hostname;
-    var connectionPort = opts.port || 5223;
-    var ssl = (opts.ssl == undefined ? true : opts.ssl);
+    var password = opts.password;
+    var connectionHost = opts.connectionHost || JID(jid).hostname;
+    var connectionPort = opts.connectionPort || 5223;
+    var ssl = opts.connectionSecurity == 1 || opts.connectionSecurity == undefined;
 
-    var streamReplyObserver = {
+    var onSessionActive = {
         observe: function(subject, topic, data) {
             continuation();
         }
@@ -315,9 +316,9 @@ function open(jid, opts, continuation) {
 
     var transport = Cc['@hyperstruct.net/xmpp4moz/xmpptransport;1?type=tcp']
         .createInstance(Ci.nsIXMPPTransport);
-    transport.init(JID(jid).hostname, connectionHost, connectionPort, ssl);
+    transport.init(jid, password, connectionHost, connectionPort, ssl);
 
-    service.open(jid, transport, streamReplyObserver);
+    service.open(jid, transport, onSessionActive);
 }
 
 // http://dev.hyperstruct.net/xmpp4moz/wiki/DocLocalAPI#XMPP.close
@@ -684,14 +685,10 @@ function _promptAccount(jid) {
 }
 
 function _up(account, continuation) {
-    var jid, password, host, port, ssl;
+    var jid, password, connectionHost, connectionPort, connectionSecurity;
     if(account) {
         jid = account.jid;
         password = account.password;
-        host = account.connectionHost;
-        port = account.connectionPort;
-        ssl = (account.connectionSecurity == undefined ||
-               account.connectionSecurity == 1);
     }
 
     if(!((jid && password) || (jid && this.isUp(jid)))) {
@@ -706,29 +703,22 @@ function _up(account, continuation) {
     if(this.isUp(jid) && continuation)
         continuation(jid);
     else if(jid && password) {
-        open(jid, {host: host, port: port, ssl: ssl},
-             function() {
-                 send(
-                     jid,
-                     <iq to={JID(jid).hostname} type="set">
-                     <query xmlns="jabber:iq:auth">
-                     <username>{JID(jid).username}</username>
-                     <password>{password}</password>
-                     <resource>{JID(jid).resource}</resource>
-                     </query></iq>,
-                     function(reply) {
-                         if(reply.stanza.@type == 'result') {
-                             send(jid,
-                                  <iq type="get">
-                                  <query xmlns="jabber:iq:roster"/>
-                                  </iq>, function() {
-                                      send(jid, <presence/>);
-                                      if(continuation)
-                                          continuation(jid);
-                                  })
-                         }
-                     });
-             });        
+        open(jid, {
+            password: password,
+            connectionHost: connectionHost,
+            connectionPort: connectionPort,
+            connectionSecurity: connectionSecurity
+        }, function() {
+            send(jid,
+                 <iq type="get">
+                 <query xmlns="jabber:iq:roster"/>
+                 </iq>,
+                 function() {
+                     send(jid, <presence/>);
+                     if(continuation)
+                         continuation(jid)
+                 })
+        });
     }
 }
 

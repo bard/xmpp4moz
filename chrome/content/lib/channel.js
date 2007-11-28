@@ -66,7 +66,8 @@ Channel.prototype.receive = function(event) {
 };
 
 Channel.prototype.observe = function(subject, topic, data) {
-    var [_, name, direction] = topic.match(/^(stream|data|stanza|transport)-(in|out)$/);
+    
+    var [_, name, direction] = topic.match(/^(stream|data|stanza|transport|connector)-?(in|out)?$/);
     var account = data.toString();
     
     var event = {
@@ -84,6 +85,7 @@ Channel.prototype.observe = function(subject, topic, data) {
     };
 
     switch(name) {
+    case 'connector':
     case 'transport':
     case 'stream':
         event.state = asString(subject);

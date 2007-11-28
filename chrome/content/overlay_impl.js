@@ -30,7 +30,7 @@ var Cr = Components.results;
 
 var prefBranch = Cc["@mozilla.org/preferences-service;1"]
     .getService(Ci.nsIPrefBranch);
-var prompts = Cc["@mozilla.org/embedcomp/prompt-service;1"]
+var srvPrompt = Cc["@mozilla.org/embedcomp/prompt-service;1"]
     .getService(Ci.nsIPromptService); 
 
 var ns_muc      = 'http://jabber.org/protocol/muc';
@@ -67,95 +67,65 @@ function initOverlay() {
     // Show progress bar when waiting for connection
 
     channel.on({
-        event     : 'stream',
-        direction : 'out',
-        state     : 'open'
+        event: 'connector',
+        state: 'connecting'
     }, function(stream) {
         document
-        .getElementById('xmpp-connecting-account').value = stream.session.name;
+            .getElementById('xmpp-connecting-account').value = stream.session.name;
         document
-        .getElementById('xmpp-status').hidden = false;
+            .getElementById('xmpp-status').hidden = false;
     });
 
     // Hiding progress bar when transport is stopped for any reason
 
     channel.on({
-        event: 'transport',
-        state: 'stop'
-    }, function(transport) {
-        if(document)
-            document.getElementById('xmpp-status').hidden = true;
+        event: 'connector',
+        state: 'disconnected'
+    }, function() {
+        document
+            .getElementById('xmpp-status').hidden = true;
+        updateStatusIndicator();
+    });
+
+    // Hiding progress bar when connector has authenticated
+
+    channel.on({
+        event: 'connector',
+        state: 'active'
+    }, function() {
+        document
+            .getElementById('xmpp-status').hidden = true;
     });
     
-    // Hiding progress bar when stream is closed
+    // Report connection error
 
     channel.on({
-        event: 'stream',
-        state: 'close'
-    }, function(stream) {
-        if(document)
-            document
-        .getElementById('xmpp-status').hidden = true;
-    });
-
-    // Hiding progress bar when authentication is accepted
-
-    channel.on({
-        event     : 'iq',
-        direction : 'out',
-        stanza: function(s) { return s.@type == 'set' && s.ns_auth::query != undefined; }
-    }, function(request) {
-
-        // To know whether authentication was successful or not,
-        // we must track the response iq.  However, we cannot
-        // track by means of a <query xmlns="jabber:iq:auth"/>
-        // because it has none, so we catch the outgoing auth
-        // request instead, note its "id", and register a one-time
-        // reaction to handle the response to it.
+        event: 'connector',
+        state: 'error'
+    }, function(connector) {
+        document
+            .getElementById('xmpp-status').hidden = true;
         
-        var authReaction = channel.on({
-            event  : 'iq', direction: 'in',
-            account: request.account,
-            stanza : function(s) { return s.@id == request.stanza.@id; }
-        }, function(response) {
-            channel.forget(authReaction);
-            
-            document.getElementById('xmpp-status').hidden = true;
-            
-            if(response.stanza.@type == 'error' &&
-               window == Cc["@mozilla.org/appshell/window-mediator;1"]
-               .getService(Ci.nsIWindowMediator)
-               .getMostRecentWindow('navigator:browser')) {
-                var message =
-                    'Error during Jabber authentication: ' +
-                    response.stanza.error.*[0].name().localName.replace(/-/g, ' ') +
-                    ' (' + response.stanza.error.@code + ')';
-                prompts.alert(null, 'Error', message);
-                response.session.close();
-            }
-        });
+        if(window == Cc["@mozilla.org/appshell/window-mediator;1"]
+           .getService(Ci.nsIWindowMediator)
+           .getMostRecentWindow('navigator:browser')) {
+            var message = 'XMPP: Error during authentication.';
+            srvPrompt.alert(null, 'Error', message);
+            // response.stanza.error.*[0].name().localName.replace(/-/g, ' ') +
+            // ' (' + response.stanza.error.@code + ')';
+        }
     });
 
     // Changing availability and show attributes on toolbar button based
     // on a summary of presences of connected accounts.
 
     channel.on({
-        event: 'presence',
-        direction: 'out',
-        stanza: function(s) {
+        event     : 'presence',
+        direction : 'out',
+        stanza    : function(s) {
             return s.@type == undefined && s.ns_muc::x == undefined;
         }
     }, function(presence) {
-        updateStatusIndicator();
-    });
-
-    // Reset main button to unavailable icon when every account is
-    // offline.
-
-    channel.on({
-        event: 'stream',
-        state: 'close'
-    }, function(stream) {
         updateStatusIndicator();
     });
 

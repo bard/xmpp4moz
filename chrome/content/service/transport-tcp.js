@@ -46,13 +46,14 @@ const STREAM_EPILOGUE =
 // INITIALIZATION
 // ----------------------------------------------------------------------
 
-function init(streamHost, host, port, ssl) {
-    this._streamHost      = streamHost;
+function init(jid, password, host, port, ssl) {
+    this._jid             = jid;
+    this._password        = password;
     this._host            = host;
     this._port            = port;
     this._ssl             = ssl;
+
     this._observers       = [];
-    this._connected       = false;
     this._keepAliveTimer  = Cc['@mozilla.org/timer;1'].createInstance(Ci.nsITimer);
     this._proxyInfo       = srvProxy.resolve(
         srvIO.newURI((ssl ? 'https://' : 'http://') + host, null, null), 0);
@@ -90,12 +91,14 @@ function write(data) {
 }
 
 function isConnected() {
-    return this._connected;
+    return ['authenticating', 'active'].indexOf(this._state) != -1;
 }
 
 function connect() {
-    if(this._connected)
+    if(this.isConnected())
         return;
+
+    this.setState('connecting');
 
     var baseOutstream = this._socketTransport.openOutputStream(0,0,0);
     this._outstream = Cc['@mozilla.org/intl/converter-output-stream;1']
@@ -144,32 +147,73 @@ function notifyObservers(subject, topic, data) {
 // ----------------------------------------------------------------------
 
 function connectedBaseTransport() {
-    this._connected = true;
     this.notifyObservers('start', 'transport', null);
+    this.setState('connected');
+
     this.openStream(function() { this.startKeepAlive(); });
 }
 
 function disconnectedBaseTransport() {
-    if(!this._connected)
+    if(!this.isConnected())
         return;
 
-    this._instream.close();
-    this._outstream.close();
-    this._connected = false;
+    // this._instream.close();
+    // this._outstream.close();
+    this._socketTransport.close(0);
+    
     this.notifyObservers('stop', 'transport', null);
+    this.setState('disconnected');
 }
 
 function openedIncomingStream() {
     this.notifyObservers('open', 'stream-in', null);
+    if(JID(this._jid).username)
+        this.authenticate();
+    else
+        this.setState('active');
 }
 
 function closedIncomingStream() {
     this.stopKeepAlive();
+    this.disconnect();
     this.notifyObservers('close', 'stream-in', null);    
 }
 
 function receivedElement(element) {
-    this._session.receive(element);
+    switch(this._state) {
+    case 'authenticating':
+        switch(element.getAttribute('type')) {
+        case 'result':
+            this.setState('active');
+            break;
+        case 'error':
+            this.setState('error');
+            this.disconnect();
+            break;
+        }
+        break;
+    case 'active':
+        this._session.receive(element);
+        break;
+    default:
+        throw new Error('Invalid state. (' + this._state + ')');
+    }
+}
+
+function setState(name) {
+    this._state = name;
+    this.notifyObservers(name, 'connector', null);
+}
+
+function authenticate() {
+    this.setState('authenticating');
+    this.write(<iq type="set" id="auth01">
+               <query xmlns="jabber:iq:auth">
+               <username>{JID(this._jid).username}</username>
+               <resource>{JID(this._jid).resource}</resource>
+               <password>{this._password}</password>
+               </query>
+               </iq>);
 }
 
 function openStream(continuation) {
@@ -260,12 +304,10 @@ function openStream(continuation) {
         }
     };
     
-    this.write(STREAM_PROLOGUE.replace('<SERVER>', this._streamHost));
+    this.write(STREAM_PROLOGUE.replace('<SERVER>', JID(this._jid).hostname));
     this.notifyObservers('open', 'stream-out', null);
     continuation.call(this);
 }
-
-
 
 function startKeepAlive() {
     var transport = this;
@@ -297,6 +339,29 @@ function xpWrapped(string) {
         throw new Error('Not an XPCOM nor a Javascript string. (' + string + ')');
 }
 
+function JID(string) {
+    var memo = arguments.callee.memo || (arguments.callee.memo = {});
+    if(string in memo)
+        return memo[string];
+    var m = string.match(/^(.+?@)?(.+?)(?:\/|$)(.*$)/);
+
+    var jid = {};
+
+    if(m[1])
+        jid.username = m[1].slice(0, -1);
+
+    jid.hostname = m[2];
+    jid.resource = m[3];
+    jid.nick     = m[3];
+    jid.full     = m[3] ? string : null;
+    jid.address  = jid.username ?
+        jid.username + '@' + jid.hostname :
+        jid.hostname;
+
+    memo[string] = jid;
+    return jid;    
+}
+
 function getCurrentThreadTarget() {
     if('@mozilla.org/thread-manager;1' in Cc)
         return Cc['@mozilla.org/thread-manager;1'].getService().currentThread;
@@ -310,6 +375,8 @@ function getCurrentThreadTarget() {
 
 function onTransportStatus(transport, status, progress, progressMax) {
     switch(status) {
+    case Ci.nsISocketTransport.STATUS_CONNECTING_TO:
+        break;
     case Ci.nsISocketTransport.STATUS_CONNECTED_TO:
         // If using a proxy, we'll only be sure about connection when
         // we get a response from the proxy, in onDataAvailable.

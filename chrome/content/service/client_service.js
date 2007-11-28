@@ -89,7 +89,7 @@ function isUp(jid) {
     return (session && session.wrappedJSObject.transport.isConnected());
 }
 
-function open(jid, transport, streamObserver) {
+function open(jid, transport, activationObserver) {
     var session = sessions.get(jid);
     if(session)
         return session;
@@ -98,42 +98,26 @@ function open(jid, transport, streamObserver) {
         .createInstance(Ci.nsIXMPPClientSession);
     session.init(jid);
 
-
-
     var transportObserver = { observe: function(subject, topic, data) {
         switch(topic) {
-        case 'stream-in':
+        case 'connector':
+            log('{' + session.name + ',connector}   ' + asString(subject));
+            service.notifyObservers(subject, topic, session.name);
+
             switch(asString(subject)) {
-            case 'open':
-                log('{' + session.name + ',stream-in}    open');
-                service.notifyObservers(xpcomize('open'), 'stream-in', session.name);
-
-                if(streamObserver)
-                    streamObserver.observe(subject, topic, data);
-
+            case 'active':
+                if(activationObserver)
+                    activationObserver.observe(subject, topic, data);
                 break;
-            case 'close':
-                log('{' + session.name + ',stream-in}    close');
-                service.notifyObservers(xpcomize('close'), 'stream-in', session.name);
-
-                transport.disconnect();
-
+            case 'disconnected':
+                sessions.closed(session);
                 break;
             }
             break;
+        case 'stream-in':
         case 'stream-out':
-            switch(asString(subject)) {
-            case 'open':
-                log('{' + session.name + ',stream-out}    open');
-                service.notifyObservers(xpcomize('open'), 'stream-out', session.name);
-
-                break;
-            case 'close':
-                log('{' + session.name + ',stream-out}    close');
-                service.notifyObservers(xpcomize('close'), 'stream-out', session.name);
-
-                break;
-            }
+            log('legacy - {' + session.name + ',' + topic + '}    ' + asString(subject));
+            service.notifyObservers(subject, topic, session.name);
             break;
         case 'transport':
             switch(asString(subject)) {
