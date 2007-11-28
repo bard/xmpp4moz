@@ -75,6 +75,10 @@ function send(element, replyObserver) {
 }
 
 function receive(element) {
+    this.notifyObservers(setMeta(element, this.name, 'in'),
+                         'stanza-in',
+                         this.name);
+
     var id = element.getAttribute('id');
     if(this._pending[id])
         try {
@@ -84,10 +88,6 @@ function receive(element) {
         } finally {
             delete this._pending[id];
         }
-
-    this.notifyObservers(setMeta(element, this.name, 'in'),
-                         'stanza-in',
-                         this.name);
 }
 
 function addObserver(observer) {
