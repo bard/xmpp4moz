@@ -76,24 +76,6 @@ function setSession(session) {
     this._session = session;
 }
 
-function deliver(element) {
-    // XXX metadata could arrive up to here as it might contain info
-    // useful to the transport (so will need to be stripped here)
-    this.write(serialize(element));
-}
-
-function write(data) {
-    try {
-        return this._outstream.writeString(data);
-    } catch(e if e.name == 'NS_BASE_STREAM_CLOSED') {
-        this.disconnectedBaseTransport();
-    }
-}
-
-function isConnected() {
-    return ['authenticating', 'active'].indexOf(this._state) != -1;
-}
-
 function connect() {
     if(this.isConnected())
         return;
@@ -118,12 +100,20 @@ function disconnect() {
     this.disconnectedBaseTransport();
 }
 
-// XXX implement "topic" and "ownsWeak" parameters as per IDL interface
+function isConnected() {
+    return ['authenticating', 'active'].indexOf(this._state) != -1;
+}
+
+function deliver(element) {
+    // XXX metadata could arrive up to here as it might contain info
+    // useful to the transport (so will need to be stripped here)
+    this.write(serialize(element));
+}
+
 function addObserver(observer) {
     this._observers.push(observer);    
 }
 
-// XXX implement "topic" parameter as per IDL interface
 function removeObserver(observer) {
     var index = this._observers.indexOf(observer);
     if(index != -1) 
@@ -138,7 +128,6 @@ function notifyObservers(subject, topic, data) {
             observer.observe(subject, topic, data);
         } catch(e) {
             Cu.reportError(e);
-            // XXX possibly remove buggy observers
         }
 }
 
@@ -320,11 +309,20 @@ function stopKeepAlive() {
     this._keepAliveTimer.cancel();
 }
 
+function write(data) {
+    try {
+        return this._outstream.writeString(data);
+    } catch(e if e.name == 'NS_BASE_STREAM_CLOSED') {
+        this.disconnectedBaseTransport();
+    }
+}
+
 function serialize(element) {
-    var _ = arguments.callee;
-    _.serializer = _.serializer ||
-        Cc['@mozilla.org/xmlextras/xmlserializer;1'].getService(Ci.nsIDOMSerializer);
-    return _.serializer.serializeToString(element);
+    var serializer = Cc['@mozilla.org/xmlextras/xmlserializer;1'].getService(Ci.nsIDOMSerializer);
+    serialize = function(element) {
+        return serializer.serializeToString(element);
+    };
+    return serialize(element);
 }
 
 function xpWrapped(string) {
