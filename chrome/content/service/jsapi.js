@@ -825,27 +825,29 @@ function getAccountByKey(key) {
 }
 
 function asDOM(object) {
-    var _ = arguments.callee;
-    _.parser = _.parser || Cc['@mozilla.org/xmlextras/domparser;1'].getService(Ci.nsIDOMParser);
+    var parser = Cc['@mozilla.org/xmlextras/domparser;1'].getService(Ci.nsIDOMParser);
 
-    var element;    
-    switch(typeof(object)) {
-    case 'xml':
-        element = _.parser
-        .parseFromString(object.toXMLString(), 'text/xml')
-        .documentElement;
-        break;
-    case 'string':
-        element = _.parser
-        .parseFromString(object, 'text/xml')
-        .documentElement;
-        break;
-    default:
-        // XXX use xpcom exception
-        throw new Error('Argument error. (' + typeof(object) + ')');
-    }
-    
-    return element;
+    asDOM = function(object) {
+        var element;    
+        switch(typeof(object)) {
+        case 'xml':
+            element = parser
+                .parseFromString(object.toXMLString(), 'text/xml')
+                .documentElement;
+            break;
+        case 'string':
+            element = parser
+                .parseFromString(object, 'text/xml')
+                .documentElement;
+            break;
+        default:
+            throw new Error('Argument error. (' + typeof(object) + ')');
+        }
+        
+        return element;
+    };
+
+    return asDOM(object);
 }
 
 
@@ -875,9 +877,9 @@ function getStackTrace() {
 }
 
 function log(msg) {
-    var _ = arguments.callee;
-    _.console = _.console ||
-        Cc['@mozilla.org/consoleservice;1'].getService(Ci.nsIConsoleService);
-
-    _.console.logStringMessage('xmpp4moz: ' + msg);
+    var console = Cc['@mozilla.org/consoleservice;1'].getService(Ci.nsIConsoleService);
+    log = function(msg) {
+        console.logStringMessage('xmpp4moz: ' + msg);
+    }
+    log(msg);
 }
