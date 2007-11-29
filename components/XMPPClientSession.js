@@ -1,7 +1,7 @@
 /* ---------------------------------------------------------------------- */
 /*                      Component specific code                           */
 
-const CLASS_ID = Components.ID('{0fa2417d-60a7-4d53-ba9a-b63cfbee96a4}');
+const CLASS_ID = Components.ID('{1552a874-4e8f-47cd-a9f0-5a87b248e0a8}');
 const CLASS_NAME = 'XMPP Session';
 const CONTRACT_ID = '@hyperstruct.net/xmpp4moz/xmppsession;1';
 const SOURCE = 'chrome://xmpp4moz/content/service/client_session.js';

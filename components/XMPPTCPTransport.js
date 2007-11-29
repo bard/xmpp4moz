@@ -1,7 +1,7 @@
 /* ---------------------------------------------------------------------- */
 /*                      Component specific code                           */
 
-const CLASS_ID = Components.ID('{b8a71ae4-8419-4768-9255-3735126f69a9}');
+const CLASS_ID = Components.ID('{6a51541a-791c-41fa-a32f-29371ea088a9}');
 const CLASS_NAME = 'XMPP Transport (TCP)';
 const CONTRACT_ID = '@hyperstruct.net/xmpp4moz/xmpptransport;1?type=tcp';
 const SOURCE = 'chrome://xmpp4moz/content/service/connector-xmpp_tcp.js';
