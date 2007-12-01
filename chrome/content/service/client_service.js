@@ -106,6 +106,7 @@ function open(jid, transport, activationObserver) {
 
             switch(asString(subject)) {
             case 'active':
+                sessions.activated(session);
                 if(activationObserver)
                     activationObserver.observe(subject, topic, data);
                 break;
@@ -252,7 +253,6 @@ function open(jid, transport, activationObserver) {
 
     transport.setSession(session);
     transport.connect();
-    sessions.activated(session);
 
     return session;
 }
