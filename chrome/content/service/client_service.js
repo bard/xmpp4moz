@@ -168,9 +168,6 @@ function open(jid, transport, activationObserver) {
 
             // Deliver data to physical transport
 
-            if(topic == 'stanza-out' && transport.isConnected())
-                transport.deliver(stripMeta(subject));
-            
             // Submit data to cache (which will decide what to keep
             // and what to throw away)
             
@@ -179,6 +176,9 @@ function open(jid, transport, activationObserver) {
 
             service.notifyObservers(subject, topic, data);
 
+            if(topic == 'stanza-out' && transport.isConnected())
+                transport.deliver(stripMeta(subject));
+            
             // Synthesize some events for consistency
 
             // When an unavailable presence with a muc#user payload
