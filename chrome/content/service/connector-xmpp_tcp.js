@@ -104,7 +104,7 @@ function isConnected() {
     return ['authenticating', 'active'].indexOf(this._state) != -1;
 }
 
-function deliver(element) {
+function send(element) {
     // XXX metadata could arrive up to here as it might contain info
     // useful to the transport (so will need to be stripped here)
     this.write(serialize(element));

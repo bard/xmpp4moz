@@ -177,7 +177,7 @@ function open(jid, transport, activationObserver) {
             service.notifyObservers(subject, topic, data);
 
             if(topic == 'stanza-out' && transport.isConnected())
-                transport.deliver(stripMeta(subject));
+                transport.send(stripMeta(subject));
             
             // Synthesize some events for consistency
 

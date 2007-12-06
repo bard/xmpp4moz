@@ -12,7 +12,7 @@ interface nsIXMPPTransport: nsISupports
 
     boolean write(in AUTF8String data);
 
-    void deliver(in nsIDOMElement element);
+    void send(in nsIDOMElement element);
 
     boolean isConnected();
 
