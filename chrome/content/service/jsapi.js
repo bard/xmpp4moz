@@ -402,7 +402,7 @@ function match(object, template) {
 
 function dom2xml(element) {
     if(!element.__dom2xml_memo)
-        element.__dom2xml_memo = new XML(serializer.serializeToString(element));
+        element.__dom2xml_memo = new XML(serializer.serializeToString(element)).normalize();
     
     return element.__dom2xml_memo;
 }
