@@ -86,10 +86,10 @@ let(module = {}) {
 
 function isUp(jid) {
     var session = sessions.get(jid);
-    return (session && session.wrappedJSObject.transport.isConnected());
+    return (session && session.wrappedJSObject.connector.isConnected());
 }
 
-function open(jid, transport, activationObserver) {
+function open(jid, connector, activationObserver) {
     var session = sessions.get(jid);
     if(session)
         return session;
@@ -98,7 +98,7 @@ function open(jid, transport, activationObserver) {
         .createInstance(Ci.nsIXMPPClientSession);
     session.init(jid);
 
-    var transportObserver = { observe: function(subject, topic, data) {
+    var connectorObserver = { observe: function(subject, topic, data) {
         switch(topic) {
         case 'connector':
             log('{' + session.name + ',connector}   ' + asString(subject));
@@ -153,7 +153,7 @@ function open(jid, transport, activationObserver) {
             break;
 
         default:
-            dump('WARNING - unexpected transport event -- ' + topic + '\n');
+            dump('WARNING - unexpected connector event -- ' + topic + '\n');
         }
     } };
     
@@ -166,8 +166,6 @@ function open(jid, transport, activationObserver) {
             if(topic == 'stanza-out' || topic == 'stanza-in')
                 log('{' + session.name + ',' + topic + '}    ' + serialize(stripMeta(subject)));
 
-            // Deliver data to physical transport
-
             // Submit data to cache (which will decide what to keep
             // and what to throw away)
             
@@ -176,8 +174,8 @@ function open(jid, transport, activationObserver) {
 
             service.notifyObservers(subject, topic, data);
 
-            if(topic == 'stanza-out' && transport.isConnected())
-                transport.send(stripMeta(subject));
+            if(topic == 'stanza-out' && connector.isConnected())
+                connector.send(stripMeta(subject));
             
             // Synthesize some events for consistency
 
@@ -248,17 +246,17 @@ function open(jid, transport, activationObserver) {
 
     session.addObserver(sessionObserver, null, false);
 
-    transport.addObserver(transportObserver, null, false);
-    session.wrappedJSObject.transport = transport;
+    connector.addObserver(connectorObserver, null, false);
+    session.wrappedJSObject.connector = connector;
 
-    transport.setSession(session);
-    transport.connect();
+    connector.setSession(session);
+    connector.connect();
 
     return session;
 }
 
 function close(jid) {
-    sessions.get(jid).wrappedJSObject.transport.disconnect();
+    sessions.get(jid).wrappedJSObject.connector.disconnect();
 }
 
 function send(sessionName, element, observer) {

@@ -1,3 +1,4 @@
+
 #include "nsISupports.idl"
 #include "nsIObserver.idl"
 #include "nsIDOMElement.idl"
@@ -6,7 +7,7 @@
 interface nsIObserver;
 
 [scriptable, uuid(b8a71ae4-8419-4768-9255-3735126f69a9)]
-interface nsIXMPPTransport: nsISupports
+interface nsIXMPPConnector: nsISupports
 {
     void init(in string jid, in string password, in string host, in long port, in boolean ssl);
 

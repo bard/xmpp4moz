@@ -1,6 +1,6 @@
 IDLC=/home/pkg/gecko-sdk/bin/xpidl
 INC=-I. -I/home/pkg/gecko-sdk/idl/
-XPTS=nsIXMPPClientService.xpt nsIXMPPClientSession.xpt nsIXMPPTransport.xpt
+XPTS=nsIXMPPClientService.xpt nsIXMPPClientSession.xpt nsIXMPPConnector.xpt
 
 all: $(XPTS)
 

@@ -314,11 +314,22 @@ function open(jid, opts, continuation) {
         }
     };
 
-    var transport = Cc['@hyperstruct.net/xmpp4moz/xmpptransport;1?type=tcp']
-        .createInstance(Ci.nsIXMPPTransport);
-    transport.init(jid, password, connectionHost, connectionPort, ssl);
-
-    service.open(jid, transport, onSessionActive);
+    var connectorType;
+    if(JID(jid).hostname == 'x4m.localhost')
+        connectorType = 'virtual';
+    else if(JID(jid).hostname.match(/^(.+)\.x4m\.localhost$/)) {
+        connectorType = RegExp.$1;
+    } else {
+        var m = JID(jid).hostname.match(/^(.+)\.x4m\.localhost$/);
+        connectorType = m ? m[1] : 'tcp';
+    }
+        
+    var connector =
+        Cc['@hyperstruct.net/xmpp4moz/connector;1?type=' + connectorType]
+        .createInstance(Ci.nsIXMPPConnector);
+    
+    connector.init(jid, password, connectionHost, connectionPort, ssl);
+    service.open(jid, connector, onSessionActive);
 }
 
 // http://dev.hyperstruct.net/xmpp4moz/wiki/DocLocalAPI#XMPP.close

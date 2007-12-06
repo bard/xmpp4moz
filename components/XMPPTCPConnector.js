@@ -1,11 +1,11 @@
 /* ---------------------------------------------------------------------- */
 /*                      Component specific code                           */
 
-const CLASS_ID = Components.ID('{6a51541a-791c-41fa-a32f-29371ea088a9}');
-const CLASS_NAME = 'XMPP Transport (TCP)';
-const CONTRACT_ID = '@hyperstruct.net/xmpp4moz/xmpptransport;1?type=tcp';
-const SOURCE = 'chrome://xmpp4moz/content/service/connector-xmpp_tcp.js';
-const INTERFACE = Components.interfaces.nsIXMPPTransport;
+const CLASS_ID    = Components.ID('{6a51541a-791c-41fa-a32f-29371ea088a9}');
+const CLASS_NAME  = 'XMPP Connector (TCP)';
+const CONTRACT_ID = '@hyperstruct.net/xmpp4moz/connector;1?type=tcp';
+const SOURCE      = 'chrome://xmpp4moz/content/service/connector-xmpp_tcp.js';
+const INTERFACE   = Components.interfaces.nsIXMPPConnector;
 
 /* ---------------------------------------------------------------------- */
 /*                           Template code                                */

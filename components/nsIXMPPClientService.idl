@@ -3,7 +3,7 @@
 #include "nsISimpleEnumerator.idl"
 #include "nsIDOMElement.idl"
 #include "nsIXMPPClientSession.idl"
-#include "nsIXMPPTransport.idl"
+#include "nsIXMPPConnector.idl"
 
 interface nsIObserver;
 interface nsISimpleEnumerator;
@@ -12,7 +12,7 @@ interface nsISimpleEnumerator;
 interface nsIXMPPClientService: nsISupports
 {
     nsIXMPPClientSession open(in string accountJid,
-                              in nsIXMPPTransport transport,
+                              in nsIXMPPConnector connector,
                               in nsIObserver streamObserver);
 
     void close(in string accountJid);
