@@ -416,21 +416,10 @@ function log(msg) {
 // ----------------------------------------------------------------------
 
 function verify() {
-    var assert = {
-        isNull: function(thing) {
-            if(thing != null)
-                throw new Error('Not a null-equivalent. (' + thing + ')');
-        },
-
-        isEquivalentXML: function(a, b) {
-            compareXML(a, b);
-        },
-
-        equals: function(a, b) {
-            if(a != b)
-                throw new Error('Not equal. (' + a + ',' + b + ')');
-        }
-    };
+    if(!('assert' in this))
+        Cc['@mozilla.org/moz/jssubscript-loader;1']
+            .getService(Ci.mozIJSSubScriptLoader)
+            .loadSubScript('chrome://xmpp4moz/content/lib/test.js');
 
     var presenceTests = {
         'contact sends user available presence, cache is empty: add': function() {
@@ -1286,20 +1275,6 @@ function verify() {
         }
         
     };
-
-   function runTests(tests) {
-        var report = [];
-        for(var testName in tests)
-            try {
-                tests[testName].call();
-            } catch(e) {
-                report.push('**********************************************************************');
-                report.push('FAILURE: ' + testName + '\n' + e.message);
-                report.push(e.stack);
-            }
-        report.push('\nTests completed.');
-        return report.join('\n');
-    }
 
     return [
         presenceTests,
