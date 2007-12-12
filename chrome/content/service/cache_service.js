@@ -51,6 +51,7 @@ function init() {
     this.addRule(presenceRules);
     this.addRule(rosterRules);
     this.addRule(bookmarkRules);
+    this.addRule(vCardRules);
 }
 
 
@@ -117,6 +118,29 @@ function remove(element) {
 
 // BUSINESS RULES
 // ----------------------------------------------------------------------
+
+var vCardRules = {
+    appliesTo: function(element) {
+        return (element.nodeName == 'iq' &&
+                element.getAttribute('type') == 'result' &&
+                element.getElementsByTagNameNS('vcard-temp', 'vCard').length > 0 &&
+                element.getElementsByTagNameNS(ns_x4m, 'meta')[0].getAttribute('direction') == 'in');
+    },
+
+    doApply: function(stanza, cache) {
+        var account = stanza.getElementsByTagNameNS(ns_x4m, 'meta')[0].getAttribute('account');
+        var previous = cache.first(q()
+                                   .event('iq')
+                                   .account(account)
+                                   .child('vcard-temp', 'vCard')
+                                   .compile());
+
+        if(previous)
+            cache.replace(stanza, previous)
+        else
+            cache.insert(stanza);
+    }
+};
 
 var bookmarkRules = {
     appliesTo: function(element) {
@@ -1001,6 +1025,30 @@ function verify() {
         }
     };
 
+    var vCardTests = {
+        'vcards are cached': function() {
+            var cache = new Cache();
+//            cache.addRule(vcardRules);
+
+            cache.receive(
+                    asDOM(<iq type="result" from="ford@betelgeuse.org">
+                          <vCard xmlns="vcard-temp">
+                          <FN>Ford Prefect</FN>
+                          </vCard>
+                          <meta xmlns={ns_x4m} account="alyssa@sameplace.cc/Firefox" direction="in"/>
+                          </iq>));
+
+            assert.isEquivalentXML(
+                    <iq type="result" from="ford@betelgeuse.org">
+                    <vCard xmlns="vcard-temp">
+                    <FN>Ford Prefect</FN>
+                    </vCard>
+                    <meta xmlns={ns_x4m} account="alyssa@sameplace.cc/Firefox" direction="in"/>
+                    </iq>,
+                asXML(cache.first('//iq')));
+        }
+    };
+
     var bookmarkTests = {
         'bookmarks are cached': function() {
             var cache = new Cache();
@@ -1151,7 +1199,8 @@ function verify() {
     return [
         presenceTests,
         rosterTests,
-        bookmarkTests
+        bookmarkTests,
+        vCardTests
     ].map(runTests).join('\n');
 }
 

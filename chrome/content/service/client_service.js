@@ -277,18 +277,18 @@ function send(sessionName, element, observer) {
     if(element.nodeName == 'iq' &&
        element.getAttribute('type') == 'get' &&
        element.getElementsByTagNameNS(ns_x4m_in, 'cache-control').length > 0) {
-
-        // XXX should be made more general
-
-        var payload = (element.getElementsByTagName('query')[0] ||
-                       element.getElementsByTagName('vCard')[0]);
         
+        // XXX should be made more general
+        
+        var query = element.getElementsByTagName('query')[0];
         var cachedReply = cache.first(q()
                                       .event('iq')
-                                      .to(element.getAttribute('to'))
+                                      .from(element.getAttribute('to'))
                                       .type('result')
                                       .direction('in')
-                                      .child(payload.namespaceURI, payload.nodeName)
+                                      .child(query.namespaceURI,
+                                             (query.namespaceURI == 'vcard-temp' ?
+                                              'vCard' : 'query'))
                                       .compile());
     }
 
