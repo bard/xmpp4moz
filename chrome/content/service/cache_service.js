@@ -133,6 +133,7 @@ var vCardRules = {
                                    .event('iq')
                                    .account(account)
                                    .child('vcard-temp', 'vCard')
+                                   .from(stanza.getAttribute('from'))
                                    .compile());
 
         if(previous)
