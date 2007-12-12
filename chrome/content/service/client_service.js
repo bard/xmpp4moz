@@ -24,12 +24,6 @@
 // GLOBAL DEFINITIONS
 // ----------------------------------------------------------------------
 
-const Cc = Components.classes;
-const Ci = Components.interfaces;
-const Cu = Components.utils;
-
-const loader = Cc['@mozilla.org/moz/jssubscript-loader;1']
-    .getService(Ci.mozIJSSubScriptLoader);
 const pref = Cc['@mozilla.org/preferences-service;1']
     .getService(Ci.nsIPrefService)
     .getBranch('xmpp.')

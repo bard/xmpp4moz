@@ -24,10 +24,6 @@
 // GLOBAL DEFINITIONS
 // ----------------------------------------------------------------------
 
-var Cc = Components.classes;
-var Ci = Components.interfaces;
-var Cu = Components.utils;
-
 var srvSocketTransport = Cc["@mozilla.org/network/socket-transport-service;1"]
 .getService(Ci.nsISocketTransportService);
 var srvProxy = Cc['@mozilla.org/network/protocol-proxy-service;1']

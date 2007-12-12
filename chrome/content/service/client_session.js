@@ -21,17 +21,6 @@
  */
 
 
-// GLOBAL DEFINITIONS
-// ----------------------------------------------------------------------
-
-const Cc = Components.classes;
-const Ci = Components.interfaces;
-const Cu = Components.utils;
-
-const loader = Cc['@mozilla.org/moz/jssubscript-loader;1']
-    .getService(Ci.mozIJSSubScriptLoader);
-
-
 // INITIALIZATION
 // ----------------------------------------------------------------------
 
