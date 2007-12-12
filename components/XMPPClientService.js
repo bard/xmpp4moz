@@ -13,6 +13,7 @@ const INTERFACE = Components.interfaces.nsIXMPPClientService;
 const Cc = Components.classes;
 const Ci = Components.interfaces;
 const Cr = Components.results;
+const Cu = Components.utils;
 const loader = Cc['@mozilla.org/moz/jssubscript-loader;1']
     .getService(Ci.mozIJSSubScriptLoader);
 
