@@ -31,7 +31,8 @@ const pref = Cc['@mozilla.org/preferences-service;1']
 
 const ns_disco_info = 'http://jabber.org/protocol/disco#info';    
 
-var [Query] = load('chrome://xmpp4moz/content/lib/query.js', 'Query');
+loader.loadSubScript('chrome://xmpp4moz/content/lib/misc.js');
+load('chrome://xmpp4moz/content/lib/query.js', ['Query']);
 
 
 // GLOBAL STATE
@@ -306,13 +307,6 @@ function removeFeature(discoInfoFeature) {
 // UTILITIES
 // ----------------------------------------------------------------------
 
-function serialize(element) {
-    var _ = arguments.callee;
-    _.serializer = _.serializer ||
-        Cc['@mozilla.org/xmlextras/xmlserializer;1'].getService(Ci.nsIDOMSerializer);
-    return _.serializer.serializeToString(element);
-}
-
 function stripMeta(domStanza) {
     var outDomStanza = domStanza.cloneNode(true);
     var metas = outDomStanza.getElementsByTagNameNS('http://hyperstruct.net/xmpp4moz', 'meta');
@@ -323,17 +317,6 @@ function stripMeta(domStanza) {
 
 function q() {
     return new Query();
-}
-
-function load(url) {
-    var loader = (Cc['@mozilla.org/moz/jssubscript-loader;1']
-                  .getService(Ci.mozIJSSubScriptLoader));
-
-    var context = {};
-    loader.loadSubScript(url, context);
-    
-    var names = Array.slice(arguments, 1);
-    return names.map(function(name) { return context[name]; });
 }
 
 function xpcomize(thing) {
@@ -349,39 +332,8 @@ function xpcomize(thing) {
     }
 }
 
-function JID(string) {
-    var m = string.match(/^(.+?@)?(.+?)(?:\/|$)(.*$)/);
-
-    var jid = {};
-
-    if(m[1])
-        jid.username = m[1].slice(0, -1);
-
-    jid.hostname = m[2];
-    jid.resource = m[3];
-    jid.nick     = m[3];
-    jid.full     = m[3] ? string : null;
-    jid.address  = jid.username ?
-        jid.username + '@' + jid.hostname :
-        jid.hostname;
-
-    return jid;    
-}
-
 function asString(xpcomString) {
     return xpcomString.QueryInterface(Ci.nsISupportsString).toString();
-}
-
-function getStackTrace() {
-    var frame = Components.stack.caller;
-    var str = "<top>";
-
-    while (frame) {
-        str += '\n' + frame;
-        frame = frame.caller;
-    }
-
-    return str;
 }
 
 function defineLogger(strategy) {
@@ -449,30 +401,6 @@ function syntheticClone(stanza) {
                 'synthetic'));
  
     return clone;
-}
-
-function asDOM(object) {
-    var _ = arguments.callee;
-    _.parser = _.parser || Cc['@mozilla.org/xmlextras/domparser;1'].getService(Ci.nsIDOMParser);
-
-    var element;    
-    switch(typeof(object)) {
-    case 'xml':
-        element = _.parser
-        .parseFromString(object.toXMLString(), 'text/xml')
-        .documentElement;
-        break;
-    case 'string':
-        element = _.parser
-        .parseFromString(object, 'text/xml')
-        .documentElement;
-        break;
-    default:
-        // XXX use xpcom exception
-        throw new Error('Argument error. (' + typeof(object) + ')');
-    }
-    
-    return element;
 }
 
 
