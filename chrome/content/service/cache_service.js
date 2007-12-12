@@ -31,7 +31,9 @@ var ns_muc_user  = 'http://jabber.org/protocol/muc#user';
 var ns_bookmarks = 'storage:bookmarks';
 var ns_roster    = 'jabber:iq:roster';
 
-var [Query] = load('chrome://xmpp4moz/content/lib/query.js', 'Query');
+
+loader.loadSubScript('chrome://xmpp4moz/content/lib/misc.js');
+load('chrome://xmpp4moz/content/lib/query.js', ['Query']);
 
 
 // INITIALIZATION
@@ -110,152 +112,6 @@ function replace(newElement, oldElement) {
 
 function remove(element) {
     this._doc.documentElement.removeChild(element);
-}
-
-
-// UTILITIES
-// ----------------------------------------------------------------------
-
-function load(url) {
-    var loader = (Cc['@mozilla.org/moz/jssubscript-loader;1']
-                  .getService(Ci.mozIJSSubScriptLoader));
-
-    var context = {};
-    loader.loadSubScript(url, context);
-    
-    var names = Array.slice(arguments, 1);
-    return names.map(function(name) { return context[name]; });
-}
-
-function JID(string) {
-    var memo = arguments.callee.memo || (arguments.callee.memo = {});
-    if(string in memo)
-        return memo[string];
-    var m = string.match(/^(.+?@)?(.+?)(?:\/|$)(.*$)/);
-
-    var jid = {};
-
-    if(m[1])
-        jid.username = m[1].slice(0, -1);
-
-    jid.hostname = m[2];
-    jid.resource = m[3];
-    jid.nick     = m[3];
-    jid.full     = m[3] ? string : null;
-    jid.address  = jid.username ?
-        jid.username + '@' + jid.hostname :
-        jid.hostname;
-
-    memo[string] = jid;
-    return jid;
-}
-
-function q() {
-    return new Query();
-}
-
-function resolver(prefix) {
-    switch(prefix) {
-    case 'x4m':
-        return ns_x4m;
-        break;
-    case 'roster':
-        return ns_roster;
-        break;
-    case 'bookmarks':
-        return ns_bookmarks;
-        break;
-    }
-    return undefined;
-}
-
-function asXML(dom) {
-    return new XML(Cc['@mozilla.org/xmlextras/xmlserializer;1']
-    .getService(Ci.nsIDOMSerializer)
-    .serializeToString(dom));
-}
-
-function asDOM(object) {
-    var _ = arguments.callee;
-    _.parser = _.parser ||
-        Cc['@mozilla.org/xmlextras/domparser;1'].getService(Ci.nsIDOMParser);
-
-    var element;
-    switch(typeof(object)) {
-    case 'xml':
-        element = _.parser
-        .parseFromString(object.toXMLString(), 'text/xml')
-        .documentElement;
-        break;
-    case 'string':
-        element = _.parser
-        .parseFromString(object, 'text/xml')
-        .documentElement;
-        break;
-    default:
-        // XXX use xpcom exception
-        throw new Error('Argument error. (' + typeof(object) + ')');
-    }
-
-    return element;
-}
-
-function compareXML(tree1, tree2) {
-    if(tree1.nodeKind() != tree2.nodeKind())
-        throw new Error('Different node kinds. (' +
-                        tree1.nodeKind() + ',' + tree2.nodeKind() + ')');
-
-    switch(tree1.nodeKind()) {
-    case 'element':
-        if(tree1.name() != tree2.name())
-            throw new Error('Different tag names. (' +
-                            '<' + tree1.name() + '>, ' + '<' + tree2.name() + '>)');
-        break;
-    case 'text':
-        if(tree1.valueOf() != tree2.valueOf())
-            throw new Error('Different text values. (' +
-                            '<' + tree1.valueOf() + '>, ' + '<' + tree2.valueOf() + '>)');
-
-        break;
-    default:
-        throw new Error('Unhandled node kind. (' + tree1.nodeKind() + ')');
-    }
-
-    var attrList1 = tree1.@*;
-    var attrList2 = tree2.@*;
-    if(attrList1.length() != attrList2.length())
-        throw new Error('Different attribute count for <' + tree1.name() + '>. (' +
-                        attrList1.length() + ', ' + attrList2.length() + ')');
-
-    var childList1 = tree1.*;
-    var childList2 = tree2.*;
-    if(childList1.length() != childList2.length())
-        throw new Error('Different child count for <' + tree1.name() + '>. (' +
-                        childList1.length() + ', ' + childList2.length() + ')');
-
-    for each(var attr in attrList1) {
-        if(tree1['@' + attr.name()] != tree2['@' + attr.name()])
-            throw new Error('Different values for attribute @' + attr.name() + '. (' +
-                            tree1['@' + attr.name()] + ', ' + tree2['@' + attr.name()] + ')');
-    }
-
-    for(var i=0; i<childList1.length(); i++)
-        compareXML(childList1[i], childList2[i])
-
-    return true;
-}
-
-function parse(string) {
-    return (Cc['@mozilla.org/xmlextras/domparser;1']
-            .getService(Ci.nsIDOMParser)
-            .parseFromString(string, 'text/xml')
-            .documentElement);
-}
-
-function serialize(node) {
-    return (Cc['@mozilla.org/xmlextras/xmlserializer;1']
-            .getService(Ci.nsIDOMSerializer)
-            .serializeToString(node));
 }
 
 
@@ -406,25 +262,28 @@ var presenceRules = {
 }
 
 
-// DEVELOPER UTILITIES
+// UTILITIES
 // ----------------------------------------------------------------------
 
-function getStackTrace() {
-    var frame = Components.stack.caller;
-    var str = "<top>";
-
-    while (frame) {
-        str += '\n' + frame;
-        frame = frame.caller;
-    }
-
-    return str;
+function q() {
+    return new Query();
 }
 
-function log(msg) {
-    Cc['@mozilla.org/consoleservice;1']
-        .getService(Ci.nsIConsoleService)
-        .logStringMessage('XMPP Cache ' + msg);
+// tags: resolve, namespace, xpath
+
+function resolver(prefix) {
+    switch(prefix) {
+    case 'x4m':
+        return ns_x4m;
+        break;
+    case 'roster':
+        return ns_roster;
+        break;
+    case 'bookmarks':
+        return ns_bookmarks;
+        break;
+    }
+    return undefined;
 }
 
 
