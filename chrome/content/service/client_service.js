@@ -337,9 +337,10 @@ function stripMeta(domStanza) {
     var metas = outDomStanza.getElementsByTagNameNS(ns_x4m, 'meta');
     for(var i=0; i<metas.length; i++)
         outDomStanza.removeChild(metas[i]);
-    var cache = outDomStanza.getElementsByTagNameNS(ns_x4m_in, 'cache-control');
-    for(var i=0; i<metas.length; i++)
-        outDomStanza.removeChild(metas[i]);
+
+    var cacheControls = outDomStanza.getElementsByTagNameNS(ns_x4m_in, 'cache-control');
+    for(var i=0; i<cacheControls.length; i++)
+        outDomStanza.removeChild(cacheControls[i]);
     return outDomStanza;
 }
 
