@@ -745,6 +745,7 @@ function _send(jid, stanza, handler) {
         replyObserver = {
             observe: function(replyStanza, topic, sessionName) {
                 handler({
+                    account: sessionName,
                     session: { name: sessionName }, // XXX hack
                     stanza: dom2xml(replyStanza)
                     });
