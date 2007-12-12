@@ -280,15 +280,15 @@ function send(sessionName, element, observer) {
         
         // XXX should be made more general
         
-        var query = element.getElementsByTagName('query')[0];
+        var query = (element.getElementsByTagName('query')[0] ||
+                     element.getElementsByTagName('vCard')[0]);
+
         var cachedReply = cache.first(q()
                                       .event('iq')
                                       .from(element.getAttribute('to'))
                                       .type('result')
                                       .direction('in')
-                                      .child(query.namespaceURI,
-                                             (query.namespaceURI == 'vcard-temp' ?
-                                              'vCard' : 'query'))
+                                      .child(query.namespaceURI, query.nodeName)
                                       .compile());
     }
 
