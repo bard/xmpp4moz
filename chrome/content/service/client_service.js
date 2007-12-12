@@ -292,7 +292,7 @@ function send(sessionName, element, observer) {
                                       .compile());
     }
 
-    if(cachedReply)
+    if(cachedReply && observer)
         observer.observe(cachedReply, 'reply-in', sessionName);
     else
         sessions.get(sessionName).send(element, observer);
