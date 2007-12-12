@@ -429,7 +429,7 @@ function rosterSegment(account, address) {
                              .event('iq')
                              .direction('in')
                              .account(account)
-                             .query('roster'));
+                             .child('jabber:iq:roster', 'query'));
     var segment =
         <iq type="result" from={account} to={account}>
         <query xmlns={ns_roster}/>

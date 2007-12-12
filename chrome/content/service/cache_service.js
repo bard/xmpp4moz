@@ -160,7 +160,7 @@ var rosterRules = {
             q()
             .event('iq')
             .account(stanza.getElementsByTagNameNS(ns_x4m, 'meta')[0].getAttribute('account'))
-            .query('roster')
+            .child('jabber:iq:roster', 'query')
             .compile());
 
         if(!previous)

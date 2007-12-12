@@ -61,7 +61,22 @@ Query.prototype = {
         return this;
     },
 
+    queryNS: function(ns) {
+        this._fragments.push('/*[local-name() = "query" and ' +
+                             'namespace-uri() = "' + ns + '"]');
+
+        return this;
+    },
+
+    child: function(namespace, name) {
+        this._fragments.push('/*[local-name() = "' + name + '" and ' +
+                             'namespace-uri() = "' + namespace + '"]');
+
+        return this;
+    },
+
     query: function(val) {
+        dump('*** Deprecation notice *** Use q().child(namespace, name) instead of q().query(prefix) ')
         this._fragments.push('/' + val + ':query');
         return this;
     },
