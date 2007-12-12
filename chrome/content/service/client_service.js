@@ -30,6 +30,7 @@ const pref = Cc['@mozilla.org/preferences-service;1']
     .QueryInterface(Ci.nsIPrefBranch2);
 
 const ns_disco_info = 'http://jabber.org/protocol/disco#info';    
+const ns_x4m    = 'http://hyperstruct.net/xmpp4moz';
 const ns_x4m_in = 'http://hyperstruct.net/xmpp4moz/protocol/internal';
 
 loader.loadSubScript('chrome://xmpp4moz/content/lib/misc.js');
@@ -149,7 +150,7 @@ function open(jid, connector, activationObserver) {
                     var inverse = syntheticClone(stanzas.snapshotItem(i));
                     inverse.setAttribute('type', 'unavailable');
                     
-                    if(inverse.getElementsByTagNameNS('http://hyperstruct.net/xmpp4moz', 'meta')[0].getAttribute('direction') == 'in')
+                    if(inverse.getElementsByTagNameNS(ns_x4m, 'meta')[0].getAttribute('direction') == 'in')
                         session.receive(inverse);
                     else
                         cache.receive(inverse);
@@ -229,7 +230,7 @@ function open(jid, connector, activationObserver) {
             if(topic == 'stanza-in' && subject.nodeName == 'iq' &&
                subject.getAttribute('type') == 'get') {
                 var query = subject.getElementsByTagName('query')[0];
-                if(query && query.getAttribute('xmlns') == 'http://jabber.org/protocol/disco#info') {
+                if(query && query.getAttribute('xmlns') == ns_disco_info) {
                     var stanza =
                         <iq type="result" to={subject.getAttribute('from')}>
                         <query xmlns="http://jabber.org/protocol/disco#info">
@@ -252,7 +253,7 @@ function open(jid, connector, activationObserver) {
     cache.receive(
         asDOM(<iq from={jid} to={jid} type="result">
               <query xmlns="jabber:iq:roster"/>
-              <meta xmlns="http://hyperstruct.net/xmpp4moz" account={jid} direction="in"/>
+              <meta xmlns={ns_x4m} account={jid} direction="in"/>
               </iq>));
 
     session.addObserver(sessionObserver, null, false);
@@ -333,7 +334,10 @@ function removeFeature(discoInfoFeature) {
 
 function stripMeta(domStanza) {
     var outDomStanza = domStanza.cloneNode(true);
-    var metas = outDomStanza.getElementsByTagNameNS('http://hyperstruct.net/xmpp4moz', 'meta');
+    var metas = outDomStanza.getElementsByTagNameNS(ns_x4m, 'meta');
+    for(var i=0; i<metas.length; i++)
+        outDomStanza.removeChild(metas[i]);
+    var cache = outDomStanza.getElementsByTagNameNS(ns_x4m_in, 'cache-control');
     for(var i=0; i<metas.length; i++)
         outDomStanza.removeChild(metas[i]);
     return outDomStanza;
@@ -404,9 +408,7 @@ function isMUCUserPresence(domStanza) {
  */
 
 function isSynthetic(stanza) {
-    return stanza.getElementsByTagNameNS(
-        'http://dev.hyperstruct.net/xmpp4moz',
-        'synthetic').length > 0;
+    return stanza.getElementsByTagNameNS(ns_x4m, 'synthetic').length > 0;
 }
 
 /**
@@ -420,9 +422,7 @@ function syntheticClone(stanza) {
     clone.removeAttribute('id');
     if(!isSynthetic(clone))
         clone.appendChild(
-            clone.ownerDocument.createElementNS(
-                'http://dev.hyperstruct.net/xmpp4moz',
-                'synthetic'));
+            clone.ownerDocument.createElementNS(ns_x4m, 'synthetic'));
  
     return clone;
 }
