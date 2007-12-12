@@ -296,10 +296,15 @@ function verify() {
             .getService(Ci.mozIJSSubScriptLoader)
             .loadSubScript('chrome://xmpp4moz/content/lib/test.js');
 
+    function Cache() { init.call(this); }
+    for each(var name in ['receive', 'insert', 'replace', 'remove', 'all', 'first', 'addRule']) {
+        Cache.prototype[name] = this[name];
+    }
+
     var presenceTests = {
         'contact sends user available presence, cache is empty: add': function() {
             var cache = new Cache();
-            cache.addRule(presenceRules);
+//            cache.addRule(presenceRules);
             cache.receive(
                 asDOM(<presence from="ford@betelgeuse.org/Test">
                       <meta xmlns={ns_x4m} account="arthur@earth.org/Test" direction="in"/>
@@ -314,7 +319,7 @@ function verify() {
 
         'contact sends available presence, presence from contact not in cache: add': function() {
             var cache = new Cache();
-            cache.addRule(presenceRules);
+//            cache.addRule(presenceRules);
             cache.receive(
                 asDOM(<presence from="ford@betelgeuse.org/Test">
                       <meta xmlns={ns_x4m} account="arthur@earth.org/Test" direction="in"/>
@@ -339,7 +344,7 @@ function verify() {
 
         'contact sends available presence, presence from contact is already in cache: replace': function() {
             var cache = new Cache();
-            cache.addRule(presenceRules);
+//            cache.addRule(presenceRules);
             cache.receive(
                 asDOM(<presence from="ford@betelgeuse.org/Test" to="arthur@earth.org/Test">
                       <meta xmlns={ns_x4m} account="arthur@earth.org/Test" direction="in"/>
@@ -363,7 +368,7 @@ function verify() {
             // presence is sent to our bare jid
 
             var cache = new Cache();
-            cache.addRule(presenceRules);
+//            cache.addRule(presenceRules);
             
             cache.receive(
                 asDOM(<presence from="arthur@server.org/Test" to="ford@betelgeuse.org" id="1003">
@@ -389,7 +394,7 @@ function verify() {
             // but presence from components (e.g. transports) does
             // not, that's why this test is needed.
             var cache = new Cache();
-            cache.addRule(presenceRules);
+//            cache.addRule(presenceRules);
             
             cache.receive(
                 asDOM(<presence from="transport.earth.org"
@@ -413,7 +418,7 @@ function verify() {
 
         'contact sends unavailable presence, presence from contact is not in cache: ignore': function() {
             var cache = new Cache();
-            cache.addRule(presenceRules);
+//            cache.addRule(presenceRules);
 
             cache.receive(
                 asDOM(<presence from="ford@betelgeuse.org/Test" to="arthur@earth.org/Test" type="unavailable">
@@ -425,7 +430,7 @@ function verify() {
 
         'contact sends unavailable presence, presence from contact is in cache: replace': function() {
             var cache = new Cache();
-            cache.addRule(presenceRules);
+//            cache.addRule(presenceRules);
             cache.receive(
                 asDOM(<presence from="ford@betelgeuse.org/Test" to="arthur@earth.org/Test">
                       <meta xmlns={ns_x4m} account="arthur@earth.org/Test" direction="in"/>
@@ -446,7 +451,7 @@ function verify() {
 
         'occupant sends uavailable presence, presence from occupant is not in cache: add': function() {
             var cache = new Cache();
-            cache.addRule(presenceRules);
+//            cache.addRule(presenceRules);
 
             cache.receive(
                 asDOM(<presence from="room@server/foo" to="arthur@earth.org/Test">
@@ -464,7 +469,7 @@ function verify() {
 
         'occupant sends available presence, presence from occupant is in cache: replace': function() {
             var cache = new Cache();
-            cache.addRule(presenceRules);
+//            cache.addRule(presenceRules);
 
             cache.receive(
                 asDOM(<presence from="room@server/foo" to="arthur@earth.org/Test">
@@ -489,7 +494,7 @@ function verify() {
 
         'occupant sends unavailable presence, presence from occupant is not in cache: ignore': function() {
             var cache = new Cache();
-            cache.addRule(presenceRules);
+//            cache.addRule(presenceRules);
 
             cache.receive(
                 asDOM(<presence to="room@server/arthur">
@@ -514,7 +519,7 @@ function verify() {
 
         'occupant sends unavailable presence, presence from occupant is in cache: remove': function() {
             var cache = new Cache();
-            cache.addRule(presenceRules);
+//            cache.addRule(presenceRules);
 
             cache.receive(
                 asDOM(<presence to="room@server/arthur">
@@ -544,7 +549,7 @@ function verify() {
 
         'user sends available presence, no user presence is in cache: add': function() {
             var cache = new Cache();
-            cache.addRule(presenceRules);
+//            cache.addRule(presenceRules);
             cache.receive(
                 asDOM(<presence>
                       <meta xmlns={ns_x4m} account="arthur@earth.org/Test" direction="out"/>
@@ -559,7 +564,7 @@ function verify() {
 
         'user sends contacts available presence, user presence is in cache: replace': function() {
             var cache = new Cache();
-            cache.addRule(presenceRules);
+//            cache.addRule(presenceRules);
             cache.receive(
                 asDOM(<presence>
                       <meta xmlns={ns_x4m} account="arthur@earth.org/Test" direction="out"/>
@@ -580,7 +585,7 @@ function verify() {
 
         'user sends contacts available presences through multiple accounts: do not mix': function() {
             var cache = new Cache();
-            cache.addRule(presenceRules);
+//            cache.addRule(presenceRules);
 
             cache.receive(
                 asDOM(<presence>
@@ -606,7 +611,7 @@ function verify() {
 
         'user sends directed presence: do not cache': function() {
             var cache = new Cache();
-            cache.addRule(presenceRules);
+//            cache.addRule(presenceRules);
 
             cache.receive(
                 asDOM(<presence>
@@ -628,7 +633,7 @@ function verify() {
 
         'user receives presence subscription: do not cache': function() {
             var cache = new Cache();
-            cache.addRule(presenceRules);
+//            cache.addRule(presenceRules);
 
             cache.receive(
                 asDOM(<presence from="arthur@earth.org/Test" type="subscribe">
@@ -640,7 +645,7 @@ function verify() {
 
         'user sends presence subscription confirmation: do not cache': function() {
             var cache = new Cache();
-            cache.addRule(presenceRules);
+//            cache.addRule(presenceRules);
 
             cache.receive(
                 asDOM(<presence to="arthur@earth.org/Test" type="subscribed">
@@ -652,7 +657,7 @@ function verify() {
 
         'fetch presences from a given session and contact address': function() {
             var cache = new Cache();
-            cache.addRule(presenceRules);
+//            cache.addRule(presenceRules);
 
             cache.receive(
                 asDOM(<presence from="ford@betelgeuse.org/Test">
@@ -689,7 +694,7 @@ function verify() {
 
         'user sends regular presence, user sends muc presence: add': function() {
             var cache = new Cache();
-            cache.addRule(presenceRules);
+//            cache.addRule(presenceRules);
 
             cache.receive(
                 asDOM(<presence>
@@ -717,7 +722,7 @@ function verify() {
 
         'user sends muc presence, user sends a different muc presence: add': function() {
             var cache = new Cache();
-            cache.addRule(presenceRules);
+//            cache.addRule(presenceRules);
 
             cache.receive(
                 asDOM(<presence to="room@server/arthur">
@@ -747,7 +752,7 @@ function verify() {
 
         'non-muc <x/> child elements are ignored when deciding whether later presence should replace previous one': function() {
             var cache = new Cache();
-            cache.addRule(presenceRules);
+//            cache.addRule(presenceRules);
 
             cache.receive(
                 asDOM(<presence from="alyssa@sameplace.cc/SamePlaceAgent"
@@ -780,7 +785,7 @@ function verify() {
     var rosterTests = {
         'receive iq roster': function() {
             var cache = new Cache();
-            cache.addRule(rosterRules);
+//            cache.addRule(rosterRules);
 
             cache.receive(
                 asDOM(<iq type="result" from="arthur@earth.org/Resource"
@@ -804,7 +809,7 @@ function verify() {
 
         'roster with update (addition) causes new roster to replace existing one': function() {
             var cache = new Cache();
-            cache.addRule(rosterRules);
+//            cache.addRule(rosterRules);
 
             cache.receive(
                 asDOM(<iq type="result" from="arthur@earth.org">
@@ -836,7 +841,7 @@ function verify() {
 
         'roster with update (removal) causes new roster to replace existing one': function() {
             var cache = new Cache();
-            cache.addRule(rosterRules);
+//            cache.addRule(rosterRules);
 
             cache.receive(
                 asDOM(<iq type="result" from="arthur@earth.org">
@@ -866,7 +871,7 @@ function verify() {
 
         'roster with update (replacement) causes new roster to replace existing one': function() {
             var cache = new Cache();
-            cache.addRule(rosterRules);
+//            cache.addRule(rosterRules);
 
             cache.receive(
                 asDOM(<iq type="result" from="arthur@earth.org">
@@ -895,7 +900,7 @@ function verify() {
 
         'roster result causes replacement': function() {
             var cache = new Cache();
-            cache.addRule(rosterRules);
+//            cache.addRule(rosterRules);
 
             cache.receive(
                 asDOM(<iq from="arthur@server.org/Test" to="arthur@server.org/Test"
@@ -930,7 +935,7 @@ function verify() {
 
         'cached roster stanzas remain unchanged': function() {
             var cache = new Cache();
-            cache.addRule(rosterRules);
+//            cache.addRule(rosterRules);
 
             cache.receive(
                 asDOM(<iq from="arthur@earth.org/Firefox" to="arthur@earth.org/Firefox" type="result">
@@ -962,7 +967,7 @@ function verify() {
 
         'empty roster result does not modify cache': function() {
             var cache = new Cache();
-            cache.addRule(rosterRules);
+//            cache.addRule(rosterRules);
 
             cache.receive(
                 asDOM(<iq from="arthur@earth.org/Firefox" to="arthur@earth.org/Firefox" type="result">
@@ -996,7 +1001,7 @@ function verify() {
     var bookmarkTests = {
         'bookmarks are cached': function() {
             var cache = new Cache();
-            cache.addRule(bookmarkRules);
+//            cache.addRule(bookmarkRules);
 
             cache.receive(
                 asDOM(<iq from="arthur@earth.org/Firefox" to="arthur@earth.org/Firefox" type="result">
@@ -1039,7 +1044,7 @@ function verify() {
     var compatibilityTests = {
         'return wrapped objects': function() {
             var cache = new Cache();
-            cache.addRule(presenceRules);
+//            cache.addRule(presenceRules);
             cache.receive(
                 asDOM(<presence from="ford@betelgeuse.org/Test">
                       <meta xmlns={ns_x4m} account="arthur@earth.org/Test" direction="in"/>
@@ -1064,7 +1069,7 @@ function verify() {
 
         'handle nested patterns': function() {
             var cache = new Cache();
-            cache.addRule(presenceRules);
+//            cache.addRule(presenceRules);
             cache.receive(
                 asDOM(<presence from="ford@betelgeuse.org/Test">
                       <meta xmlns={ns_x4m} account="arthur@earth.org/Test" direction="in"/>
@@ -1086,7 +1091,7 @@ function verify() {
 
         'handle nested patterns 2': function() {
             var cache = new Cache();
-            cache.addRule(presenceRules);
+//            cache.addRule(presenceRules);
             cache.receive(
                 asDOM(<presence from="ford@betelgeuse.org/Test">
                       <meta xmlns={ns_x4m} account="arthur@earth.org/Test" direction="in"/>
@@ -1108,7 +1113,7 @@ function verify() {
 
         'handle nested patterns 3': function() {
             var cache = new Cache();
-            cache.addRule(presenceRules);
+//            cache.addRule(presenceRules);
             cache.receive(
                 asDOM(<presence from="ford@betelgeuse.org/Test">
                       <meta xmlns={ns_x4m} account="arthur@earth.org/Test" direction="in"/>
@@ -1130,7 +1135,7 @@ function verify() {
 
         'handle nested patterns 3': function() {
             var cache = new Cache();
-            cache.addRule(presenceRules);
+//            cache.addRule(presenceRules);
             cache.receive(
                 asDOM(<presence from="ford@betelgeuse.org/Test">
                       <meta xmlns={ns_x4m} account="arthur@earth.org/Test" direction="in"/>
