@@ -292,10 +292,17 @@ function send(sessionName, element, observer) {
                                       .compile());
     }
 
-    if(cachedReply && observer)
-        observer.observe(cachedReply, 'reply-in', sessionName);
-    else
-        sessions.get(sessionName).send(element, observer);
+    var session = sessions.get(sessionName);
+    if(cachedReply) {
+        if(observer)
+            observer.observe(cachedReply, 'reply-in', sessionName);
+        else {
+            var reply = cachedReply.cloneNode(true);
+            reply.setAttribute('id', element.getAttribute('id'));
+            session.receive(cachedReply);
+        }
+    } else
+        session.send(element, observer);
 }
 
 function addObserver(observer) {
