@@ -30,6 +30,7 @@ const pref = Cc['@mozilla.org/preferences-service;1']
     .QueryInterface(Ci.nsIPrefBranch2);
 
 const ns_disco_info = 'http://jabber.org/protocol/disco#info';    
+const ns_x4m_in = 'http://hyperstruct.net/xmpp4moz/protocol/internal';
 
 loader.loadSubScript('chrome://xmpp4moz/content/lib/misc.js');
 load('chrome://xmpp4moz/content/lib/query.js', ['Query']);
@@ -270,7 +271,30 @@ function close(jid) {
 }
 
 function send(sessionName, element, observer) {
-    sessions.get(sessionName).send(element, observer);
+    var cachedReply = null;
+
+    if(element.nodeName == 'iq' &&
+       element.getAttribute('type') == 'get' &&
+       element.getElementsByTagNameNS(ns_x4m_in, 'cache-control').length > 0) {
+
+        // XXX should be made more general
+
+        var payload = (element.getElementsByTagName('query')[0] ||
+                       element.getElementsByTagName('vCard')[0]);
+        
+        var cachedReply = cache.first(q()
+                                      .event('iq')
+                                      .to(element.getAttribute('to'))
+                                      .type('result')
+                                      .direction('in')
+                                      .child(payload.namespaceURI, payload.nodeName)
+                                      .compile());
+    }
+
+    if(cachedReply)
+        observer.observe(cachedReply, 'reply-in', sessionName);
+    else
+        sessions.get(sessionName).send(element, observer);
 }
 
 function addObserver(observer) {
