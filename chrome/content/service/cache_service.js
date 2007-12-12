@@ -24,9 +24,6 @@
 // DEFINITIONS
 // ----------------------------------------------------------------------
 
-var Cc = Components.classes;
-var Ci = Components.interfaces;
-
 var ns_x4m       = 'http://hyperstruct.net/xmpp4moz';
 var ns_roster    = 'jabber:iq:roster';
 var ns_muc       = 'http://jabber.org/protocol/muc';
@@ -37,8 +34,98 @@ var ns_roster    = 'jabber:iq:roster';
 var [Query] = load('chrome://xmpp4moz/content/lib/query.js', 'Query');
 
 
+// INITIALIZATION
+// ----------------------------------------------------------------------
+
+function init() {
+    this._doc = Cc['@mozilla.org/xml/xml-document;1']
+    .createInstance(Ci.nsIDOMXMLDocument);
+    this._doc.QueryInterface(Ci.nsIDOMXPathEvaluator);
+    this._doc.appendChild(
+        this._doc.importNode(
+            asDOM(<x4m:cache xmlns:x4m={ns_x4m} xmlns="jabber:client"/>),
+            true));
+    this._rules = [];
+    this.addRule(presenceRules);
+    this.addRule(rosterRules);
+    this.addRule(bookmarkRules);
+}
+
+
+// PUBLIC API
+// ----------------------------------------------------------------------
+
+function first(query) {
+    return this._doc.evaluate(query,
+                              this._doc,
+                              resolver,
+                              Ci.nsIDOMXPathResult.ANY_UNORDERED_NODE_TYPE,
+                              null).singleNodeValue;
+}
+
+function all(query) {
+    return this._doc.evaluate(query,
+                              this._doc,
+                              resolver,
+                              Ci.nsIDOMXPathResult.ORDERED_NODE_SNAPSHOT_TYPE,
+                              null);
+}
+
+function receive(element) {
+    if(typeof(element) == 'object' && ('stanza' in element)) {
+        log('DEPRECATION WARNING: received old-format object from ' +
+            Components.stack.caller);
+        element = element.stanza;
+    }
+
+    for each(var rule in this._rules) {
+        if(rule.appliesTo(element)) {
+            var imported = this._doc.importNode(element, true);
+            rule.doApply(imported, this);
+        }
+    }
+}
+
+function toString() {
+    return (Cc['@mozilla.org/xmlextras/xmlserializer;1']
+            .getService(Ci.nsIDOMSerializer)
+            .serializeToString(this._doc));
+}
+
+
+// INTERNAL API
+// ----------------------------------------------------------------------
+
+function addRule(rule) {
+    this._rules.push(rule);
+}
+
+function insert(element) {
+    this._doc.documentElement.appendChild(element);
+}
+
+function replace(newElement, oldElement) {
+    this._doc.documentElement.replaceChild(newElement, oldElement);
+}
+
+function remove(element) {
+    this._doc.documentElement.removeChild(element);
+}
+
+
 // UTILITIES
 // ----------------------------------------------------------------------
+
+function load(url) {
+    var loader = (Cc['@mozilla.org/moz/jssubscript-loader;1']
+                  .getService(Ci.mozIJSSubScriptLoader));
+
+    var context = {};
+    loader.loadSubScript(url, context);
+    
+    var names = Array.slice(arguments, 1);
+    return names.map(function(name) { return context[name]; });
+}
 
 function JID(string) {
     var memo = arguments.callee.memo || (arguments.callee.memo = {});
@@ -169,74 +256,6 @@ function serialize(node) {
     return (Cc['@mozilla.org/xmlextras/xmlserializer;1']
             .getService(Ci.nsIDOMSerializer)
             .serializeToString(node));
-}
-
-
-// OBJECTS
-// ----------------------------------------------------------------------
-
-function Cache() {
-    this._doc = Cc['@mozilla.org/xml/xml-document;1']
-    .createInstance(Ci.nsIDOMXMLDocument);
-    this._doc.QueryInterface(Ci.nsIDOMXPathEvaluator);
-    this._doc.appendChild(
-        this._doc.importNode(
-            asDOM(<x4m:cache xmlns:x4m={ns_x4m} xmlns="jabber:client"/>),
-            true));
-    this._rules = [];
-}
-
-Cache.prototype.first = function(query) {
-    return this._doc.evaluate(query,
-                              this._doc,
-                              resolver,
-                              Ci.nsIDOMXPathResult.ANY_UNORDERED_NODE_TYPE,
-                              null).singleNodeValue;
-};
-
-Cache.prototype.all = function(query) {
-    return this._doc.evaluate(query,
-                              this._doc,
-                              resolver,
-                              Ci.nsIDOMXPathResult.ORDERED_NODE_SNAPSHOT_TYPE,
-                              null);
-};
-
-Cache.prototype.receive = function(element) {
-    if(typeof(element) == 'object' && ('stanza' in element)) {
-        log('DEPRECATION WARNING: received old-format object from ' +
-            Components.stack.caller);
-        element = element.stanza;
-    }
-
-    for each(var rule in this._rules) {
-        if(rule.appliesTo(element)) {
-            var imported = this._doc.importNode(element, true);
-            rule.doApply(imported, this);
-        }
-    }
-};
-
-Cache.prototype.dump = function() {
-    return (Cc['@mozilla.org/xmlextras/xmlserializer;1']
-            .getService(Ci.nsIDOMSerializer)
-            .serializeToString(this._doc));
-};
-
-Cache.prototype.addRule = function(rule) {
-    this._rules.push(rule);
-}
-
-Cache.prototype.insert = function(element) {
-    this._doc.documentElement.appendChild(element);
-}
-
-Cache.prototype.replace = function(newElement, oldElement) {
-    this._doc.documentElement.replaceChild(newElement, oldElement);
-}
-
-Cache.prototype.remove = function(element) {
-    this._doc.documentElement.removeChild(element);
 }
 
 
@@ -387,23 +406,20 @@ var presenceRules = {
 }
 
 
-// UTILITIES
-// ----------------------------------------------------------------------
-
-function load(url) {
-    var loader = (Cc['@mozilla.org/moz/jssubscript-loader;1']
-                  .getService(Ci.mozIJSSubScriptLoader));
-
-    var context = {};
-    loader.loadSubScript(url, context);
-    
-    var names = Array.slice(arguments, 1);
-    return names.map(function(name) { return context[name]; });
-}
-
-
 // DEVELOPER UTILITIES
 // ----------------------------------------------------------------------
+
+function getStackTrace() {
+    var frame = Components.stack.caller;
+    var str = "<top>";
+
+    while (frame) {
+        str += '\n' + frame;
+        frame = frame.caller;
+    }
+
+    return str;
+}
 
 function log(msg) {
     Cc['@mozilla.org/consoleservice;1']

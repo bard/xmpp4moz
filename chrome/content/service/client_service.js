@@ -70,15 +70,30 @@ var sessions = {
     }
 };
 
-var cache;
-let(module = {}) {
-    loader.loadSubScript('chrome://xmpp4moz/content/lib/cache.js', module);
-    cache = new module.Cache();
-    cache.addRule(module.presenceRules);
-    cache.addRule(module.rosterRules);
-    cache.addRule(module.bookmarkRules);
-}
 
+// INITIALIZATION
+// ----------------------------------------------------------------------
+
+function init() {
+    cache = Cc['@hyperstruct.net/xmpp4moz/xmppcache;1']
+        .getService(Ci.nsIXMPPCacheService);
+
+    pref.addObserver('', {
+        observe: function(subject, topic, data) {
+            if(topic != 'nsPref:changed')
+                return;
+
+            switch(data) {
+            case 'logTarget':
+                defineLogger(pref.getCharPref('logTarget'));
+                break;
+            default:
+            }
+         }
+    }, false);
+
+    defineLogger(pref.getCharPref('logTarget'));
+}
 
 
 // PUBLIC FUNCTIONALITY
@@ -498,24 +513,4 @@ function asDOM(object) {
 //     transport.removeObserver(transportObserver, null);
 //     continuation(transport);
 // }
-
-
-// INITIALIZATION
-// ----------------------------------------------------------------------
-
-pref.addObserver('', {
-    observe: function(subject, topic, data) {
-        if(topic != 'nsPref:changed')
-            return;
-        
-        switch(data) {
-        case 'logTarget':
-            defineLogger(pref.getCharPref('logTarget'));
-            break;
-        default:
-        }
-     }
-}, false);
-
-defineLogger(pref.getCharPref('logTarget'));
 
