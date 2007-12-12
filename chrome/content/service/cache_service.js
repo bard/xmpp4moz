@@ -121,23 +121,26 @@ function remove(element) {
 var bookmarkRules = {
     appliesTo: function(element) {
         return (element.nodeName == 'iq' &&
-                element.getElementsByTagNameNS(ns_bookmarks, 'storage').length > 0);
+                element.getAttribute('type') == 'result' &&
+                element.getElementsByTagNameNS('storage:bookmarks', 'storage').length > 0 &&
+                element.getElementsByTagNameNS(ns_x4m, 'meta')[0].getAttribute('direction') == 'in');
     },
 
     doApply: function(stanza, cache) {
-        var previous = cache.first(
-            q()
-            .event('iq')
-            .account(stanza.getElementsByTagNameNS(ns_x4m, 'meta')[0].getAttribute('account'))
-            .xpath('//bookmarks:storage')
-            .compile());
+        var account = stanza.getElementsByTagNameNS(ns_x4m, 'meta')[0].getAttribute('account');
+        var previous = cache.first(q()
+                                   .event('iq')
+                                   .account(account)
+                                   .xpath('//*[local-name() = "storage" and ' +
+                                          'namespace-uri() = "storage:bookmarks"]')
+                                   .compile());
 
-        if(!previous)
-            cache.insert(stanza);
-        else
+        if(previous)
             cache.replace(stanza, previous);
+        else
+            cache.insert(stanza);
     }
-};
+}
 
 var rosterRules = {
     appliesTo: function(element) {
@@ -1001,42 +1004,31 @@ function verify() {
     var bookmarkTests = {
         'bookmarks are cached': function() {
             var cache = new Cache();
-//            cache.addRule(bookmarkRules);
+//             cache.addRule(bookmarkRules);
 
             cache.receive(
-                asDOM(<iq from="arthur@earth.org/Firefox" to="arthur@earth.org/Firefox" type="result">
-                      <meta xmlns={ns_x4m} account="arthur@earth.org" direction="in"/>
+                asDOM(<iq type="result">
                       <query xmlns="jabber:iq:private">
                       <storage xmlns="storage:bookmarks">
-                      <conference jid="test@places.earth.org"/>
+                      <conference jid="users@places.sameplace.cc" autojoin="true" nick="alyssa"/>
                       </storage>
                       </query>
-                      </iq>));
-
-            cache.receive(
-                asDOM(<iq from="arthur@earth.org/Firefox" to="arthur@earth.org/Firefox" type="result">
-                      <meta xmlns={ns_x4m} account="arthur@earth.org" direction="in"/>
-                      <query xmlns="jabber:iq:private">
-                      <storage xmlns="storage:bookmarks">
-                      <conference jid="test@places.earth.org"/>
-                      <conference jid="seaside@places.earth.org"/>
-                      </storage>
-                      </query>
+                      <meta xmlns={ns_x4m} account="alyssa@sameplace.cc/Firefox" direction="in"/>
                       </iq>));
 
             assert.isEquivalentXML(
-                    <iq from="arthur@earth.org/Firefox" to="arthur@earth.org/Firefox" type="result">
-                    <meta xmlns={ns_x4m} account="arthur@earth.org" direction="in"/>
+                    <iq type="result">
                     <query xmlns="jabber:iq:private">
                     <storage xmlns="storage:bookmarks">
-                    <conference jid="test@places.earth.org"/>
-                    <conference jid="seaside@places.earth.org"/>
+                    <conference jid="users@places.sameplace.cc" autojoin="true" nick="alyssa"/>
                     </storage>
                     </query>
+                    <meta xmlns={ns_x4m} account="alyssa@sameplace.cc/Firefox" direction="in"/>
                     </iq>,
                 asXML(cache.first('//iq')));
         }
     };
+
 
     // Compatibility layer no longer here.  Leaving these for
     // documentation (for now).
