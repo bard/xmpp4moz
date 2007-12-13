@@ -72,6 +72,9 @@ const ns_x4m        = 'http://hyperstruct.net/xmpp4moz';
 const ns_muc        = 'http://jabber.org/protocol/muc';
 const ns_roster     = 'jabber:iq:roster';
 const ns_disco_info = 'http://jabber.org/protocol/disco#info';
+const ns_chatstates = 'http://jabber.org/protocol/chatstates';
+const ns_event      = 'jabber:x:event';
+
 
 var [Query] = load('chrome://xmpp4moz/content/lib/query.js', 'Query');
 var [Channel] = load('chrome://xmpp4moz/content/lib/channel.js', 'Channel');
@@ -272,10 +275,14 @@ function isDown(account) {
 function send(account, stanza, handler) {
     if(isUp(account))
         _send(account.jid || account, stanza, handler);
+    else if(stanza.name() == 'message' &&
+            (stanza.ns_event::x != undefined || stanza.ns_chatstates::* != undefined))
+        ;
+    else if(stanza.name() == 'presence' &&
+            stanza.@type == 'unavailable')
+        ;
     else
-        up(account, function(jid) {
-               _send(jid, stanza, handler);
-           });
+        up(account, function(jid) { _send(jid, stanza, handler); });
 }
 
 // http://dev.hyperstruct.net/xmpp4moz/wiki/DocLocalAPI#XMPP.createChannel
