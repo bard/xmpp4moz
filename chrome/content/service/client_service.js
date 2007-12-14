@@ -175,7 +175,7 @@ function open(jid, connector, activationObserver) {
             // Log
 
             if(topic == 'stanza-out' || topic == 'stanza-in')
-                log('{' + session.name + ',' + topic + '}    ' + serialize(stripMeta(subject)));
+                log('{' + session.name + ',' + topic + '}    ' + serialize(stripInternal(subject)));
 
             // Submit data to cache (which will decide what to keep
             // and what to throw away)
@@ -186,7 +186,7 @@ function open(jid, connector, activationObserver) {
             service.notifyObservers(subject, topic, data);
 
             if(topic == 'stanza-out' && connector.isConnected())
-                connector.send(stripMeta(subject));
+                connector.send(stripInternal(subject));
             
             // Synthesize some events for consistency
 
@@ -338,15 +338,15 @@ function removeFeature(discoInfoFeature) {
 // UTILITIES
 // ----------------------------------------------------------------------
 
-function stripMeta(domStanza) {
+function stripInternal(domStanza) {
     var outDomStanza = domStanza.cloneNode(true);
-    var metas = outDomStanza.getElementsByTagNameNS(ns_x4m_in, 'meta');
-    for(var i=0; i<metas.length; i++)
-        outDomStanza.removeChild(metas[i]);
-
-    var cacheControls = outDomStanza.getElementsByTagNameNS(ns_x4m_in, 'cache-control');
-    for(var i=0; i<cacheControls.length; i++)
-        outDomStanza.removeChild(cacheControls[i]);
+    var child = outDomStanza.lastChild;
+    while(child) {
+        var next = child.previousSibling;
+        if(child.namespaceURI == ns_x4m_in)
+            outDomStanza.removeChild(child);
+        child = next;
+    }
     return outDomStanza;
 }
 
