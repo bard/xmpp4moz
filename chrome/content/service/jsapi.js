@@ -74,6 +74,9 @@ const ns_roster     = 'jabber:iq:roster';
 const ns_disco_info = 'http://jabber.org/protocol/disco#info';
 const ns_chatstates = 'http://jabber.org/protocol/chatstates';
 const ns_event      = 'jabber:x:event';
+const ns_private    = 'jabber:iq:private';
+const ns_bookmarks  = 'storage:bookmarks';
+
 
 
 var [Query] = load('chrome://xmpp4moz/content/lib/query.js', 'Query');
@@ -517,6 +520,33 @@ function presenceSummary(account, address) {
 // ----------------------------------------------------------------------
 
 function enableContentDocument(panel, account, address, type, createSocket) {
+    deprecation('use connectPanel() instead of enableContentDocument()');
+    connectPanel(panel, account, address, createSocket);
+}
+
+function connectPanel(panel, account, address, createSocket) {
+    function isMUC(account, address) { // XXX duplicated
+        return XMPP.cache.fetch({
+            event     : 'presence',
+            direction : 'out',
+            account   : account,
+            stanza    : function(s) {
+                    return (s.@to != undefined &&
+                            XMPP.JID(s.@to).address == address &&
+                            s.ns_muc::x != undefined);
+                }}).length > 0 ||
+            XMPP.cache.fetch({
+                event     : 'iq',
+                direction : 'in',
+                account   : account,
+                stanza    : function(s) {
+                        return (s.ns_private::query
+                                .ns_bookmarks::storage
+                                .ns_bookmarks::conference
+                                .(@jid == address) != undefined);
+                    }}).length > 0;
+    }
+
     if(panel.hasAttribute('account') &&
        panel.getAttribute('account') != account)
         throw new Error('Content panel already attached to different account. (' + account + ')');
@@ -529,6 +559,8 @@ function enableContentDocument(panel, account, address, type, createSocket) {
         log('Content panel already connected.');
         return;
     }
+
+    var type = isMUC(account, address) ? 'groupchat' : 'chat';
 
     var appDoc = panel.contentDocument;
     if(createSocket) 
