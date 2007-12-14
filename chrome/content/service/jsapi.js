@@ -794,11 +794,7 @@ function _send(jid, stanza, handler) {
             }
         };
 
-    var settings = XML.settings();
-    XML.prettyPrinting = false;
-    XML.ignoreWhitespace = false;
     service.send(jid, asDOM(stanza), replyObserver);
-    XML.setSettings(settings);
 }
 
 function AccountWrapper(key) {
@@ -891,6 +887,8 @@ function asDOM(object) {
         var element;    
         switch(typeof(object)) {
         case 'xml':
+            XML.prettyPrinting = false;
+            XML.ignoreWhitespace = true;
             element = parser
                 .parseFromString(object.toXMLString(), 'text/xml')
                 .documentElement;
