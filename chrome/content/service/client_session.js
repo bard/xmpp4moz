@@ -121,7 +121,7 @@ function setMeta(domStanza, account, direction) {
 
     var meta = domStanza
         .ownerDocument
-        .createElementNS('http://hyperstruct.net/xmpp4moz', 'meta');
+        .createElementNS('http://hyperstruct.net/xmpp4moz/protocol/internal', 'meta');
     meta.setAttribute('account', account);
     meta.setAttribute('direction', direction);
     outDomStanza.appendChild(
@@ -131,7 +131,7 @@ function setMeta(domStanza, account, direction) {
 
 function stripMeta(domStanza) {
     var outDomStanza = domStanza.cloneNode(true);
-    var metas = outDomStanza.getElementsByTagNameNS('http://hyperstruct.net/xmpp4moz', 'meta');
+    var metas = outDomStanza.getElementsByTagNameNS('http://hyperstruct.net/xmpp4moz/protocol/internal', 'meta');
     for(var i=0; i<metas.length; i++)
         outDomStanza.removeChild(metas[i]);
     return outDomStanza;

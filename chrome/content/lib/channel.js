@@ -28,7 +28,7 @@ const Cc = Components.classes;
 const Ci = Components.interfaces;
 const Cu = Components.utils;
 
-const ns_x4m = 'http://hyperstruct.net/xmpp4moz';
+const ns_x4m_in = 'http://hyperstruct.net/xmpp4moz/protocol/internal';
 
 
 // DOMAIN
@@ -75,7 +75,7 @@ Channel.prototype.observe = function(subject, topic, data) {
 
         get account() {
             return (this.stanza ?
-                    this.stanza.ns_x4m::meta.@account.toXMLString() :
+                    this.stanza.ns_x4m_in::meta.@account.toXMLString() :
                     account);
         },
 

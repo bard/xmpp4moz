@@ -68,7 +68,7 @@ const serializer = Cc['@mozilla.org/xmlextras/xmlserializer;1']
 const srvPrompt = Cc["@mozilla.org/embedcomp/prompt-service;1"]
     .getService(Ci.nsIPromptService);
 
-const ns_x4m        = 'http://hyperstruct.net/xmpp4moz';
+const ns_x4m_in     = 'http://hyperstruct.net/xmpp4moz/protocol/internal';
 const ns_muc        = 'http://jabber.org/protocol/muc';
 const ns_roster     = 'jabber:iq:roster';
 const ns_disco_info = 'http://jabber.org/protocol/disco#info';
@@ -129,7 +129,7 @@ var cache = {
     },
 
     _wrapResult: function(stanza) {
-        var meta = stanza.getElementsByTagNameNS(ns_x4m, 'meta')[0];
+        var meta = stanza.getElementsByTagNameNS(ns_x4m_in, 'meta')[0];
         return {
             stanza    : dom2xml(stanza),
             direction : meta.getAttribute('direction'),

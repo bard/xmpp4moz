@@ -24,7 +24,7 @@
 // DEFINITIONS
 // ----------------------------------------------------------------------
 
-var ns_x4m       = 'http://hyperstruct.net/xmpp4moz';
+var ns_x4m_in    = 'http://hyperstruct.net/xmpp4moz/protocol/internal';
 var ns_roster    = 'jabber:iq:roster';
 var ns_muc       = 'http://jabber.org/protocol/muc';
 var ns_muc_user  = 'http://jabber.org/protocol/muc#user';
@@ -45,7 +45,7 @@ function init() {
     this._doc.QueryInterface(Ci.nsIDOMXPathEvaluator);
     this._doc.appendChild(
         this._doc.importNode(
-            asDOM(<x4m:cache xmlns:x4m={ns_x4m} xmlns="jabber:client"/>),
+            asDOM(<x4m:cache xmlns:x4m={ns_x4m_in} xmlns="jabber:client"/>),
             true));
     this._rules = [];
     this.addRule(presenceRules);
@@ -124,11 +124,11 @@ var vCardRules = {
         return (element.nodeName == 'iq' &&
                 element.getAttribute('type') == 'result' &&
                 element.getElementsByTagNameNS('vcard-temp', 'vCard').length > 0 &&
-                element.getElementsByTagNameNS(ns_x4m, 'meta')[0].getAttribute('direction') == 'in');
+                element.getElementsByTagNameNS(ns_x4m_in, 'meta')[0].getAttribute('direction') == 'in');
     },
 
     doApply: function(stanza, cache) {
-        var account = stanza.getElementsByTagNameNS(ns_x4m, 'meta')[0].getAttribute('account');
+        var account = stanza.getElementsByTagNameNS(ns_x4m_in, 'meta')[0].getAttribute('account');
         var previous = cache.first(q()
                                    .event('iq')
                                    .account(account)
@@ -148,11 +148,11 @@ var bookmarkRules = {
         return (element.nodeName == 'iq' &&
                 element.getAttribute('type') == 'result' &&
                 element.getElementsByTagNameNS('storage:bookmarks', 'storage').length > 0 &&
-                element.getElementsByTagNameNS(ns_x4m, 'meta')[0].getAttribute('direction') == 'in');
+                element.getElementsByTagNameNS(ns_x4m_in, 'meta')[0].getAttribute('direction') == 'in');
     },
 
     doApply: function(stanza, cache) {
-        var account = stanza.getElementsByTagNameNS(ns_x4m, 'meta')[0].getAttribute('account');
+        var account = stanza.getElementsByTagNameNS(ns_x4m_in, 'meta')[0].getAttribute('account');
         var previous = cache.first(q()
                                    .event('iq')
                                    .account(account)
@@ -171,7 +171,7 @@ var rosterRules = {
     appliesTo: function(element) {
         return (element.nodeName == 'iq' &&
                 element.getElementsByTagNameNS(ns_roster, 'query').length > 0 &&
-                element.getElementsByTagNameNS(ns_x4m, 'meta')[0].getAttribute('direction') == 'in');
+                element.getElementsByTagNameNS(ns_x4m_in, 'meta')[0].getAttribute('direction') == 'in');
     },
 
     doApply: function(stanza, cache) {
@@ -187,7 +187,7 @@ var rosterRules = {
         var previous = cache.first(
             q()
             .event('iq')
-            .account(stanza.getElementsByTagNameNS(ns_x4m, 'meta')[0].getAttribute('account'))
+            .account(stanza.getElementsByTagNameNS(ns_x4m_in, 'meta')[0].getAttribute('account'))
             .child('jabber:iq:roster', 'query')
             .compile());
 
@@ -247,7 +247,7 @@ var presenceRules = {
     },
 
     doApply: function(stanza, cache) {
-        var meta = stanza.getElementsByTagNameNS(ns_x4m, 'meta')[0];
+        var meta = stanza.getElementsByTagNameNS(ns_x4m_in, 'meta')[0];
 
         //        if(this.isMUCPresence(stanza))
         // should also add check on whether target presence is a muc presence
@@ -302,7 +302,7 @@ function q() {
 function resolver(prefix) {
     switch(prefix) {
     case 'x4m':
-        return ns_x4m;
+        return ns_x4m_in;
         break;
     case 'roster':
         return ns_roster;
@@ -335,13 +335,13 @@ function verify() {
 //            cache.addRule(presenceRules);
             cache.receive(
                 asDOM(<presence from="ford@betelgeuse.org/Test">
-                      <meta xmlns={ns_x4m} account="arthur@earth.org/Test" direction="in"/>
+                      <meta xmlns={ns_x4m_in} account="arthur@earth.org/Test" direction="in"/>
                       </presence>));
 
             assert.isEquivalentXML(
                 asXML(cache.first('//presence')),
                     <presence from="ford@betelgeuse.org/Test">
-                    <meta xmlns={ns_x4m} account="arthur@earth.org/Test" direction="in"/>
+                    <meta xmlns={ns_x4m_in} account="arthur@earth.org/Test" direction="in"/>
                     </presence>);
         },
 
@@ -350,23 +350,23 @@ function verify() {
 //            cache.addRule(presenceRules);
             cache.receive(
                 asDOM(<presence from="ford@betelgeuse.org/Test">
-                      <meta xmlns={ns_x4m} account="arthur@earth.org/Test" direction="in"/>
+                      <meta xmlns={ns_x4m_in} account="arthur@earth.org/Test" direction="in"/>
                       </presence>));
             cache.receive(
                 asDOM(<presence from="marvin@spaceship.org/Test">
-                      <meta xmlns={ns_x4m} account="arthur@earth.org/Test" direction="in"/>
+                      <meta xmlns={ns_x4m_in} account="arthur@earth.org/Test" direction="in"/>
                       </presence>));
 
             var stanzas = cache.all('//presence');
             assert.isEquivalentXML(
                 asXML(stanzas.snapshotItem(0)),
                     <presence from="ford@betelgeuse.org/Test">
-                    <meta xmlns={ns_x4m} account="arthur@earth.org/Test" direction="in"/>
+                    <meta xmlns={ns_x4m_in} account="arthur@earth.org/Test" direction="in"/>
                     </presence>);
             assert.isEquivalentXML(
                 asXML(stanzas.snapshotItem(1)),
                     <presence from="marvin@spaceship.org/Test">
-                    <meta xmlns={ns_x4m} account="arthur@earth.org/Test" direction="in"/>
+                    <meta xmlns={ns_x4m_in} account="arthur@earth.org/Test" direction="in"/>
                     </presence>);
         },
 
@@ -375,18 +375,18 @@ function verify() {
 //            cache.addRule(presenceRules);
             cache.receive(
                 asDOM(<presence from="ford@betelgeuse.org/Test" to="arthur@earth.org/Test">
-                      <meta xmlns={ns_x4m} account="arthur@earth.org/Test" direction="in"/>
+                      <meta xmlns={ns_x4m_in} account="arthur@earth.org/Test" direction="in"/>
                       </presence>));
             cache.receive(
                 asDOM(<presence from="ford@betelgeuse.org/Test" to="arthur@earth.org/Test">
-                      <meta xmlns={ns_x4m} account="arthur@earth.org/Test" direction="in"/>
+                      <meta xmlns={ns_x4m_in} account="arthur@earth.org/Test" direction="in"/>
                       <show>away</show>
                       </presence>));
 
             assert.isEquivalentXML(
                 asXML(cache.first('//presence')),
                     <presence from="ford@betelgeuse.org/Test" to="arthur@earth.org/Test">
-                    <meta xmlns={ns_x4m} account="arthur@earth.org/Test" direction="in"/>
+                    <meta xmlns={ns_x4m_in} account="arthur@earth.org/Test" direction="in"/>
                     <show>away</show>
                     </presence>);
         },
@@ -400,17 +400,17 @@ function verify() {
             
             cache.receive(
                 asDOM(<presence from="arthur@server.org/Test" to="ford@betelgeuse.org" id="1003">
-                      <status>test</status>
-                      <meta account="ford@betelgeuse.org/Firefox" direction="in" xmlns="http://hyperstruct.net/xmpp4moz"/>
+                      <status>test</status>q
+                      <meta account="ford@betelgeuse.org/Firefox" direction="in" xmlns={ns_x4m_in}/>
                       </presence>));
             cache.receive(
                 asDOM(<presence from="arthur@server.org/Test" to="ford@betelgeuse.org" id="1004">
                       <show>away</show>
-                      <meta account="ford@betelgeuse.org/Firefox" direction="in" xmlns="http://hyperstruct.net/xmpp4moz"/>
+                      <meta account="ford@betelgeuse.org/Firefox" direction="in" xmlns={ns_x4m_in}/>
                       </presence>));
             cache.receive(
                 asDOM(<presence from="arthur@server.org/Test" to="ford@betelgeuse.org" id="1005">
-                      <meta account="ford@betelgeuse.org/Firefox" direction="in" xmlns="http://hyperstruct.net/xmpp4moz"/>
+                      <meta account="ford@betelgeuse.org/Firefox" direction="in" xmlns={ns_x4m_in}/>
                       </presence>));
             
             var stanzas = cache.all('//presence');
@@ -427,19 +427,19 @@ function verify() {
             cache.receive(
                 asDOM(<presence from="transport.earth.org"
                       to="arthur@earth.org/Test">
-                      <meta xmlns={ns_x4m} account="arthur@earth.org/Test" direction="in"/>
+                      <meta xmlns={ns_x4m_in} account="arthur@earth.org/Test" direction="in"/>
                      </presence>));
             cache.receive(
                 asDOM(<presence from="transport.earth.org" type="unavailable"
                       to="arthur@earth.org/Test">
-                      <meta xmlns={ns_x4m} account="arthur@earth.org/Test" direction="in"/>
+                      <meta xmlns={ns_x4m_in} account="arthur@earth.org/Test" direction="in"/>
                       </presence>));
 
             var stanzas = cache.all('//presence');
             assert.equals(1, stanzas.snapshotLength);
             assert.isEquivalentXML(
                     <presence from="transport.earth.org" type="unavailable" to="arthur@earth.org/Test">
-                    <meta xmlns={ns_x4m} account="arthur@earth.org/Test" direction="in"/>
+                    <meta xmlns={ns_x4m_in} account="arthur@earth.org/Test" direction="in"/>
                     </presence>,
                     asXML(stanzas.snapshotItem(0)));
         },
@@ -450,7 +450,7 @@ function verify() {
 
             cache.receive(
                 asDOM(<presence from="ford@betelgeuse.org/Test" to="arthur@earth.org/Test" type="unavailable">
-                      <meta xmlns={ns_x4m} account="arthur@earth.org/Test" direction="in"/>
+                      <meta xmlns={ns_x4m_in} account="arthur@earth.org/Test" direction="in"/>
                       </presence>));
 
             assert.isNull(cache.first('//presence'));
@@ -461,17 +461,17 @@ function verify() {
 //            cache.addRule(presenceRules);
             cache.receive(
                 asDOM(<presence from="ford@betelgeuse.org/Test" to="arthur@earth.org/Test">
-                      <meta xmlns={ns_x4m} account="arthur@earth.org/Test" direction="in"/>
+                      <meta xmlns={ns_x4m_in} account="arthur@earth.org/Test" direction="in"/>
                       </presence>));
             cache.receive(
                 asDOM(<presence from="ford@betelgeuse.org/Test" to="arthur@earth.org/Test" type="unavailable">
-                      <meta xmlns={ns_x4m} account="arthur@earth.org/Test" direction="in"/>
+                      <meta xmlns={ns_x4m_in} account="arthur@earth.org/Test" direction="in"/>
                       </presence>));
 
             assert.isEquivalentXML(
                 asXML(cache.first('//presence')),
                     <presence from="ford@betelgeuse.org/Test" to="arthur@earth.org/Test" type="unavailable">
-                    <meta xmlns={ns_x4m} account="arthur@earth.org/Test" direction="in"/>
+                    <meta xmlns={ns_x4m_in} account="arthur@earth.org/Test" direction="in"/>
                     </presence>);
         },
 
@@ -483,14 +483,14 @@ function verify() {
 
             cache.receive(
                 asDOM(<presence from="room@server/foo" to="arthur@earth.org/Test">
-                      <meta xmlns={ns_x4m} account="arthur@earth.org/Test" direction="in"/>
+                      <meta xmlns={ns_x4m_in} account="arthur@earth.org/Test" direction="in"/>
                       <x xmlns="http://jabber.org/protocol/muc#user"/>
                       </presence>));
 
             assert.isEquivalentXML(
                 asXML(cache.first('//presence')),
                     <presence from="room@server/foo" to="arthur@earth.org/Test">
-                    <meta xmlns={ns_x4m} account="arthur@earth.org/Test" direction="in"/>
+                    <meta xmlns={ns_x4m_in} account="arthur@earth.org/Test" direction="in"/>
                     <x xmlns="http://jabber.org/protocol/muc#user"/>
                     </presence>);
         },
@@ -501,12 +501,12 @@ function verify() {
 
             cache.receive(
                 asDOM(<presence from="room@server/foo" to="arthur@earth.org/Test">
-                      <meta xmlns={ns_x4m} account="arthur@earth.org/Test" direction="in"/>
+                      <meta xmlns={ns_x4m_in} account="arthur@earth.org/Test" direction="in"/>
                       <x xmlns="http://jabber.org/protocol/muc#user"/>
                       </presence>));
             cache.receive(
                 asDOM(<presence from="room@server/foo" to="arthur@earth.org/Test">
-                      <meta xmlns={ns_x4m} account="arthur@earth.org/Test" direction="in"/>
+                      <meta xmlns={ns_x4m_in} account="arthur@earth.org/Test" direction="in"/>
                       <x xmlns="http://jabber.org/protocol/muc#user"/>
                       <show>away</show>
                       </presence>));
@@ -514,7 +514,7 @@ function verify() {
             assert.isEquivalentXML(
                 asXML(cache.first('//presence')),
                     <presence from="room@server/foo" to="arthur@earth.org/Test">
-                    <meta xmlns={ns_x4m} account="arthur@earth.org/Test" direction="in"/>
+                    <meta xmlns={ns_x4m_in} account="arthur@earth.org/Test" direction="in"/>
                     <x xmlns="http://jabber.org/protocol/muc#user"/>
                     <show>away</show>
                     </presence>);
@@ -526,12 +526,12 @@ function verify() {
 
             cache.receive(
                 asDOM(<presence to="room@server/arthur">
-                      <meta xmlns={ns_x4m} account="arthur@earth.org/Test" direction="in"/>
+                      <meta xmlns={ns_x4m_in} account="arthur@earth.org/Test" direction="in"/>
                       <x xmlns="http://jabber.org/protocol/muc"/>
                       </presence>));
             cache.receive(
                 asDOM(<presence from="room@server/foo" to="arthur@earth.org/Test" type="unavailable">
-                      <meta xmlns={ns_x4m} account="arthur@earth.org/Test" direction="in"/>
+                      <meta xmlns={ns_x4m_in} account="arthur@earth.org/Test" direction="in"/>
                       <x xmlns="http://jabber.org/protocol/muc#user"/>
                       </presence>));
 
@@ -539,7 +539,7 @@ function verify() {
             assert.isEquivalentXML(
                 asXML(stanzas.snapshotItem(0)),
                     <presence to="room@server/arthur">
-                    <meta xmlns={ns_x4m} account="arthur@earth.org/Test" direction="in"/>
+                    <meta xmlns={ns_x4m_in} account="arthur@earth.org/Test" direction="in"/>
                     <x xmlns="http://jabber.org/protocol/muc"/>
                     </presence>);
             assert.isNull(stanzas.snapshotItem(1));
@@ -551,17 +551,17 @@ function verify() {
 
             cache.receive(
                 asDOM(<presence to="room@server/arthur">
-                      <meta xmlns={ns_x4m} account="arthur@earth.org/Test" direction="in"/>
+                      <meta xmlns={ns_x4m_in} account="arthur@earth.org/Test" direction="in"/>
                       <x xmlns="http://jabber.org/protocol/muc"/>
                       </presence>));
             cache.receive(
                 asDOM(<presence from="room@server/foo" to="arthur@earth.org/Test">
-                      <meta xmlns={ns_x4m} account="arthur@earth.org/Test" direction="in"/>
+                      <meta xmlns={ns_x4m_in} account="arthur@earth.org/Test" direction="in"/>
                       <x xmlns="http://jabber.org/protocol/muc#user"/>
                       </presence>));
             cache.receive(
                 asDOM(<presence from="room@server/foo" to="arthur@earth.org/Test" type="unavailable">
-                      <meta xmlns={ns_x4m} account="arthur@earth.org/Test" direction="in"/>
+                      <meta xmlns={ns_x4m_in} account="arthur@earth.org/Test" direction="in"/>
                       <x xmlns="http://jabber.org/protocol/muc#user"/>
                       </presence>));
 
@@ -569,7 +569,7 @@ function verify() {
             assert.isEquivalentXML(
                 asXML(stanzas.snapshotItem(0)),
                     <presence to="room@server/arthur">
-                    <meta xmlns={ns_x4m} account="arthur@earth.org/Test" direction="in"/>
+                    <meta xmlns={ns_x4m_in} account="arthur@earth.org/Test" direction="in"/>
                     <x xmlns="http://jabber.org/protocol/muc"/>
                     </presence>);
             assert.isNull(stanzas.snapshotItem(1));
@@ -580,13 +580,13 @@ function verify() {
 //            cache.addRule(presenceRules);
             cache.receive(
                 asDOM(<presence>
-                      <meta xmlns={ns_x4m} account="arthur@earth.org/Test" direction="out"/>
+                      <meta xmlns={ns_x4m_in} account="arthur@earth.org/Test" direction="out"/>
                       </presence>));
 
             assert.isEquivalentXML(
                 asXML(cache.first('//presence')),
                     <presence>
-                    <meta xmlns={ns_x4m} account="arthur@earth.org/Test" direction="out"/>
+                    <meta xmlns={ns_x4m_in} account="arthur@earth.org/Test" direction="out"/>
                     </presence>);
         },
 
@@ -595,18 +595,18 @@ function verify() {
 //            cache.addRule(presenceRules);
             cache.receive(
                 asDOM(<presence>
-                      <meta xmlns={ns_x4m} account="arthur@earth.org/Test" direction="out"/>
+                      <meta xmlns={ns_x4m_in} account="arthur@earth.org/Test" direction="out"/>
                       </presence>));
             cache.receive(
                 asDOM(<presence>
-                      <meta xmlns={ns_x4m} account="arthur@earth.org/Test" direction="out"/>
+                      <meta xmlns={ns_x4m_in} account="arthur@earth.org/Test" direction="out"/>
                       <show>away</show>
                       </presence>));
 
             assert.isEquivalentXML(
                 asXML(cache.first('//presence')),
                     <presence>
-                    <meta xmlns={ns_x4m} account="arthur@earth.org/Test" direction="out"/>
+                    <meta xmlns={ns_x4m_in} account="arthur@earth.org/Test" direction="out"/>
                     <show>away</show>
                     </presence>);
         },
@@ -617,23 +617,23 @@ function verify() {
 
             cache.receive(
                 asDOM(<presence>
-                      <meta xmlns={ns_x4m} account="arthur@earth.org/Test" direction="out"/>
+                      <meta xmlns={ns_x4m_in} account="arthur@earth.org/Test" direction="out"/>
                       </presence>));
             cache.receive(
                 asDOM(<presence>
-                      <meta xmlns={ns_x4m} account="marvin@spaceship.org/Test" direction="out"/>
+                      <meta xmlns={ns_x4m_in} account="marvin@spaceship.org/Test" direction="out"/>
                       </presence>));
 
             var stanzas = cache.all('//presence');
             assert.isEquivalentXML(
                 asXML(stanzas.snapshotItem(0)),
                     <presence>
-                    <meta xmlns={ns_x4m} account="arthur@earth.org/Test" direction="out"/>
+                    <meta xmlns={ns_x4m_in} account="arthur@earth.org/Test" direction="out"/>
                     </presence>);
             assert.isEquivalentXML(
                 asXML(stanzas.snapshotItem(1)),
                     <presence>
-                    <meta xmlns={ns_x4m} account="marvin@spaceship.org/Test" direction="out"/>
+                    <meta xmlns={ns_x4m_in} account="marvin@spaceship.org/Test" direction="out"/>
                     </presence>);
         },
 
@@ -643,18 +643,18 @@ function verify() {
 
             cache.receive(
                 asDOM(<presence>
-                      <meta xmlns={ns_x4m} account="arthur@earth.org/Test" direction="out"/>
+                      <meta xmlns={ns_x4m_in} account="arthur@earth.org/Test" direction="out"/>
                       </presence>));
             cache.receive(
                 asDOM(<presence to="ford@betelgeuse.org/Test">
-                      <meta xmlns={ns_x4m} account="arthur@earth.org/Test" direction="out"/>
+                      <meta xmlns={ns_x4m_in} account="arthur@earth.org/Test" direction="out"/>
                       </presence>));
 
             var stanzas = cache.all('//presence');
             assert.isEquivalentXML(
                 asXML(stanzas.snapshotItem(0)),
                     <presence>
-                    <meta xmlns={ns_x4m} account="arthur@earth.org/Test" direction="out"/>
+                    <meta xmlns={ns_x4m_in} account="arthur@earth.org/Test" direction="out"/>
                     </presence>);
             assert.isNull(stanzas.snapshotItem(1));
         },
@@ -665,7 +665,7 @@ function verify() {
 
             cache.receive(
                 asDOM(<presence from="arthur@earth.org/Test" type="subscribe">
-                      <meta xmlns={ns_x4m} account="arthur@earth.org/Test" direction="in"/>
+                      <meta xmlns={ns_x4m_in} account="arthur@earth.org/Test" direction="in"/>
                       </presence>));
 
             assert.isNull(cache.first('//presence'));
@@ -677,7 +677,7 @@ function verify() {
 
             cache.receive(
                 asDOM(<presence to="arthur@earth.org/Test" type="subscribed">
-                      <meta xmlns={ns_x4m} account="arthur@earth.org/Test" direction="out"/>
+                      <meta xmlns={ns_x4m_in} account="arthur@earth.org/Test" direction="out"/>
                       </presence>));
 
             assert.isNull(cache.first('//presence'));
@@ -689,16 +689,16 @@ function verify() {
 
             cache.receive(
                 asDOM(<presence from="ford@betelgeuse.org/Test">
-                      <meta xmlns={ns_x4m} account="arthur@earth.org/Test" direction="in"/>
+                      <meta xmlns={ns_x4m_in} account="arthur@earth.org/Test" direction="in"/>
                       <show>dnd</show>
                       </presence>));
             cache.receive(
                 asDOM(<presence from="ford@betelgeuse.org/Toast">
-                      <meta xmlns={ns_x4m} account="arthur@earth.org/Test" direction="in"/>
+                      <meta xmlns={ns_x4m_in} account="arthur@earth.org/Test" direction="in"/>
                       </presence>));
             cache.receive(
                 asDOM(<presence from="marvin@spaceship.org/Test">
-                      <meta xmlns={ns_x4m} account="arthur@earth.org/Test" direction="in"/>
+                      <meta xmlns={ns_x4m_in} account="arthur@earth.org/Test" direction="in"/>
                       </presence>));
 
             var stanzas = cache.all(
@@ -710,13 +710,13 @@ function verify() {
             assert.isEquivalentXML(
                 asXML(stanzas.snapshotItem(0)),
                     <presence from="ford@betelgeuse.org/Test">
-                    <meta xmlns={ns_x4m} account="arthur@earth.org/Test" direction="in"/>
+                    <meta xmlns={ns_x4m_in} account="arthur@earth.org/Test" direction="in"/>
                     <show>dnd</show>
                     </presence>);
             assert.isEquivalentXML(
                 asXML(stanzas.snapshotItem(1)),
                     <presence from="ford@betelgeuse.org/Toast">
-                    <meta xmlns={ns_x4m} account="arthur@earth.org/Test" direction="in"/>
+                    <meta xmlns={ns_x4m_in} account="arthur@earth.org/Test" direction="in"/>
                     </presence>);
         },
 
@@ -726,11 +726,11 @@ function verify() {
 
             cache.receive(
                 asDOM(<presence>
-                      <meta xmlns={ns_x4m} account="arthur@earth.org/Test" direction="out"/>
+                      <meta xmlns={ns_x4m_in} account="arthur@earth.org/Test" direction="out"/>
                       </presence>));
             cache.receive(
                 asDOM(<presence to="room@server/arthur">
-                      <meta xmlns={ns_x4m} account="arthur@earth.org/Test" direction="out"/>
+                      <meta xmlns={ns_x4m_in} account="arthur@earth.org/Test" direction="out"/>
                       <x xmlns="http://jabber.org/protocol/muc"/>
                       </presence>));
 
@@ -738,12 +738,12 @@ function verify() {
             assert.isEquivalentXML(
                 asXML(stanzas.snapshotItem(0)),
                     <presence>
-                    <meta xmlns={ns_x4m} account="arthur@earth.org/Test" direction="out"/>
+                    <meta xmlns={ns_x4m_in} account="arthur@earth.org/Test" direction="out"/>
                     </presence>);
             assert.isEquivalentXML(
                 asXML(stanzas.snapshotItem(1)),
                     <presence to="room@server/arthur">
-                    <meta xmlns={ns_x4m} account="arthur@earth.org/Test" direction="out"/>
+                    <meta xmlns={ns_x4m_in} account="arthur@earth.org/Test" direction="out"/>
                     <x xmlns="http://jabber.org/protocol/muc"/>
                     </presence>);
         },
@@ -754,12 +754,12 @@ function verify() {
 
             cache.receive(
                 asDOM(<presence to="room@server/arthur">
-                      <meta xmlns={ns_x4m} account="arthur@earth.org/Test" direction="out"/>
+                      <meta xmlns={ns_x4m_in} account="arthur@earth.org/Test" direction="out"/>
                       <x xmlns="http://jabber.org/protocol/muc"/>
                       </presence>));
             cache.receive(
                 asDOM(<presence to="anotherroom@server/arthur">
-                      <meta xmlns={ns_x4m} account="arthur@earth.org/Test" direction="out"/>
+                      <meta xmlns={ns_x4m_in} account="arthur@earth.org/Test" direction="out"/>
                       <x xmlns="http://jabber.org/protocol/muc"/>
                       </presence>));
 
@@ -767,13 +767,13 @@ function verify() {
             assert.isEquivalentXML(
                 asXML(stanzas.snapshotItem(0)),
                     <presence to="room@server/arthur">
-                    <meta xmlns={ns_x4m} account="arthur@earth.org/Test" direction="out"/>
+                    <meta xmlns={ns_x4m_in} account="arthur@earth.org/Test" direction="out"/>
                     <x xmlns="http://jabber.org/protocol/muc"/>
                     </presence>);
             assert.isEquivalentXML(
                 asXML(stanzas.snapshotItem(1)),
                     <presence to="anotherroom@server/arthur">
-                    <meta xmlns={ns_x4m} account="arthur@earth.org/Test" direction="out"/>
+                    <meta xmlns={ns_x4m_in} account="arthur@earth.org/Test" direction="out"/>
                     <x xmlns="http://jabber.org/protocol/muc"/>
                     </presence>);
         },
@@ -785,7 +785,7 @@ function verify() {
             cache.receive(
                 asDOM(<presence from="alyssa@sameplace.cc/SamePlaceAgent"
                       to="alyssa@sameplace.cc/Firefox" xml:lang="*">
-                      <meta xmlns={ns_x4m} account="alyssa@sameplace.cc/Firefox" direction="in"/>
+                      <meta xmlns={ns_x4m_in} account="alyssa@sameplace.cc/Firefox" direction="in"/>
                       <status/>
                       <priority>0</priority>
                       <c node="http://www.google.com/xmpp/client/caps" ver="1.0.0.66"
@@ -796,14 +796,14 @@ function verify() {
             cache.receive(
                 asDOM(<presence from="alyssa@sameplace.cc/SamePlaceAgent"
                       to="alyssa@sameplace.cc/Firefox" type="unavailable">
-                      <meta xmlns={ns_x4m} account="alyssa@sameplace.cc/Firefox" direction="in"/>
+                      <meta xmlns={ns_x4m_in} account="alyssa@sameplace.cc/Firefox" direction="in"/>
                       </presence>));
 
             var stanzas = cache.all('//presence');
             assert.isEquivalentXML(
                 <presence from="alyssa@sameplace.cc/SamePlaceAgent"
                 to="alyssa@sameplace.cc/Firefox" type="unavailable">
-                    <meta xmlns={ns_x4m} account="alyssa@sameplace.cc/Firefox" direction="in"/>
+                    <meta xmlns={ns_x4m_in} account="alyssa@sameplace.cc/Firefox" direction="in"/>
                     </presence>,
                 asXML(stanzas.snapshotItem(0)));
             assert.isNull(stanzas.snapshotItem(1));
@@ -818,7 +818,7 @@ function verify() {
             cache.receive(
                 asDOM(<iq type="result" from="arthur@earth.org/Resource"
                       to="arthur@earth.org/Resource">
-                      <meta xmlns={ns_x4m} direction="in" account="arthur@earth.org/Test"/>
+                      <meta xmlns={ns_x4m_in} direction="in" account="arthur@earth.org/Test"/>
                       <query xmlns="jabber:iq:roster">
                       <item jid="ford@betelgeuse.org"/>
                       </query>
@@ -827,7 +827,7 @@ function verify() {
             assert.isEquivalentXML(
                     <iq type="result" from="arthur@earth.org/Resource"
                 to="arthur@earth.org/Resource">
-                    <meta xmlns={ns_x4m} direction="in" account="arthur@earth.org/Test"/>
+                    <meta xmlns={ns_x4m_in} direction="in" account="arthur@earth.org/Test"/>
                     <query xmlns="jabber:iq:roster">
                     <item jid="ford@betelgeuse.org"/>
                     </query>
@@ -841,14 +841,14 @@ function verify() {
 
             cache.receive(
                 asDOM(<iq type="result" from="arthur@earth.org">
-                      <meta xmlns={ns_x4m} account="arthur@earth.org/Test" direction="in"/>
+                      <meta xmlns={ns_x4m_in} account="arthur@earth.org/Test" direction="in"/>
                       <query xmlns="jabber:iq:roster">
                       <item jid="ford@betelgeuse.org"/>
                       </query>
                       </iq>));
             cache.receive(
                 asDOM(<iq type="set" from="arthur@earth.org">
-                      <meta xmlns={ns_x4m} account="arthur@earth.org/Test" direction="in"/>
+                      <meta xmlns={ns_x4m_in} account="arthur@earth.org/Test" direction="in"/>
                       <query xmlns="jabber:iq:roster">
                       <item jid="marvin@spaceship.org"/>
                       </query>
@@ -858,7 +858,7 @@ function verify() {
             assert.equals(1, stanzas.snapshotLength);
             assert.isEquivalentXML(
                     <iq type="result" from="arthur@earth.org">
-                    <meta xmlns={ns_x4m} account="arthur@earth.org/Test" direction="in"/>
+                    <meta xmlns={ns_x4m_in} account="arthur@earth.org/Test" direction="in"/>
                     <query xmlns="jabber:iq:roster">
                     <item jid="ford@betelgeuse.org"/>
                     <item jid="marvin@spaceship.org"/>
@@ -873,7 +873,7 @@ function verify() {
 
             cache.receive(
                 asDOM(<iq type="result" from="arthur@earth.org">
-                      <meta xmlns={ns_x4m} account="arthur@earth.org" direction="in"/>
+                      <meta xmlns={ns_x4m_in} account="arthur@earth.org" direction="in"/>
                       <query xmlns="jabber:iq:roster">
                       <item jid="ford@betelgeuse.org"/>
                       <item jid="zaphod@betelgeuse.org"/>
@@ -881,7 +881,7 @@ function verify() {
                       </iq>));
             cache.receive(
                 asDOM(<iq type="set" from="arthur@earth.org">
-                      <meta xmlns={ns_x4m} account="arthur@earth.org" direction="in"/>
+                      <meta xmlns={ns_x4m_in} account="arthur@earth.org" direction="in"/>
                       <query xmlns="jabber:iq:roster">
                       <item jid="ford@betelgeuse.org" subscription="remove"/>
                       </query>
@@ -889,7 +889,7 @@ function verify() {
 
             assert.isEquivalentXML(
                     <iq type="result" from="arthur@earth.org">
-                    <meta xmlns={ns_x4m} account="arthur@earth.org" direction="in"/>
+                    <meta xmlns={ns_x4m_in} account="arthur@earth.org" direction="in"/>
                     <query xmlns="jabber:iq:roster">
                     <item jid="zaphod@betelgeuse.org"/>
                     </query>
@@ -903,14 +903,14 @@ function verify() {
 
             cache.receive(
                 asDOM(<iq type="result" from="arthur@earth.org">
-                      <meta xmlns={ns_x4m} account="arthur@earth.org" direction="in"/>
+                      <meta xmlns={ns_x4m_in} account="arthur@earth.org" direction="in"/>
                       <query xmlns="jabber:iq:roster">
                       <item jid="ford@betelgeuse.org"/>
                       </query>
                       </iq>));
             cache.receive(
                 asDOM(<iq type="set" from="arthur@earth.org">
-                      <meta xmlns={ns_x4m} account="arthur@earth.org" direction="in"/>
+                      <meta xmlns={ns_x4m_in} account="arthur@earth.org" direction="in"/>
                       <query xmlns="jabber:iq:roster">
                       <item jid="ford@betelgeuse.org" name="Ford"/>
                       </query>
@@ -918,7 +918,7 @@ function verify() {
 
             assert.isEquivalentXML(
                     <iq type="result" from="arthur@earth.org">
-                    <meta xmlns={ns_x4m} account="arthur@earth.org" direction="in"/>
+                    <meta xmlns={ns_x4m_in} account="arthur@earth.org" direction="in"/>
                     <query xmlns="jabber:iq:roster">
                     <item jid="ford@betelgeuse.org" name="Ford"/>
                     </query>
@@ -934,7 +934,7 @@ function verify() {
                 asDOM(<iq from="arthur@server.org/Test" to="arthur@server.org/Test"
                       type="result">
                       <query xmlns="jabber:iq:roster"/>
-                      <meta xmlns="http://hyperstruct.net/xmpp4moz"
+                      <meta xmlns={ns_x4m_in}
                       account="arthur@server.org/Test" direction="in"/>
                       </iq>));
             cache.receive(
@@ -944,7 +944,7 @@ function verify() {
                       <item subscription="both" jid="marvin@spaceship.org"/>
                       <item subscription="both" jid="ford@betelgeuse.org"/>
                       </query>
-                      <meta xmlns="http://hyperstruct.net/xmpp4moz"
+                      <meta xmlns={ns_x4m_in}
                       account="arthur@server.org/Test" direction="in"/>
                       </iq>));
 
@@ -955,7 +955,7 @@ function verify() {
                     <item subscription="both" jid="marvin@spaceship.org"/>
                     <item subscription="both" jid="ford@betelgeuse.org"/>
                     </query>
-                    <meta xmlns="http://hyperstruct.net/xmpp4moz"
+                    <meta xmlns={ns_x4m_in}
                 account="arthur@server.org/Test" direction="in"/>
                     </iq>,
                 asXML(cache.first('//iq')));
@@ -967,7 +967,7 @@ function verify() {
 
             cache.receive(
                 asDOM(<iq from="arthur@earth.org/Firefox" to="arthur@earth.org/Firefox" type="result">
-                      <meta xmlns={ns_x4m} account="arthur@earth.org" direction="in"/>
+                      <meta xmlns={ns_x4m_in} account="arthur@earth.org" direction="in"/>
                       <query xmlns="jabber:iq:roster">
                       <item subscription="both" jid="marvin@earth.org"/>
                       </query>
@@ -975,7 +975,7 @@ function verify() {
 
             var rosterPush =
                 asDOM(<iq from="arthur@earth.org/Firefox" to="arthur@earth.org/Firefox" id="push" type="set">
-                      <meta xmlns={ns_x4m} account="arthur@earth.org" direction="in"/>
+                      <meta xmlns={ns_x4m_in} account="arthur@earth.org" direction="in"/>
                       <query xmlns="jabber:iq:roster">
                       <item subscription="both" name="Marvin" jid="marvin@earth.org"/>
                       </query>
@@ -985,7 +985,7 @@ function verify() {
 
             assert.isEquivalentXML(
                     <iq from="arthur@earth.org/Firefox" to="arthur@earth.org/Firefox" id="push" type="set">
-                    <meta xmlns={ns_x4m} account="arthur@earth.org" direction="in"/>
+                    <meta xmlns={ns_x4m_in} account="arthur@earth.org" direction="in"/>
                     <query xmlns="jabber:iq:roster">
                     <item subscription="both" name="Marvin" jid="marvin@earth.org"/>
                     </query>
@@ -999,25 +999,25 @@ function verify() {
 
             cache.receive(
                 asDOM(<iq from="arthur@earth.org/Firefox" to="arthur@earth.org/Firefox" type="result">
-                      <meta xmlns={ns_x4m} account="arthur@earth.org" direction="in"/>
+                      <meta xmlns={ns_x4m_in} account="arthur@earth.org" direction="in"/>
                       <query xmlns="jabber:iq:roster"/>
                       </iq>));
             cache.receive(
                 asDOM(<iq from="arthur@earth.org/Firefox" to="arthur@earth.org/Firefox" type="result">
-                      <meta xmlns={ns_x4m} account="arthur@earth.org" direction="in"/>
+                      <meta xmlns={ns_x4m_in} account="arthur@earth.org" direction="in"/>
                       <query xmlns="jabber:iq:roster">
                       <item subscription="both" jid="marvin@earth.org"/>
                       </query>
                       </iq>));;
             cache.receive(
                 asDOM(<iq from="arthur@earth.org/Firefox" to="arthur@earth.org/Firefox" type="result">
-                      <meta xmlns={ns_x4m} account="arthur@earth.org" direction="in"/>
+                      <meta xmlns={ns_x4m_in} account="arthur@earth.org" direction="in"/>
                       <query xmlns="jabber:iq:roster"/>
                       </iq>));
 
             assert.isEquivalentXML(
                     <iq from="arthur@earth.org/Firefox" to="arthur@earth.org/Firefox" type="result">
-                    <meta xmlns={ns_x4m} account="arthur@earth.org" direction="in"/>
+                    <meta xmlns={ns_x4m_in} account="arthur@earth.org" direction="in"/>
                     <query xmlns="jabber:iq:roster">
                     <item subscription="both" jid="marvin@earth.org"/>
                     </query>
@@ -1036,7 +1036,7 @@ function verify() {
                           <vCard xmlns="vcard-temp">
                           <FN>Ford Prefect</FN>
                           </vCard>
-                          <meta xmlns={ns_x4m} account="alyssa@sameplace.cc/Firefox" direction="in"/>
+                          <meta xmlns={ns_x4m_in} account="alyssa@sameplace.cc/Firefox" direction="in"/>
                           </iq>));
 
             assert.isEquivalentXML(
@@ -1044,7 +1044,7 @@ function verify() {
                     <vCard xmlns="vcard-temp">
                     <FN>Ford Prefect</FN>
                     </vCard>
-                    <meta xmlns={ns_x4m} account="alyssa@sameplace.cc/Firefox" direction="in"/>
+                    <meta xmlns={ns_x4m_in} account="alyssa@sameplace.cc/Firefox" direction="in"/>
                     </iq>,
                 asXML(cache.first('//iq')));
         }
@@ -1062,7 +1062,7 @@ function verify() {
                       <conference jid="users@places.sameplace.cc" autojoin="true" nick="alyssa"/>
                       </storage>
                       </query>
-                      <meta xmlns={ns_x4m} account="alyssa@sameplace.cc/Firefox" direction="in"/>
+                      <meta xmlns={ns_x4m_in} account="alyssa@sameplace.cc/Firefox" direction="in"/>
                       </iq>));
 
             assert.isEquivalentXML(
@@ -1072,7 +1072,7 @@ function verify() {
                     <conference jid="users@places.sameplace.cc" autojoin="true" nick="alyssa"/>
                     </storage>
                     </query>
-                    <meta xmlns={ns_x4m} account="alyssa@sameplace.cc/Firefox" direction="in"/>
+                    <meta xmlns={ns_x4m_in} account="alyssa@sameplace.cc/Firefox" direction="in"/>
                     </iq>,
                 asXML(cache.first('//iq')));
         }
@@ -1088,7 +1088,7 @@ function verify() {
 //            cache.addRule(presenceRules);
             cache.receive(
                 asDOM(<presence from="ford@betelgeuse.org/Test">
-                      <meta xmlns={ns_x4m} account="arthur@earth.org/Test" direction="in"/>
+                      <meta xmlns={ns_x4m_in} account="arthur@earth.org/Test" direction="in"/>
                       </presence>));
 
             var results = cache.fetch({
@@ -1103,7 +1103,7 @@ function verify() {
             assert.equals(1, results.length);
             assert.isEquivalentXML(
                     <presence from="ford@betelgeuse.org/Test">
-                    <meta xmlns={ns_x4m} account="arthur@earth.org/Test" direction="in"/>
+                    <meta xmlns={ns_x4m_in} account="arthur@earth.org/Test" direction="in"/>
                     </presence>,
                 asXML(results[0].stanza));
         },
@@ -1113,7 +1113,7 @@ function verify() {
 //            cache.addRule(presenceRules);
             cache.receive(
                 asDOM(<presence from="ford@betelgeuse.org/Test">
-                      <meta xmlns={ns_x4m} account="arthur@earth.org/Test" direction="in"/>
+                      <meta xmlns={ns_x4m_in} account="arthur@earth.org/Test" direction="in"/>
                       </presence>));
 
             var results = cache.fetch({
@@ -1125,7 +1125,7 @@ function verify() {
             assert.equals(1, results.length);
             assert.isEquivalentXML(
                     <presence from="ford@betelgeuse.org/Test">
-                    <meta xmlns={ns_x4m} account="arthur@earth.org/Test" direction="in"/>
+                    <meta xmlns={ns_x4m_in} account="arthur@earth.org/Test" direction="in"/>
                     </presence>,
                 asXML(results[0].stanza));
         },
@@ -1135,7 +1135,7 @@ function verify() {
 //            cache.addRule(presenceRules);
             cache.receive(
                 asDOM(<presence from="ford@betelgeuse.org/Test">
-                      <meta xmlns={ns_x4m} account="arthur@earth.org/Test" direction="in"/>
+                      <meta xmlns={ns_x4m_in} account="arthur@earth.org/Test" direction="in"/>
                       </presence>));
 
             var results = cache.fetch({
@@ -1147,7 +1147,7 @@ function verify() {
             assert.equals(1, results.length);
             assert.isEquivalentXML(
                     <presence from="ford@betelgeuse.org/Test">
-                    <meta xmlns={ns_x4m} account="arthur@earth.org/Test" direction="in"/>
+                    <meta xmlns={ns_x4m_in} account="arthur@earth.org/Test" direction="in"/>
                     </presence>,
                 asXML(results[0].stanza));
         },
@@ -1157,7 +1157,7 @@ function verify() {
 //            cache.addRule(presenceRules);
             cache.receive(
                 asDOM(<presence from="ford@betelgeuse.org/Test">
-                      <meta xmlns={ns_x4m} account="arthur@earth.org/Test" direction="in"/>
+                      <meta xmlns={ns_x4m_in} account="arthur@earth.org/Test" direction="in"/>
                       </presence>));
 
             var results = cache.fetch({
@@ -1169,7 +1169,7 @@ function verify() {
             assert.equals(1, results.length);
             assert.isEquivalentXML(
                     <presence from="ford@betelgeuse.org/Test">
-                    <meta xmlns={ns_x4m} account="arthur@earth.org/Test" direction="in"/>
+                    <meta xmlns={ns_x4m_in} account="arthur@earth.org/Test" direction="in"/>
                     </presence>,
                 asXML(results[0].stanza));
         },
@@ -1179,7 +1179,7 @@ function verify() {
 //            cache.addRule(presenceRules);
             cache.receive(
                 asDOM(<presence from="ford@betelgeuse.org/Test">
-                      <meta xmlns={ns_x4m} account="arthur@earth.org/Test" direction="in"/>
+                      <meta xmlns={ns_x4m_in} account="arthur@earth.org/Test" direction="in"/>
                       </presence>));
 
             var results = cache.fetch({
@@ -1190,7 +1190,7 @@ function verify() {
             assert.equals(1, results.length);
             assert.isEquivalentXML(
                     <presence from="ford@betelgeuse.org/Test">
-                    <meta xmlns={ns_x4m} account="arthur@earth.org/Test" direction="in"/>
+                    <meta xmlns={ns_x4m_in} account="arthur@earth.org/Test" direction="in"/>
                     </presence>,
                 asXML(results[0].stanza));
         }
@@ -1230,7 +1230,7 @@ function profile() {
 
         function makeRandomPresence() {
             return (<presence from={makeRandomJid()}>
-                    <meta xmlns={ns_x4m} account="arthur@server.org"/>
+                    <meta xmlns={ns_x4m_in} account="arthur@server.org"/>
                     </presence>);
         }
 

@@ -233,7 +233,7 @@ function openStream(continuation) {
             // Filter out.  These are supposed to be local only --
             // accepting them from outside can cause serious mess.
             // Should probably be filtered by session.
-            if(uri == 'http://hyperstruct.net/xmpp4moz' && localName == 'meta')
+            if(uri == 'http://hyperstruct.net/xmpp4moz/protocol/internal')
                 return;
 
             var e = (uri == 'jabber:client' ?
