@@ -738,47 +738,51 @@ function _promptAccount(jid) {
 }
 
 function _up(account, continuation) {
-    var jid, password, connectionHost, connectionPort, connectionSecurity, connector;
+    var password;
+
     if(account) {
-        jid = account.jid;
-        password = account.password;
-
-        connectionSecurity = account.connectionSecurity;
-        connectionHost = account.connectionHost;
-        connectionPort = account.connectionPort;
-        connector = account.connector;
-    }
-
-    if(!((jid && password) || (jid && this.isUp(jid)))) {
-        var userInput = this._promptAccount(jid);
-
+        if(account.password)
+            password = account.password;
+        else {
+            var userInput = _promptAccount(account.jid);
+            if(userInput.confirm)
+                password = userInput.password;
+        }
+    } else {
+        var userInput = _promptAccount();
         if(userInput.confirm) {
+            account = getAccountByJid(userInput.jid);
             password = userInput.password;
-            jid = userInput.jid;
         }
     }
 
-    if(this.isUp(jid) && continuation)
-        continuation(jid);
-    else if(jid && password) {
-        open(jid, {
-            password: password,
-            connectionHost: connectionHost,
-            connectionPort: connectionPort,
-            connectionSecurity: connectionSecurity,
-            connector: connector
-        }, function() {
-            send(jid,
-                 <iq type="get">
-                 <query xmlns="jabber:iq:roster"/>
-                 </iq>,
-                 function() {
-                     send(jid, <presence/>);
-                     if(continuation)
-                         continuation(jid)
-                 })
-        });
+    if(!account)
+        return;
+
+    if(!(account.jid && password))
+        return;
+        
+    if(isUp(account.jid)) { // remove in case of strange loops
+        continuation(account.jid);
+        return;
     }
+
+    open(account.jid, {
+        password: password,
+        connectionHost: account.connectionHost,
+        connectionPort: account.connectionPort,
+        connectionSecurity: account.connectionSecurity,
+    }, function() {
+        send(account.jid,
+             <iq type='get'>
+             <query xmlns='jabber:iq:roster'/>
+             </iq>,
+             function() {
+                 send(account.jid, <presence/>);
+                 if(continuation)
+                     continuation(account.jid)
+             })        
+    });
 }
 
 function _send(jid, stanza, handler) {
