@@ -284,6 +284,7 @@ function send(sessionName, element, observer) {
 
         var cachedReply = cache.first(q()
                                       .event('iq')
+                                      .account(sessionName)
                                       .from(element.getAttribute('to'))
                                       .type('result')
                                       .direction('in')
