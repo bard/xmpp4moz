@@ -294,14 +294,14 @@ function up(account, extra) {
     else if(typeof(account) == 'string')
         account = getAccountByJid(account);
     
+    continuation = continuation || function() {};
     if(account.jid)
         _up(account, continuation);
     else
         _up(null, function(jid) {
-                account.jid = jid;
-                if(continuation)
-                    continuation(jid);
-            });
+            account.jid = jid;
+                continuation(jid);
+        });
 }
 
 // http://dev.hyperstruct.net/xmpp4moz/wiki/DocLocalAPI#XMPP.down
