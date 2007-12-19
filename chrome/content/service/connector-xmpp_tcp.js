@@ -62,6 +62,93 @@ function init(jid, password, host, port, ssl) {
         this.onDataAvailable_normalOperation;
     this._doc = Cc['@mozilla.org/xml/xml-document;1']
         .createInstance(Ci.nsIDOMXMLDocument);
+
+    this._parser = Cc['@mozilla.org/saxparser/xmlreader;1']
+        .createInstance(Ci.nsISAXXMLReader);
+    this._parser.parseAsync(null);
+
+    this._parser.errorHandler = {
+        error: function() { },
+        fatalError: function() { },
+        ignorableWarning: function() { },
+        QueryInterface: function(iid) {
+            if(!iid.equals(Ci.nsISupports) &&
+               !iid.equals(Ci.nsISAXErrorHandler))
+                throw Cr.NS_ERROR_NO_INTERFACE;
+            return this;
+        }
+    };
+
+
+    var connector = this, doc = this._doc;
+    this._parser.contentHandler = {
+        startDocument: function() {
+            connector.openedIncomingStream();
+        },
+        
+        endDocument: function() {
+            connector.closedIncomingStream();
+        },
+        
+        startElement: function(uri, localName, qName, attributes) {
+            // Filter out.  These are supposed to be local only --
+            // accepting them from outside can cause serious mess.
+            // Should probably be filtered by session.
+            if(uri == 'http://hyperstruct.net/xmpp4moz/protocol/internal')
+                return;
+
+            var e = (uri == 'jabber:client' ?
+                     doc.createElement(qName) :
+                     doc.createElementNS(uri, qName))
+            for(var i=0; i<attributes.length; i++)
+                e.setAttribute(attributes.getQName(i),
+                               attributes.getValue(i));
+    
+            if(this._element) {
+                this._element.appendChild(e);
+                this._element = e;
+            }
+            else if(['message', 'iq', 'presence'].indexOf(localName) != -1)
+                this._element = e;
+            else
+                dump('--- xmpp4moz: started non-stanza element: ' + localName + '\n');
+        },
+        
+        endElement: function(uri, localName, qName) {
+            if(!this._element)
+                return;
+            
+            if(this._element.parentNode) {
+                this._element = this._element.parentNode;
+            } else {
+                this._element.normalize();
+                connector.receivedElement(this._element);
+                this._element = null;
+            }
+        },
+        
+        characters: function(value) {
+            if(!this._element)
+                return;
+    
+            this._element.appendChild(doc.createTextNode(value));
+        },
+        
+        processingInstruction: function(target, data) {},
+        
+        ignorableWhitespace: function(whitespace) {},
+        
+        startPrefixMapping: function(prefix, uri) {},
+        
+        endPrefixMapping: function(prefix) {},
+    
+        QueryInterface: function(iid) {
+            if(!iid.equals(Ci.nsISupports) &&
+               !iid.equals(Ci.nsISAXContentHandler))
+                throw Cr.NS_ERROR_NO_INTERFACE;
+            return this;
+        }
+    };
 }
 
 
@@ -202,93 +289,6 @@ function authenticate() {
 }
 
 function openStream(continuation) {
-    this._parser = Cc['@mozilla.org/saxparser/xmlreader;1']
-        .createInstance(Ci.nsISAXXMLReader);
-    this._parser.parseAsync(null);
-
-    this._parser.errorHandler = {
-        error: function() { },
-        fatalError: function() { },
-        ignorableWarning: function() { },
-        QueryInterface: function(iid) {
-            if(!iid.equals(Ci.nsISupports) &&
-               !iid.equals(Ci.nsISAXErrorHandler))
-                throw Cr.NS_ERROR_NO_INTERFACE;
-            return this;
-        }
-    };
-
-    var transport = this, doc = this._doc;
-
-    this._parser.contentHandler = {
-        startDocument: function() {
-            transport.openedIncomingStream();
-        },
-        
-        endDocument: function() {
-            transport.closedIncomingStream();
-        },
-        
-        startElement: function(uri, localName, qName, attributes) {
-            // Filter out.  These are supposed to be local only --
-            // accepting them from outside can cause serious mess.
-            // Should probably be filtered by session.
-            if(uri == 'http://hyperstruct.net/xmpp4moz/protocol/internal')
-                return;
-
-            var e = (uri == 'jabber:client' ?
-                     doc.createElement(qName) :
-                     doc.createElementNS(uri, qName))
-            for(var i=0; i<attributes.length; i++)
-                e.setAttribute(attributes.getQName(i),
-                               attributes.getValue(i));
-    
-            if(this._element) {
-                this._element.appendChild(e);
-                this._element = e;
-            }
-            else if(['message', 'iq', 'presence'].indexOf(localName) != -1)
-                this._element = e;
-            else
-                dump('--- xmpp4moz: started non-stanza element: ' + localName + '\n');
-        },
-        
-        endElement: function(uri, localName, qName) {
-            if(!this._element)
-                return;
-            
-            if(this._element.parentNode) {
-                this._element = this._element.parentNode;
-            } else {
-                this._element.normalize();
-                transport.receivedElement(this._element);
-                this._element = null;
-            }
-        },
-        
-        characters: function(value) {
-            if(!this._element)
-                return;
-    
-            this._element.appendChild(doc.createTextNode(value));
-        },
-        
-        processingInstruction: function(target, data) {},
-        
-        ignorableWhitespace: function(whitespace) {},
-        
-        startPrefixMapping: function(prefix, uri) {},
-        
-        endPrefixMapping: function(prefix) {},
-    
-        QueryInterface: function(iid) {
-            if(!iid.equals(Ci.nsISupports) &&
-               !iid.equals(Ci.nsISAXContentHandler))
-                throw Cr.NS_ERROR_NO_INTERFACE;
-            return this;
-        }
-    };
-    
     this.write(STREAM_PROLOGUE.replace('<SERVER>', JID(this._jid).hostname));
     this.notifyObservers('open', 'stream-out', null);
     continuation.call(this);
