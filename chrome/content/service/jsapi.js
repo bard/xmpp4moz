@@ -383,18 +383,8 @@ function open(jid, opts, continuation) {
              if(asString(subject) == 'active') continuation(); }} :
          null)
 
-    var connectorType;
-    if(JID(jid).hostname == 'x4m.localhost')
-        connectorType = 'virtual';
-    else if(JID(jid).hostname.match(/^(.+)\.x4m\.localhost$/)) {
-        connectorType = RegExp.$1;
-    } else {
-        var m = JID(jid).hostname.match(/^(.+)\.x4m\.localhost$/);
-        connectorType = m ? m[1] : 'tcp';
-    }
-        
-    var connector =
-        Cc['@hyperstruct.net/xmpp4moz/connector;1?type=' + connectorType]
+    var connector = 
+        Cc['@hyperstruct.net/xmpp4moz/connector;1?type=' + connectorTypeFor(jid)]
         .createInstance(Ci.nsIXMPPConnector);
     
     connector.init(jid, password, connectionHost, connectionPort, ssl);
@@ -410,6 +400,17 @@ function close(jid) {
 
 // UTILITIES
 // ----------------------------------------------------------------------
+
+function connectorTypeFor(jid) {
+    if(JID(jid).hostname == 'x4m.localhost')
+        return 'virtual';
+    else if(JID(jid).hostname.match(/^(.+)\.x4m\.localhost$/)) {
+        return RegExp.$1;
+    } else {
+        var m = JID(jid).hostname.match(/^(.+)\.x4m\.localhost$/);
+        return m ? m[1] : 'tcp';
+    }
+}
 
 function q() {
     return new Query();
