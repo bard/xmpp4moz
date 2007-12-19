@@ -108,7 +108,7 @@ function initOverlay() {
         
         if(window == Cc["@mozilla.org/appshell/window-mediator;1"]
            .getService(Ci.nsIWindowMediator)
-           .getMostRecentWindow('navigator:browser')) {
+           .getMostRecentWindow('')) {
             var message = 'XMPP: Error during authentication.';
             srvPrompt.alert(null, 'Error', message);
             // response.stanza.error.*[0].name().localName.replace(/-/g, ' ') +
