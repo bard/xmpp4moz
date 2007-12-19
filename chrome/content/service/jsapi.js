@@ -190,6 +190,39 @@ function isMUC(account, address) {
     }).length > 0;
 }
 
+// http://dev.hyperstruct.net/xmpp4moz/wiki/DocLocalAPI#XMPP.getError
+
+function getError(stanza) {
+    const ns_stanzas = 'urn:ietf:params:xml:ns:xmpp-stanzas';
+
+    const mappings = {
+        302: ['redirect', 'modify'],
+        400: ['bad-request', 'modify'],
+        401: ['not-authorized', 'auth'],
+        402: ['payment-required', 'auth'],
+        403: ['forbidden', 'auth'],
+        404: ['item-not-found', 'cancel'],
+        405: ['not-allowed', 'cancel'],
+        406: ['not-acceptable', 'modify'],
+        407: ['registration-required', 'auth'],
+        408: ['remote-server-timeout', 'wait'],
+        409: ['conflict', 'cancel'],
+        500: ['internal-server-error', 'wait'],
+        501: ['feature-not-implemented', 'cancel'],
+        502: ['service-unavailable', 'wait'],
+        503: ['service-unavailable', 'cancel'],
+        504: ['remote-server-timeout', 'wait'],
+        510: ['service-unavailable', 'cancel']
+    };
+
+    var xmppErrorCondition = stanza.error..ns_stanzas::*;
+    
+    if(xmppErrorCondition == undefined)
+        return mappings[stanza.error.@code];
+    else
+        return [xmppErrorCondition.localName(), stanza.error.@type.toString()];
+}
+
 // http://dev.hyperstruct.net/xmpp4moz/wiki/DocLocalAPI#XMPP.nickFor
 
 function nickFor(account, address) {
