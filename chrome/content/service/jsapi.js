@@ -377,11 +377,11 @@ function open(jid, opts, continuation) {
     var connectionPort = opts.connectionPort || 5223;
     var ssl = opts.connectionSecurity == 1 || opts.connectionSecurity == undefined;
 
-    var onSessionActive = {
-        observe: function(subject, topic, data) {
-            continuation();
-        }
-    };
+    var onResult =
+        (continuation ?
+         {observe: function(subject, topic, data) {
+             if(asString(subject) == 'active') continuation(); }} :
+         null)
 
     var connectorType;
     if(JID(jid).hostname == 'x4m.localhost')
@@ -398,7 +398,7 @@ function open(jid, opts, continuation) {
         .createInstance(Ci.nsIXMPPConnector);
     
     connector.init(jid, password, connectionHost, connectionPort, ssl);
-    service.open(jid, connector, onSessionActive);
+    service.open(jid, connector, onResult);
 }
 
 // http://dev.hyperstruct.net/xmpp4moz/wiki/DocLocalAPI#XMPP.close
@@ -944,6 +944,10 @@ function asDOM(object) {
     };
 
     return asDOM(object);
+}
+
+function asString(xpcomString) {
+   return xpcomString.QueryInterface(Ci.nsISupportsString).toString();
 }
 
 

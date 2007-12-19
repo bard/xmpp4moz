@@ -100,7 +100,7 @@ function isUp(jid) {
     return (session && session.wrappedJSObject.connector.isConnected());
 }
 
-function open(jid, connector, activationObserver) {
+function open(jid, connector, connectionProgressObserver) {
     var session = sessions.get(jid);
     if(session)
         return session;
@@ -118,13 +118,15 @@ function open(jid, connector, activationObserver) {
             switch(asString(subject)) {
             case 'active':
                 sessions.activated(session);
-                if(activationObserver)
-                    activationObserver.observe(subject, topic, data);
                 break;
             case 'disconnected':
                 sessions.closed(session);
                 break;
             }
+
+            if(connectionProgressObserver)
+                connectionProgressObserver.observe(subject, topic, data);
+
             break;
         case 'stream-in':
         case 'stream-out':
