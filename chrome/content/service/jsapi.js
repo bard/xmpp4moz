@@ -371,6 +371,7 @@ function createChannel(features) {
 // http://dev.hyperstruct.net/xmpp4moz/wiki/DocLocalAPI#XMPP.open
 
 function open(jid, opts, continuation) {
+    opts = opts || {};
     var password = opts.password;
     var connectionHost = opts.connectionHost || JID(jid).hostname;
     var connectionPort = opts.connectionPort || 5223;
