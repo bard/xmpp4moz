@@ -89,7 +89,8 @@ function finish() {
 // GUI ACTIONS
 // ----------------------------------------------------------------------
 
-// XXX Redundant with code in overlay_impl.js
+// XXX Redundant with and dependent on SamePlace code -- wrong, but no
+// better solution in sight.
 
 function openPreferences(paneID) {
     var instantApply;
@@ -105,7 +106,7 @@ function openPreferences(paneID) {
     var wm = Cc['@mozilla.org/appshell/window-mediator;1']
         .getService(Ci.nsIWindowMediator);
 
-    var win = wm.getMostRecentWindow('XMPP:Preferences');
+    var win = wm.getMostRecentWindow('SamePlace:Preferences');
     
     if(win) {
         win.focus();
@@ -114,8 +115,8 @@ function openPreferences(paneID) {
             win.document.documentElement.showPane(pane);
         }
     } else {
-        window.openDialog('chrome://xmpp4moz/content/preferences.xul',
-                          'XMPP Preferences', features, paneID);
+        window.openDialog('chrome://sameplace/content/preferences.xul',
+                          'SamePlace Preferences', features, paneID);
     }
 }
 

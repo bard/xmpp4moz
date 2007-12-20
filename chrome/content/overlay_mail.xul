@@ -36,12 +36,7 @@
 
   <!-- COMMANDS -->
 
-  <commandset id="mailCommands">
-    <command id="xmpp-command-open-preferences"
-             label="XMPP Preferences"
-             accesskey="r"
-             oncommand="xmpp4moz.openPreferences();"/>
-  </commandset>
+  <commandset id="mailCommands"/>
 
   <!-- KEYS -->
 
@@ -49,10 +44,7 @@
 
   <!-- MENUS -->
   
-  <menupopup id="taskPopup">
-    <menuitem class="menuitem-iconic"
-              command="xmpp-command-open-preferences"/>
-  </menupopup>
+  <menupopup id="taskPopup"/>
   
   <!-- TOOLBAR -->
  
