@@ -53,7 +53,8 @@ function isOpen() {
 }
 
 function send(element, replyObserver) {
-    element.setAttribute('id', this._idCounter++);
+    if(!element.getAttribute('id'))
+        element.setAttribute('id', this._idCounter++);
 
     if(replyObserver)
         this._pending[element.getAttribute('id')] = replyObserver;
