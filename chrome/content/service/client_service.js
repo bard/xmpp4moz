@@ -227,16 +227,18 @@ function open(jid, connector, connectionProgressObserver) {
             
             if(topic == 'stanza-in' && subject.nodeName == 'iq' &&
                subject.getAttribute('type') == 'get') {
-                var query = subject.getElementsByTagName('query')[0];
-                if(query && query.getAttribute('xmlns') == ns_disco_info) {
+                if(subject.getElementsByTagNameNS(ns_disco_info, 'query')[0]) {
                     var stanza =
                         <iq type="result" to={subject.getAttribute('from')}>
                         <query xmlns="http://jabber.org/protocol/disco#info">
-                             <identity category="client" type="pc" name="xmpp4moz"/>
-                             </query>
-                             </iq>;
-                    for each(var feature in features)
+                        <identity category="client" type="pc" name="xmpp4moz"/>
+                        <feature var="http://jabber.org/protocol/disco#info"/>
+                        </query>
+                        </iq>;
+                    for each(var feature in features) {
+                        // XXX should make sure that every feature is reported just once...
                         stanza.ns_disco_info::query.appendChild(new XML(feature));
+                    }
 
                     session.send(asDOM(stanza), null);
                 }
