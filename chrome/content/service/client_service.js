@@ -119,6 +119,22 @@ function open(jid, connector, connectionProgressObserver) {
                 sessions.activated(session);
                 break;
             case 'disconnected':
+                // Synthesize events
+                
+                var stanzas = cache.all(q()
+                                        .event('presence')
+                                        .account(session.name)
+                                        .compile());
+                for(var i=0; i<stanzas.snapshotLength; i++) {
+                    var inverse = syntheticClone(stanzas.snapshotItem(i));
+                    inverse.setAttribute('type', 'unavailable');
+                    
+                    if(inverse.getElementsByTagNameNS(ns_x4m_in, 'meta')[0].getAttribute('direction') == 'in')
+                        session.receive(inverse);
+                    else
+                        cache.receive(inverse);
+                }
+
                 sessions.closed(session);
                 break;
             }
@@ -140,27 +156,8 @@ function open(jid, connector, connectionProgressObserver) {
                 service.notifyObservers(subject, 'transport-out', session.name);
                 break;
             case 'stop':
-
-                // Synthesize events
-                
-                var stanzas = cache.all(q()
-                                        .event('presence')
-                                        .account(session.name)
-                                        .compile());
-                for(var i=0; i<stanzas.snapshotLength; i++) {
-                    var inverse = syntheticClone(stanzas.snapshotItem(i));
-                    inverse.setAttribute('type', 'unavailable');
-                    
-                    if(inverse.getElementsByTagNameNS(ns_x4m_in, 'meta')[0].getAttribute('direction') == 'in')
-                        session.receive(inverse);
-                    else
-                        cache.receive(inverse);
-                }
-                
                 log('{' + session.name + ',transport-out}    stop');
                 service.notifyObservers(xpcomize('stop'), 'transport-out', session.name);
-                sessions.closed(session);
-
                 break;
             }
             break;
