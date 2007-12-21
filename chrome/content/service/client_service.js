@@ -113,7 +113,6 @@ function open(jid, connector, connectionProgressObserver) {
         switch(topic) {
         case 'connector':
             log('{' + session.name + ',connector}   ' + asString(subject));
-            service.notifyObservers(subject, topic, session.name);
 
             switch(asString(subject)) {
             case 'active':
@@ -127,6 +126,7 @@ function open(jid, connector, connectionProgressObserver) {
             if(connectionProgressObserver)
                 connectionProgressObserver.observe(subject, topic, data);
 
+            service.notifyObservers(subject, topic, session.name);
             break;
         case 'stream-in':
         case 'stream-out':
