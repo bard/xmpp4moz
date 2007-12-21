@@ -528,7 +528,7 @@ function presenceSummary(account, address) {
             case 'away': weight = 2; break;
             case 'xa':   weight = 1; break;
             default:
-                throw new Error('Unexpected. (' + stanza.toXMLString() + ')');
+                weight = 4;
             }
         return weight;
     }
