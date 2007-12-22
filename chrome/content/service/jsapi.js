@@ -514,65 +514,56 @@ function rosterSegment(account, address) {
     return segment;
 }
 
-function presenceSummary(account, address) {
-    function presenceDegree(stanza) {
-        var weight;
-        if(stanza.@type == undefined && stanza.show == undefined)
-            weight = 4;
-        else if(stanza.@type == 'unavailable')
-            weight = 0;
+function presencesOf(account, address) {
+    function presenceWeight(presenceStanza) {
+        if(presenceStanza.@type == 'unavailable')
+            return 4;
         else
-            switch(stanza.show.toString()) {
-            case 'chat': weight = 5; break;
-            case 'dnd':  weight = 3; break;
-            case 'away': weight = 2; break;
-            case 'xa':   weight = 1; break;
+            switch(presenceStanza.show.toString()) {
+            case 'chat':
+            case '':
+                return 0;
+            case 'away':
+                return 1;
+            case 'xa':
+                return 2;
+            case 'dnd':
+                return 3;
             default:
-                weight = 4;
+                dump('Warning: unknown <show/> value: ' + presenceStanza.show.toString())
+                return 4;
             }
-        return weight;
     }
 
-    var presences;
-    if(account && address)
-        presences = cache.fetch({
-            event     : 'presence',
-            direction : 'in',
-            session   : { name: account },
-            stanza    : function(s) { return JID(s.@from).address == address; }
-            });
-    else 
-        presences = cache.fetch({
-            event     : 'presence',
-            direction : 'out',
-            stanza    : function(s) { return s.ns_muc::x == undefined && s.@to == undefined; }
-            });
-
-    presences.sort(
-        function(a, b) {
-            return presenceDegree(b.stanza) - presenceDegree(a.stanza);
+    return XMPP
+        .cache
+        .all(XMPP.q()
+             .event('presence')
+             .account(account)
+             .from(address))
+        .sort(function(p1, p2) {
+            return (parseInt(p2.stanza.priority.toString() || '0') -
+                    parseInt(p1.stanza.priority.toString() || '0') ||
+                    presenceWeight(p1.stanza) -
+                    presenceWeight(p2.stanza));
         });
+};
 
-    if(presences[0])
-        return presences[0];
-    else {
-        var synthPresence;
-        if(address)
-            synthPresence = {
-                session   : { name: account },
-                account   : account,
-                direction : 'in',
-                stanza    : <presence from={address} type="unavailable"/>
-            }
-        else
-            synthPresence = {
-                session   : { name: account },
-                account   : account,
-                direction : 'out',
-                stanza    : <presence type="unavailable"/>
-            }
-        return synthPresence;
-    }
+function presenceSummary(account, address) {
+    if(account && address)
+        return presencesOf(account, address)[0] || {
+            account   : account,
+            direction : 'in',
+            stanza    : <presence from={address} type='unavailable'/>
+        }
+    else
+        return cache.all(q().event('presence').direction('out')).filter(function(p) {
+            return p.stanza.ns_muc::x == undefined && p.stanza.@to == undefined;
+        })[0] || {
+            account   : account,
+            direction : 'out',
+            stanza    : <presence type='unavailable'/>
+        }
 }
 
 
