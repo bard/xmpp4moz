@@ -542,10 +542,12 @@ function presencesOf(account, address) {
              .account(account)
              .from(address))
         .sort(function(p1, p2) {
-            return (parseInt(p2.stanza.priority.toString() || '0') -
-                    parseInt(p1.stanza.priority.toString() || '0') ||
-                    presenceWeight(p1.stanza) -
-                    presenceWeight(p2.stanza));
+            if(p1.stanza.@type == p2.stanza.@type)
+                return (parseInt(p2.stanza.priority.toString() || '0') -
+                        parseInt(p1.stanza.priority.toString() || '0') ||
+                        presenceWeight(p1.stanza) - presenceWeight(p2.stanza));
+            else
+                return (presenceWeight(p1.stanza) - presenceWeight(p2.stanza));
         });
 };
 
