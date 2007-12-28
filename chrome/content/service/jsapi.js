@@ -227,12 +227,24 @@ function getError(stanza) {
 // http://dev.hyperstruct.net/xmpp4moz/wiki/DocLocalAPI#XMPP.nickFor
 
 function nickFor(account, address) {
-    var roster = cache.find({
-        event     : 'iq',
-        direction : 'in',
-        account   : account,
-        stanza    : function(s) { return s.ns_roster::query != undefined; }});
-        
+    const ns_vcard_update = 'vcard-temp:x:update';
+
+    var presence = cache.first(
+        q().event('presence')
+            .direction('in')
+            .account(account)
+            .from(address)
+            .desc(ns_vcard_update, 'nickname'));
+
+    if(presence)
+        return presence.stanza..ns_vcard_update::nickname.toString()
+
+    var roster = cache.first(
+        q().event('iq')
+            .direction('in')
+            .account(account)
+            .child('jabber:iq:roster', 'query'));
+    
     var name;
     if(roster) {
         var item = roster.stanza..ns_roster::item
