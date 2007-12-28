@@ -75,6 +75,13 @@ Query.prototype = {
         return this;
     },
 
+    desc: function(namespace, name) {
+        this._fragments.push('//*[local-name() = "' + name + '" and ' +
+                             'namespace-uri() = "' + namespace + '"]');
+
+        return this;
+    },
+
     query: function(val) {
         dump('*** Deprecation notice *** Use q().child(namespace, name) instead of q().query(prefix) ')
         this._fragments.push('/' + val + ':query');
