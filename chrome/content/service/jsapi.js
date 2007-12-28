@@ -92,9 +92,10 @@ var cache = {
     },
 
     first: function(query) {
-        return this._wrapResult(
-            service.wrappedJSObject.cache.first(
-                (typeof(query.compile) == 'function') ? query.compile() : query));
+        var result = service.wrappedJSObject.cache.first(
+            (typeof(query.compile) == 'function') ? query.compile() : query)
+        if(result)
+            return this._wrapResult(result);
     },
 
     all: function(query) {
