@@ -634,7 +634,7 @@ function connectPanel(panel, account, address, createSocket) {
         if(stanza.@type == undefined && stanza.name() == 'message')
             stanza.@type = type;
         else if(caps.set_type)
-            true;
+            ;
         else
             throw new Error('Shared application tried to set message type.');
 
@@ -643,7 +643,7 @@ function connectPanel(panel, account, address, createSocket) {
         else if(/^\/.+$/.test(stanza.@to.toString()) && caps.set_resource)
             stanza.@to = address + stanza.@to;
         else if(caps.set_address)
-            true;
+            ;
         else
             throw new Error('Shared application does not have enough privileges for requested operation');
 
