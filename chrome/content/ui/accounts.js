@@ -45,7 +45,7 @@ xmpp.ui.refreshAccounts = function(menuPopup) {
             menuItem.setAttribute('value', account.jid);
             menuItem.setAttribute('class', 'menuitem-iconic');
 
-            accountPresence =
+            var accountPresence =
                 XMPP.cache.fetch({
                     event: 'presence',
                     direction: 'out',
