@@ -414,6 +414,35 @@ function close(jid) {
 // UTILITIES
 // ----------------------------------------------------------------------
 
+function presenceWeight(presenceStanza) {
+    if(presenceStanza.@type == 'unavailable')
+        return 4;
+    else
+        switch(presenceStanza.show.toString()) {
+        case 'chat':
+        case '':
+            return 0;
+        case 'away':
+            return 1;
+        case 'xa':
+            return 2;
+        case 'dnd':
+            return 3;
+        default:
+            dump('Warning: unknown <show/> value: ' + presenceStanza.show.toString())
+            return 4;
+        }
+}
+
+function comparePresences(p1, p2) {
+    if(p1.stanza.@type == p2.stanza.@type)
+        return (parseInt(p2.stanza.priority.toString() || '0') -
+                parseInt(p1.stanza.priority.toString() || '0') ||
+                presenceWeight(p1.stanza) - presenceWeight(p2.stanza));
+    else
+        return (presenceWeight(p1.stanza) - presenceWeight(p2.stanza));
+}
+
 function connectorTypeFor(jid) {
     if(JID(jid).hostname == 'x4m.localhost')
         return 'virtual';
@@ -528,40 +557,13 @@ function rosterSegment(account, address) {
 }
 
 function presencesOf(account, address) {
-    function presenceWeight(presenceStanza) {
-        if(presenceStanza.@type == 'unavailable')
-            return 4;
-        else
-            switch(presenceStanza.show.toString()) {
-            case 'chat':
-            case '':
-                return 0;
-            case 'away':
-                return 1;
-            case 'xa':
-                return 2;
-            case 'dnd':
-                return 3;
-            default:
-                dump('Warning: unknown <show/> value: ' + presenceStanza.show.toString())
-                return 4;
-            }
-    }
-
     return XMPP
         .cache
         .all(XMPP.q()
              .event('presence')
              .account(account)
              .from(address))
-        .sort(function(p1, p2) {
-            if(p1.stanza.@type == p2.stanza.@type)
-                return (parseInt(p2.stanza.priority.toString() || '0') -
-                        parseInt(p1.stanza.priority.toString() || '0') ||
-                        presenceWeight(p1.stanza) - presenceWeight(p2.stanza));
-            else
-                return (presenceWeight(p1.stanza) - presenceWeight(p2.stanza));
-        });
+        .sort(comparePresences);
 };
 
 function presenceSummary(account, address) {
@@ -571,14 +573,20 @@ function presenceSummary(account, address) {
             direction : 'in',
             stanza    : <presence from={address} type='unavailable'/>
         }
-    else
-        return cache.all(q().event('presence').direction('out')).filter(function(p) {
-            return p.stanza.ns_muc::x == undefined && p.stanza.@to == undefined;
-        })[0] || {
+    else {
+        var presences = cache
+            .all(q().event('presence').direction('out'))
+            .filter(function(p) {
+                return p.stanza.ns_muc::x == undefined && p.stanza.@to == undefined;
+            })
+            .sort(comparePresences);
+        
+        return presences[0] || {
             account   : account,
             direction : 'out',
             stanza    : <presence type='unavailable'/>
         }
+    }
 }
 
 
