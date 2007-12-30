@@ -55,10 +55,15 @@ function _(id) {
 // ----------------------------------------------------------------------
 
 function initOverlay() {
-    if(prefBranch.getBoolPref('xmpp.firstInstall')) {
-        addToolbarButton();
+    if(prefBranch.getBoolPref('xmpp.firstInstall'))
+        // We used to add the toolbar button here.  No longer doing
+        // that, but keeping the check around.
         prefBranch.setBoolPref('xmpp.firstInstall', false);
-    }
+
+    // Remove toolbar button if any is left from previous
+    // installations.
+
+    removeToolbarButton('xmpp-button');
 
     // Start watching XMPP traffic
 
@@ -84,7 +89,6 @@ function initOverlay() {
     }, function() {
         document
             .getElementById('xmpp-status').hidden = true;
-        updateStatusIndicator();
     });
 
     // Hiding progress bar when connector has authenticated
@@ -116,41 +120,14 @@ function initOverlay() {
         }
     });
 
-    // Changing availability and show attributes on toolbar button based
-    // on a summary of presences of connected accounts.
-
-    channel.on({
-        event     : 'presence',
-        direction : 'out',
-        stanza    : function(s) {
-            return s.@type == undefined && s.ns_muc::x == undefined;
-        }
-    }, function(presence) {
-        updateStatusIndicator();
-    });
-
     connectAutologinAccounts();
-    updateStatusIndicator();
 }
 
 
 // GUI ACTIONS
 // ----------------------------------------------------------------------
 
-/**
- * Update the status indicator in the toolbar.  Status is determined
- * by querying the presence cache.
- *
- */
-
-function updateStatusIndicator() {
-    var summary = XMPP.presenceSummary();
-    _('button').setAttribute('availability',
-                             summary.stanza.@type.toString() || 'available');
-    _('button').setAttribute('show', summary.stanza.show.toString());    
-}
-
-function addToolbarButton() {
+function modifyToolbarButtons(modifier) {
     var toolbar =
         document.getElementById('nav-bar') ||
         document.getElementById('mail-bar') ||
@@ -158,22 +135,32 @@ function addToolbarButton() {
 
     if(!toolbar)
         return;
-        
-    if(toolbar &&
-       toolbar.currentSet.indexOf('xmpp-button') == -1 &&
-       toolbar.getAttribute('customizable') == 'true') {
 
-        toolbar.currentSet = toolbar.currentSet.replace(
-            /(urlbar-container|separator)/,
-            'xmpp-button,$1');
+    if(toolbar.getAttribute('customizable') == 'true') {
+        var newSet = modifier(toolbar.currentSet);
+        if(!newSet)
+            return;
+
+        toolbar.currentSet = newSet;
         toolbar.setAttribute('currentset', toolbar.currentSet);
         toolbar.ownerDocument.persist(toolbar.id, 'currentset');
         try { BrowserToolboxCustomizeDone(true); } catch (e) {}
     }
 }
 
-function requestedChangeStatus(event) {
-    changeStatus(event.target.value);
+function removeToolbarButton(buttonId) {
+    modifyToolbarButtons(function(set) {
+        if(set.indexOf(buttonId) != -1)
+            return set.replace(buttonId, '');
+    });
+}
+
+function addToolbarButton(buttonId) {
+    modifyToolbarButtons(function(set) {
+        if(set.indexOf(buttonId) == -1)
+            return set.replace(/(urlbar-container|separator)/,
+                               buttonId + ',$1');
+    });
 }
 
 
@@ -193,60 +180,6 @@ function connectAutologinAccounts() {
     .forEach(function(a) {
         XMPP.up(a);
     });
-}
-
-function changeStatus(type) {
-    var accountsUp = XMPP.accounts.filter(XMPP.isUp);
-
-    if(accountsUp.length == 0) {
-        if(type == 'available')
-            XMPP.accounts.forEach(XMPP.up);
-    } else {
-        accountsUp.forEach(
-            function(account) {
-                if(type == 'unavailable')
-                    XMPP.down(account);
-                else {
-                    var existingPresenceStanza =
-                        XMPP.cache.fetch({
-                            event     : 'presence',
-                            account   : account.jid,
-                            direction : 'out',
-                            stanza    : function(s) {
-                                return s.ns_muc::x == undefined;
-                            }
-                        })[0];
-                    
-                    var newPresenceStanza = (existingPresenceStanza ?
-                                             existingPresenceStanza.stanza.copy() :
-                                             <presence/>);
-                    switch(type) {
-                    case 'available':
-                        delete newPresenceStanza.show;
-                        break;
-                    case 'away':
-                        newPresenceStanza.show = <show>away</show>;
-                        break;
-                    case 'dnd':
-                        newPresenceStanza.show = <show>dnd</show>;
-                        break;
-                    }
-                    XMPP.send(account, newPresenceStanza);
-                }
-            });
-    }
-}
-
-
-// GUI REACTIONS
-// ----------------------------------------------------------------------
-
-function selectedAccount(event) {
-    var accountJid = event.target.value;
-    if(XMPP.isUp(accountJid))
-        XMPP.down(accountJid);
-    else
-        XMPP.up(accountJid);
 }
 
 

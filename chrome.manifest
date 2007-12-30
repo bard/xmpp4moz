@@ -5,4 +5,3 @@ overlay chrome://browser/content/browser.xul chrome://xmpp4moz/content/overlay_b
 overlay chrome://messenger/content/messenger.xul chrome://xmpp4moz/content/overlay_mail.xul
 overlay chrome://rubberducky/content/xul/mainwin.xul chrome://xmpp4moz/content/overlay_songbird.xul
 
-style chrome://global/content/customizeToolbar.xul chrome://xmpp4moz/skin/toolbar-button.css

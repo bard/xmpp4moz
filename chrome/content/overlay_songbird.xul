@@ -22,8 +22,6 @@
 -->
 
 <?xml-stylesheet href="chrome://xmpp4moz/skin/overlay.css" type="text/css"?>
-<?xml-stylesheet href="chrome://xmpp4moz/skin/toolbar-button.css" type="text/css"?>
-<?xul-overlay href="chrome://xmpp4moz/content/ui/accounts.xul"?>
 
 <!DOCTYPE overlay>
 <overlay id="xmpp4moz-overlay"
@@ -32,30 +30,5 @@
   <script type="application/x-javascript;version=1.7" src="chrome://xmpp4moz/content/xmpp.js"/>
   <script type="application/x-javascript;version=1.7" src="overlay.js"/>
 
-  <hbox id="frame_control_pane">
-    <toolbarbutton id="xmpp-button"
-                   class="sb_faceplate"
-                   type="menu-button"
-                   label="Jabber"
-                   availability="unavailable"
-                   oncommand="if(event.target != this)
-                              xmpp4moz.selectedAccount(event);">
-      <menupopup id="xmpp-popup-accounts-secondary">
-        <menuseparator/>
-        
-        <menu id="xmpp-menu-set-status"
-              label="Set Status" accesskey="S"
-              oncommand="xmpp4moz.requestedChangeStatus(event);
-                         event.stopPropagation();">
-          <menupopup>
-            <menuitem class="menuitem-iconic" role="online" label="Online" value="available"/>
-            <menuitem class="menuitem-iconic" role="away" label="Away" value="away"/>
-            <menuitem class="menuitem-iconic" role="dnd" label="Busy" value="dnd"/>
-            <menuitem class="menuitem-iconic" role="offline" label="Offline" value="unavailable"/>
-          </menupopup>
-        </menu>
-        <menuitem class="menuitem-iconic" command="xmpp-command-open-preferences"/>
-      </menupopup>
-    </toolbarbutton>
-  </hbox>
+  <hbox id="frame_control_pane"/>
 </overlay>

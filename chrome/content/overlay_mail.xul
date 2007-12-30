@@ -22,8 +22,6 @@
 -->
 
 <?xml-stylesheet href="chrome://xmpp4moz/skin/overlay.css" type="text/css"?>
-<?xml-stylesheet href="chrome://xmpp4moz/skin/toolbar-button.css" type="text/css"?>
-<?xul-overlay href="chrome://xmpp4moz/content/ui/accounts.xul"?>
 
 <!DOCTYPE overlay>
 <overlay id="xmpp-overlay"
@@ -49,15 +47,6 @@
   <!-- TOOLBAR -->
  
   <toolbox id="mail-toolbox"/>
-
-  <toolbarpalette id="MailToolbarPalette">
-    <toolbarbutton id="xmpp-button"
-                   class="toolbarbutton-1 chromeclass-toolbar-additional"
-                   label="SP"
-                   tooltiptext="SamePlace"
-                   availability="unavailable">
-    </toolbarbutton>
-  </toolbarpalette>
 
   <!-- STATUS BAR -->
 
