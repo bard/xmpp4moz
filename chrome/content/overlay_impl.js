@@ -120,7 +120,8 @@ function initOverlay() {
         }
     });
 
-    connectAutologinAccounts();
+    // Let browser settle down
+    setTimeout(connectAutologinAccounts, 2000);
 }
 
 
