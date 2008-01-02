@@ -227,17 +227,17 @@ function getError(stanza) {
 // http://dev.hyperstruct.net/xmpp4moz/wiki/DocLocalAPI#XMPP.nickFor
 
 function nickFor(account, address) {
-    const ns_vcard_update = 'vcard-temp:x:update';
+//     const ns_vcard_update = 'vcard-temp:x:update';
 
-    var presence = cache.first(
-        q().event('presence')
-            .direction('in')
-            .account(account)
-            .from(address)
-            .desc(ns_vcard_update, 'nickname'));
+//     var presence = cache.first(
+//         q().event('presence')
+//             .direction('in')
+//             .account(account)
+//             .from(address)
+//             .desc(ns_vcard_update, 'nickname'));
 
-    if(presence)
-        return presence.stanza..ns_vcard_update::nickname.toString()
+//     if(presence)
+//         return presence.stanza..ns_vcard_update::nickname.toString()
 
     var roster = cache.first(
         q().event('iq')
