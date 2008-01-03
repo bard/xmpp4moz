@@ -60,11 +60,6 @@ function initOverlay() {
         // that, but keeping the check around.
         prefBranch.setBoolPref('xmpp.firstInstall', false);
 
-    // Remove toolbar button if any is left from previous
-    // installations.
-
-    removeToolbarButton('xmpp-button');
-
     // Start watching XMPP traffic
 
     channel = XMPP.createChannel();
