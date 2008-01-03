@@ -742,13 +742,17 @@ function connectPanel(panel, account, address, createSocket) {
         stanza    : function(s) { return s != undefined && (JID(s.@from).address == address); }
     }, function(event) { gotDataFromXMPP(event.stanza); });
     
-    if(type != 'groupchat')
-        channel.on({
-            direction : 'out',
-            event     : 'message',
-            account   : account,
-            stanza    : function(s) { return JID(s.@to).address == address; }
-        }, function(message) { gotDataFromXMPP(message.stanza); });
+    channel.on({
+        direction : 'out',
+        event     : 'message',
+        account   : account,
+        stanza    : function(s) { return JID(s.@to).address == address; }
+    }, function(message) {
+        // Only echo messages to chat app if they're not groupchat.
+        // groupchat ones will be echoed back to us by the server.
+        if(message.stanza.@type != 'groupchat')
+            gotDataFromXMPP(message.stanza);
+    });
 
 
     gotDataFromXMPP(rosterSegment(account, address));
