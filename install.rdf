@@ -58,7 +58,7 @@
       </Description>
     </em:targetApplication>
 
-    <em:name>xmpp4moz (unstable branch)</em:name>
+    <em:name>xmpp4moz</em:name>
     <em:description>XMPP integration layer for Mozilla</em:description>
     <em:creator>Massimiliano Mirra</em:creator>
     <em:updateURL/>
