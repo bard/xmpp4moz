@@ -22,7 +22,9 @@
 
 
 window.addEventListener(
-    'load', function(event) { xmpp4moz.initOverlay(); }, false);
+    'load', function(event) { xmpp4moz.init(); }, false);
+window.addEventListener(
+    'unload', function(event) { xmpp4moz.finish(); }, false);
 
 var xmpp4moz = {};
 var xmpp = xmpp || {};

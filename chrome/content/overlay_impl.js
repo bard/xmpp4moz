@@ -54,7 +54,7 @@ function _(id) {
 // INITIALIZATION
 // ----------------------------------------------------------------------
 
-function initOverlay() {
+function init() {
     if(prefBranch.getBoolPref('xmpp.firstInstall'))
         // We used to add the toolbar button here.  No longer doing
         // that, but keeping the check around.
@@ -117,6 +117,10 @@ function initOverlay() {
 
     // Let browser settle down
     setTimeout(connectAutologinAccounts, 2000);
+}
+
+function finish() {
+    channel.release();
 }
 
 
