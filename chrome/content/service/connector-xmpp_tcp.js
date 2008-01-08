@@ -108,10 +108,10 @@ function init(jid, password, host, port, ssl) {
                 this._element.appendChild(e);
                 this._element = e;
             }
-            else if(['message', 'iq', 'presence'].indexOf(localName) != -1)
-                this._element = e;
+            else if(localName == 'stream' && uri == 'http://etherx.jabber.org/streams')
+                ;
             else
-                dump('--- xmpp4moz: started non-stanza element: ' + localName + '\n');
+                this._element = e;
         },
         
         endElement: function(uri, localName, qName) {
@@ -122,6 +122,9 @@ function init(jid, password, host, port, ssl) {
                 this._element = this._element.parentNode;
             } else {
                 this._element.normalize();
+                if(['message', 'iq', 'presence'].indexOf(localName) == -1)
+                    dump('--- xmpp4moz: got non-stream-level element: ' + localName + '\n');
+
                 connector.receivedElement(this._element);
                 this._element = null;
             }
