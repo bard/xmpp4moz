@@ -859,59 +859,64 @@ function AccountWrapper(key) {
 }
 
 AccountWrapper.prototype = {
-    _read: function(preference) {
-        var prefReaders = ['getCharPref', 'getIntPref', 'getBoolPref'];
-        for each(var reader in prefReaders) {
-            try {
-                return pref[reader]('account.' + this.key + '.' + preference);
-            } catch(e) {}
-        }
-        return undefined;
-    },
+    _read: function(_name) {
+        var name = 'account.' + this.key + '.' + _name;
 
+        var prefType = pref.getPrefType(name);
+        if(prefType == pref.PREF_STRING)
+            return pref.getCharPref(name);
+        else if(prefType == pref.PREF_INT)
+            return pref.getIntPref(name);
+        else if(prefType == pref.PREF_BOOL)
+            return pref.getBoolPref(name);
+        else
+            throw new Error('Unhandled pref type for "' + name + '". (' + prefType + ')');
+    },
+        
     get jid() {
         return this.address + '/' + this.resource;
     }
 };
 
-['address', 'password', 'resource',
- 'autoLogin', 'connectionHost', 'connectionPort', 'connectionSecurity'
-    ].forEach(function(property) {
-                  AccountWrapper.prototype.__defineGetter__(
-                      property, function() {
-                          return this._read(property);
-                      });
-              });
-
-this.__defineGetter__(
-    'accounts', function() {
-        var keys = uniq(
-            pref
-            .getChildList('account.', {})
-            .map(
-                function(item) {
-                    try {
-                        return item.split('.')[1];
-                    } catch(e) {
-                        // Cases where item.split() would result in
-                        // an error and prevent accounts from being
-                        // read were reported.  No additional
-                        // information is available, though, so we
-                        // just catch the exception and report the
-                        // error to the console.
-                        Cu.reportError(e);
-                        return undefined;
-                    }})
-            .filter(
-                function(key) {
-                    return key != undefined;
-                }));
-
-        return keys.map(
-            function(key) {
-                return new AccountWrapper(key);
-            });
+[
+    'address',
+    'password',
+    'resource',
+    'autoLogin',
+    'connectionHost',
+    'connectionPort',
+    'connectionSecurity'
+].forEach(function(property) {
+    AccountWrapper.prototype.__defineGetter__(property, function() {
+        return this._read(property);
     });
+});
+
+
+this.__defineGetter__('accounts', function() {
+    var keys = uniq(
+        pref.getChildList('account.', {})
+            .map(function(item) {
+                try {
+                    return item.split('.')[1];
+                } catch(e) {
+                    // Cases where item.split() would result in
+                    // an error and prevent accounts from being
+                    // read were reported.  No additional
+                    // information is available, though, so we
+                    // just catch the exception and report the
+                    // error to the console.
+                    Cu.reportError(e);
+                    return undefined;
+                }})
+            .filter(function(key) {
+                return key != undefined;
+            }));
+
+    return keys.map(function(key) {
+        return new AccountWrapper(key);
+    });
+});
 
 function getAccountByJid(jid) {
     var result;
