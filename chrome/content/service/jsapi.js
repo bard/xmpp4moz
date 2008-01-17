@@ -859,7 +859,7 @@ function AccountWrapper(key) {
 }
 
 AccountWrapper.prototype = {
-    _read: function(_name) {
+    _prefRead: function(_name) {
         var name = 'account.' + this.key + '.' + _name;
 
         var prefType = pref.getPrefType(name);
@@ -870,7 +870,7 @@ AccountWrapper.prototype = {
         else if(prefType == pref.PREF_BOOL)
             return pref.getBoolPref(name);
         else
-            throw new Error('Unhandled pref type for "' + name + '". (' + prefType + ')');
+            return null;
     },
         
     get jid() {
@@ -880,7 +880,6 @@ AccountWrapper.prototype = {
 
 [
     'address',
-    'password',
     'resource',
     'autoLogin',
     'connectionHost',
@@ -888,8 +887,12 @@ AccountWrapper.prototype = {
     'connectionSecurity'
 ].forEach(function(property) {
     AccountWrapper.prototype.__defineGetter__(property, function() {
-        return this._read(property);
+        return this._prefRead(property);
     });
+});
+
+AccountWrapper.prototype.__defineGetter__('password', function() {
+    return getPassword(this.address) || this._prefRead('password');
 });
 
 
@@ -940,6 +943,93 @@ function getAccountByKey(key) {
                 result = account;
         });
     return result;
+}
+
+
+function getLoginInfo(url, username) {
+    var logins = Cc['@mozilla.org/login-manager;1']
+        .getService(Ci.nsILoginManager)
+        .findLogins({}, url, null, url);
+    for(var i=0; i<logins.length; i++)
+        if(logins[i].username == username)
+            return logins[i];
+}
+
+function getPassword(address) {
+    var url = 'xmpp://' + JID(address).hostname;
+    var username = JID(address).username;
+
+    if('@mozilla.org/passwordmanager;1' in Cc) {
+        var passwordManager = Cc['@mozilla.org/passwordmanager;1']
+            .getService(Ci.nsIPasswordManager);
+        
+        var e = passwordManager.enumerator;
+        while(e.hasMoreElements()) {
+            try {
+                var pass = e.getNext().QueryInterface(Ci.nsIPassword);
+                if(pass.host == url)
+                    return pass.password;
+            } catch (ex) {
+
+            }
+        }
+        
+    } else if('@mozilla.org/login-manager;1' in Cc) {
+        var loginInfo = getLoginInfo(url, username);
+        if(loginInfo)
+            return loginInfo.password;
+    }
+}
+
+function delPassword(address) {
+    var url = 'xmpp://' + JID(address).hostname;
+    var username = JID(address).username;
+
+    if('@mozilla.org/passwordmanager;1' in Cc) {
+        var passwordManager = Cc['@mozilla.org/passwordmanager;1']
+            .getService(Ci.nsIPasswordManager);
+        
+        try { passwordManager.removeUser(url, username); } catch (e) {}
+    } else if('@mozilla.org/login-manager;1' in Cc) {
+        var loginInfo = getLoginInfo(url, username);
+        if(loginInfo)
+            loginManager.removeLogin(loginInfo)
+    }
+}
+
+function setPassword(address, password) {
+    var url = 'xmpp://' + JID(address).hostname;
+    var username = JID(address).username;
+
+    if('@mozilla.org/passwordmanager;1' in Cc) {
+        var passwordManager = Cc['@mozilla.org/passwordmanager;1']
+            .getService(Ci.nsIPasswordManager);
+        
+        try { passwordManager.removeUser(url, username); } catch (e) {}
+        passwordManager.addUser(url, username, password);
+    }
+    else if('@mozilla.org/login-manager;1' in Cc) {
+        var loginManager = Cc['@mozilla.org/login-manager;1']
+            .getService(Ci.nsILoginManager)
+
+        var loginInfo = Cc['@mozilla.org/login-manager/loginInfo;1']
+            .createInstance(Ci.nsILoginInfo);
+        loginInfo.init(
+            url,                        // hostname
+            null,                       // submit url - forms only
+            url,                        // realm - it's important that this be same as url, as firefox2->3 migration will make it so for accounts in firefox2
+            username,                   // username
+            password,                   // password
+            null,                       // username field - forms only
+            null);                      // password field - forms only
+        
+        var oldLoginInfo = getLoginInfo(url, username);
+
+        if(oldLoginInfo)
+            loginManager.modifyLogin(oldLoginInfo, loginInfo)
+        else
+            loginManager.addLogin(loginInfo);
+    }
 }
 
 function asDOM(object) {
