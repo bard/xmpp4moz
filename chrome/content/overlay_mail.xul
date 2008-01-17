@@ -47,7 +47,7 @@
   <!-- TOOLBAR -->
  
   <toolbox id="mail-toolbox"/>
-
+  
   <!-- STATUS BAR -->
 
   <statusbar id="status-bar">
@@ -59,40 +59,5 @@
 
   <!-- CONTENT AREA -->
 
-  <vbox id="folderPaneBox">
-    <toolbox id="xmpp-toolbox" hidden="true">
-      <tooltip id="xmpp-toolbox-tooltip">
-        <grid>
-          <columns>
-            <column flex="0"/>
-            <column flex="1"/>
-          </columns>
-
-          <rows>
-            <row>
-              <label value="Account:"/>
-              <label role="account"/>
-            </row>
-
-            <row>
-              <label value="Address:"/>
-              <label role="address"/>
-            </row>
-          </rows>
-        </grid>
-
-      </tooltip>
-
-      <toolbar fullscreentoolbar="true" id="xmpp-toolbox-toolbar">
-        <toolbaritem align="center" tooltip="xmpp-toolbox-tooltip">
-          <label value="Connected to:"/>
-          <label role="address"/>
-        </toolbaritem>
-
-        <toolbarspring/>
-
-        <toolbarbutton label="Disconnect" oncommand="xmpp4moz.disableContent();"/>
-      </toolbar>
-    </toolbox>
-  </vbox>
+  <vbox id="folderPaneBox"/>
 </overlay>
