@@ -1020,8 +1020,8 @@ function setPassword(address, password) {
             url,                        // realm - it's important that this be same as url, as firefox2->3 migration will make it so for accounts in firefox2
             username,                   // username
             password,                   // password
-            null,                       // username field - forms only
-            null);                      // password field - forms only
+            '',                       // username field - forms only
+            '');                      // password field - forms only
         
         var oldLoginInfo = getLoginInfo(url, username);
 
