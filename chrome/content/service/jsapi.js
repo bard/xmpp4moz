@@ -967,7 +967,7 @@ function getPassword(address) {
         while(e.hasMoreElements()) {
             try {
                 var pass = e.getNext().QueryInterface(Ci.nsIPassword);
-                if(pass.host == url)
+                if(pass.host == url && pass.user == username)
                     return pass.password;
             } catch (ex) {
 
