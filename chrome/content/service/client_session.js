@@ -26,6 +26,7 @@
 
 function init(name) {
     this._isOpen = false;
+    this._idPrefix = Date.now().toString();
     this._idCounter = 1000;
     this._pending = {};
     this._observer = null;
@@ -54,7 +55,7 @@ function isOpen() {
 
 function send(element, replyObserver) {
     if(!element.getAttribute('id'))
-        element.setAttribute('id', this._idCounter++);
+        element.setAttribute('id', this._idPrefix + this._idCounter++);
 
     if(replyObserver)
         this._pending[element.getAttribute('id')] = replyObserver;
