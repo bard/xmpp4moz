@@ -249,18 +249,19 @@ var presenceRules = {
     doApply: function(stanza, cache) {
         var meta = stanza.getElementsByTagNameNS(ns_x4m_in, 'meta')[0];
 
-        //        if(this.isMUCPresence(stanza))
-        // should also add check on whether target presence is a muc presence
-        //            query = query.to(stanza.getAttribute('to'));
-
-        var previous = cache.first(
-            q()
+        var query = q()
             .event     ('presence')
             .direction (meta.getAttribute('direction'))
             .account   (meta.getAttribute('account'))
             .from      (stanza.getAttribute('from'))
-            .to        (stanza.getAttribute('to'))
-            .compile());
+        
+        query = this.isMUCPresence(stanza) ?
+            // This is a MUC nick change presence packet.
+            query.to(JID(stanza.getAttribute('to')).address) :
+            // A normal or directed presence packet.
+            query.to(stanza.getAttribute('to'));
+        
+        var previous = cache.first(query.compile());
 
         if(stanza.getAttribute('type') == 'unavailable') {
             if(previous) {
@@ -292,6 +293,29 @@ var presenceRules = {
 
 // UTILITIES
 // ----------------------------------------------------------------------
+
+function JID(string) {
+    var memo = arguments.callee.memo || (arguments.callee.memo = {});
+    if(string in memo)
+        return memo[string];
+    var m = string.match(/^(.+?@)?(.+?)(?:\/|$)(.*$)/);
+
+    var jid = {};
+
+    if(m[1])
+        jid.username = m[1].slice(0, -1);
+
+    jid.hostname = m[2];
+    jid.resource = m[3];
+    jid.nick     = m[3];
+    jid.full     = m[3] ? string : null;
+    jid.address  = jid.username ?
+        jid.username + '@' + jid.hostname :
+        jid.hostname;
+
+    memo[string] = jid;
+    return jid;
+}
 
 function q() {
     return new Query();
