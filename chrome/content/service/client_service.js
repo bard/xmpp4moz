@@ -439,37 +439,3 @@ function syntheticClone(stanza) {
  
     return clone;
 }
-
-
-// SNIPPETS
-// ----------------------------------------------------------------------
-
-// function open(jid, transport, streamObserver) {
-//     var session;
-//     // if(requestedStartTLS)
-//     //     _openSecuringSession(
-//     //         jid, transport, function(transport) {
-//     //             session = _openUserSession(jid, transport, streamObserver);
-//     //             sessions.activated(session);
-//     //         });
-//     // else {
-//     session = _openUserSession(jid, transport, streamObserver);
-//     sessions.activated(session);
-//     // }
-// }
-
-// function _openSecuringSession(jid, transport, continuation) {
-//     var session = Cc['@hyperstruct.net/xmpp4moz/xmppsession;1']
-//         .createInstance(Ci.nsIXMPPClientSession);
-
-//     var sessionObserver = {};
-//     var transportObserver = {};
-
-//     session.addObserver(sessionObserver, null, false);
-//     transport.addObserver(transportObserver, null, false);
-
-//     session.removeObserver(sessionObserver, null);
-//     transport.removeObserver(transportObserver, null);
-//     continuation(transport);
-// }
-
