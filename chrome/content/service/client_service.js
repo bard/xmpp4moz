@@ -44,7 +44,11 @@ var observers = [], features = [], cache;
 var sessions = {
     _list: {},
 
-    activated: function(session) {
+    pending: function(session) {
+        this._pending[session.name] = session;
+    },
+
+    created: function(session) {
         if(this._list[session.name])
             throw new Error('Session already in session list. (' + session.name + ')');
         this._list[session.name] = session;
@@ -108,6 +112,7 @@ function open(jid, connector, connectionProgressObserver) {
     session = Cc['@hyperstruct.net/xmpp4moz/xmppsession;1']
         .createInstance(Ci.nsIXMPPClientSession);
     session.init(jid);
+    sessions.created(session);
 
     var connectorObserver = { observe: function(subject, topic, data) {
         switch(topic) {
@@ -116,7 +121,6 @@ function open(jid, connector, connectionProgressObserver) {
 
             switch(asString(subject)) {
             case 'active':
-                sessions.activated(session);
                 break;
             case 'disconnected':
                 // Synthesize events
