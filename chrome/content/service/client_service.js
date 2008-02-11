@@ -122,6 +122,9 @@ function open(jid, connector, connectionProgressObserver) {
             switch(asString(subject)) {
             case 'active':
                 break;
+            case 'error':
+                sessions.closed(session);
+                break;
             case 'disconnected':
                 // Synthesize events
                 
