@@ -95,28 +95,30 @@ function finish() {
 function openPreferences(paneID) {
     var instantApply;
     try {
-        instantApply = prefBranch.getBoolPref('browser.preferences.instantApply', false);
+        instantApply = Cc['@mozilla.org/preferences-service;1']
+            .getService(Ci.nsIPrefBranch)
+            .getBoolPref('browser.preferences.instantApply', false);
     } catch(e) {
         instantApply = false;
+        Cu.reportError(e);
     }
         
     var features = 'chrome,titlebar,toolbar,centerscreen' +
-        (instantApply ? ',dialog=no' : ',modal');
+        (instantApply ? ',dialog=no' : '');
     
-    var wm = Cc['@mozilla.org/appshell/window-mediator;1']
-        .getService(Ci.nsIWindowMediator);
-
-    var win = wm.getMostRecentWindow('SamePlace:Preferences');
+    var prefWindow = Cc['@mozilla.org/appshell/window-mediator;1']
+        .getService(Ci.nsIWindowMediator)
+        .getMostRecentWindow('SamePlace:Preferences');
     
-    if(win) {
-        win.focus();
+    if(prefWindow) {
+        prefWindow.focus();
         if(paneID) {
-            var pane = win.document.getElementById(paneID);
-            win.document.documentElement.showPane(pane);
+            var pane = prefWindow.document.getElementById(paneID);
+            prefWindow.document.documentElement.showPane(pane);
         }
     } else {
-        window.openDialog('chrome://sameplace/content/preferences.xul',
-                          'SamePlace Preferences', features, paneID);
+        window.openDialog('chrome://sameplace/content/preferences/preferences.xul',
+                          'SamePlace:Preferences', features, paneID);
     }
 }
 
