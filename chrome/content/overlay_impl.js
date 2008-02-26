@@ -114,9 +114,6 @@ function init() {
             // ' (' + response.stanza.error.@code + ')';
         }
     });
-
-    // Let browser settle down
-    setTimeout(connectAutologinAccounts, 2000);
 }
 
 function finish() {
@@ -160,25 +157,6 @@ function addToolbarButton(buttonId) {
         if(set.indexOf(buttonId) == -1)
             return set.replace(/(urlbar-container|separator)/,
                                buttonId + ',$1');
-    });
-}
-
-
-// NETWORK ACTIONS
-// ----------------------------------------------------------------------
-
-/**
- * Bring up accounts configured as "autoLogin".
- *
- */
-
-function connectAutologinAccounts() {
-    XMPP.accounts
-    .filter(function(a) {
-        return a.autoLogin && !XMPP.isUp(a);
-    })
-    .forEach(function(a) {
-        XMPP.up(a);
     });
 }
 
