@@ -112,7 +112,7 @@ function open(jid, connector, connectionProgressObserver) {
     var connectorObserver = { observe: function(subject, topic, data) {
         switch(topic) {
         case 'connector':
-            log('{' + session.name + ',connector}   ' + asString(subject));
+            LOG('{', session.name, ',connector}    ', subject);
 
             switch(asString(subject)) {
             case 'active':
@@ -156,7 +156,7 @@ function open(jid, connector, connectionProgressObserver) {
             // Log
 
             if(topic == 'stanza-out' || topic == 'stanza-in')
-                log('{' + session.name + ',' + topic + '}    ' + serialize(stripInternal(subject)));
+                LOG('{', session.name, ',', topic, '}    ', subject);
 
             // Submit data to cache (which will decide what to keep
             // and what to throw away)
@@ -299,7 +299,7 @@ function notifyObservers(subject, topic, data) {
             observer.observe(subject, topic, data);
         } catch(e) {
             Cu.reportError(e);
-            log('Observer raised exception: unregistered.');
+            LOG('Observer raised exception: unregistered.');
             this.removeObserver(observer);
         }
 }
@@ -352,27 +352,41 @@ function xpcomize(thing) {
     }
 }
 
-function asString(xpcomString) {
-    return xpcomString.QueryInterface(Ci.nsISupportsString).toString();
+function asString(thing) {
+    if(typeof(thing) == 'string')
+        return thing;
+    else if(thing instanceof Ci.nsISupportsString)
+        return thing.toString();
+    else if(thing instanceof Ci.nsIDOMElement)
+        return serialize(stripInternal(thing));
+    else
+        return '';
 }
 
 function defineLogger(strategy) {
     const srvConsole = Cc['@mozilla.org/consoleservice;1']
         .getService(Ci.nsIConsoleService);
 
+    function listToString(list) {
+        var parts = [];
+        for(var i=0,l=list.length; i<l; i++)
+            parts.push(asString(list[i]));
+        return parts.join('');
+    }
+    
     switch(strategy) {
     case 'console':
-        log = function(msg) { srvConsole.logStringMessage('XMPP ' + msg); }
+        LOG = function(msg) { srvConsole.logStringMessage('XMPP ' + listToString(arguments)); };
         break;
     case 'sysconsole':
-        log = function(msg) { dump('XMPP ' + msg + '\n'); }
+        LOG = function(msg) { dump('XMPP ' + listToString(arguments) + '\n'); };
         break;
     default:
-        log = function(msg) {}
+        LOG = function(msg) {};
     }
 }
 
-function log(msg) {
+function LOG(msg) {
     // this is dynamically redefined by defineLogger(), called once
     // during initialization and then whenever the xmpp.logTarget
     // pref changes.
