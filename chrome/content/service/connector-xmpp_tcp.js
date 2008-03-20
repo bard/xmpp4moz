@@ -31,13 +31,21 @@ var srvProxy = Cc['@mozilla.org/network/protocol-proxy-service;1']
 var srvIO = Cc['@mozilla.org/network/io-service;1']
 .getService(Ci.nsIIOService);
 
-const STREAM_PROLOGUE =
+var STREAM_PROLOGUE =
     '<?xml version="1.0"?>' +
     '<stream:stream xmlns="jabber:client" ' +
     'xmlns:stream="http://etherx.jabber.org/streams" ' +
     'to="<SERVER>">';
-const STREAM_EPILOGUE =
+var STREAM_EPILOGUE =
     '</stream>';
+
+
+// STATE
+// ----------------------------------------------------------------------
+
+// Set in init()
+var LOG, WARN;
+
 
 // INITIALIZATION
 // ----------------------------------------------------------------------
@@ -56,6 +64,7 @@ function init(jid, password, host, port, ssl) {
     this._socketTransport = ssl ?
         srvSocketTransport.createTransport(['ssl'], 1, host, port, this._proxyInfo) :
         srvSocketTransport.createTransport(null, 0, host, port, this._proxyInfo);
+        
     this._socketTransport.setEventSink(this, getCurrentThreadTarget());
     this.onDataAvailable = this._proxyInfo ?
         this.onDataAvailable_prepareProxy :
@@ -66,6 +75,20 @@ function init(jid, password, host, port, ssl) {
     this._parser = Cc['@mozilla.org/saxparser/xmlreader;1']
         .createInstance(Ci.nsISAXXMLReader);
     this._parser.parseAsync(null);
+
+    /* debug setup */
+
+    LOG = function(msg) {
+        dump('DBG xmpp-tcp: ' + msg + '\n\n');
+    };
+
+    WARN = function(msg) {
+        dump('WRN xmpp-tcp: ' + msg + '\n\n');
+    }
+
+    /* parser setup */
+
+    var connector = this, doc = this._doc;
 
     this._parser.errorHandler = {
         error: function() { },
@@ -79,8 +102,6 @@ function init(jid, password, host, port, ssl) {
         }
     };
 
-
-    var connector = this, doc = this._doc;
     this._parser.contentHandler = {
         startDocument: function() {
             connector.openedIncomingStream();
@@ -123,7 +144,7 @@ function init(jid, password, host, port, ssl) {
             } else {
                 this._element.normalize();
                 if(['message', 'iq', 'presence'].indexOf(localName) == -1)
-                    dump('--- xmpp4moz: got non-stream-level element: ' + localName + '\n');
+                    WARN('got non-stream-level element: ' + localName);
 
                 connector.receivedElement(this._element);
                 this._element = null;
@@ -169,13 +190,14 @@ function connect() {
     this.setState('connecting');
 
     var baseOutstream = this._socketTransport.openOutputStream(0,0,0);
+
     this._outstream = Cc['@mozilla.org/intl/converter-output-stream;1']
-    .createInstance(Ci.nsIConverterOutputStream);
+        .createInstance(Ci.nsIConverterOutputStream);
     this._outstream.init(baseOutstream, 'UTF-8', 0, '?'.charCodeAt(0));
     
     this._instream = this._socketTransport.openInputStream(0,0,0);
     var inputPump = Cc['@mozilla.org/network/input-stream-pump;1']
-    .createInstance(Ci.nsIInputStreamPump);
+        .createInstance(Ci.nsIInputStreamPump);
     inputPump.init(this._instream, -1, -1, 0, 0, false);
 
     inputPump.asyncRead(this, null);
@@ -222,6 +244,32 @@ function notifyObservers(subject, topic, data) {
 // ----------------------------------------------------------------------
 
 function connectedBaseTransport() {
+    this._socketTransport.securityInfo.QueryInterface(Ci.nsISSLSocketControl);
+    LOG('got security info: ' + this._socketTransport.securityInfo);
+    this._socketTransport.securityInfo.notificationCallbacks = {
+        notifyCertProblem: function(socketInfo, status, targetSite) {
+            dump('ouch, cert problem!\n');
+        },
+
+        notifySSLError: function(socketInfo, error, targetSite) {
+            dump('ouch again!\n');
+        },
+
+        getInterface: function(iid) {
+            return this.QueryInterface(iid);
+        },
+
+        QueryInterface: function(iid) {
+            if(!iid.equals(Ci.nsIBadCertListener2) &&
+               !iid.equals(Ci.nsISSLErrorListener))
+                throw Cr.NS_ERROR_NO_INTERFACE;
+            return this;
+        }
+    };
+
+    LOG('got security callbacks: ' +
+        this._socketTransport.securityInfo.notificationCallbacks);
+    
     this.notifyObservers('start', 'transport', null);
     this.setState('connected');
 
@@ -232,8 +280,6 @@ function disconnectedBaseTransport() {
     if(!this.isConnected())
         return;
 
-    // this._instream.close();
-    // this._outstream.close();
     this._socketTransport.close(0);
     
     this.notifyObservers('stop', 'transport', null);
@@ -257,6 +303,8 @@ function closedIncomingStream() {
 function receivedElement(element) {
     switch(this._state) {
     case 'authenticating':
+        LOG('<<< ' + serialize(element));
+
         switch(element.getAttribute('type')) {
         case 'result':
             this.setState('active');
@@ -277,6 +325,7 @@ function receivedElement(element) {
 
 function setState(name) {
     this._state = name;
+    LOG('state: ' + name);
     this.notifyObservers(name, 'connector', null);
 }
 
@@ -310,11 +359,14 @@ function stopKeepAlive() {
 
 function write(data) {
     try {
+        if(this._state != 'active')
+            LOG('>>> ' + data);
         return this._outstream.writeString(data);
     } catch(e if e.name == 'NS_BASE_STREAM_CLOSED') {
         this.disconnectedBaseTransport();
     }
 }
+
 
 function serialize(element) {
     var serializer = Cc['@mozilla.org/xmlextras/xmlserializer;1'].getService(Ci.nsIDOMSerializer);
@@ -372,9 +424,9 @@ function getCurrentThreadTarget() {
 
 function onTransportStatus(transport, status, progress, progressMax) {
     switch(status) {
-    case Ci.nsISocketTransport.STATUS_CONNECTING_TO:
-        break;
     case Ci.nsISocketTransport.STATUS_CONNECTED_TO:
+        LOG('transport status: ' + status + ' (CONNECTED_TO)');
+        
         // If using a proxy, we'll only be sure about connection when
         // we get a response from the proxy, in onDataAvailable.
         if(this._proxyInfo) {
@@ -383,6 +435,13 @@ function onTransportStatus(transport, status, progress, progressMax) {
             this.connectedBaseTransport();
         }
         break;
+    case Ci.nsISocketTransport.STATUS_RECEIVING_FROM:
+    case Ci.nsISocketTransport.STATUS_SENDING_TO:
+        break;
+    default:
+        for(var propName in Ci.nsISocketTransport)
+            if(Ci.nsISocketTransport[propName] == status)
+                LOG('transport status: ' + status + ' (' + propName + ')');
     }
 }
 
@@ -397,7 +456,7 @@ function onStartRequest(request, context) {
 function onStopRequest(request, context, status) {
     this._parser.onStopRequest.apply(null, arguments);
     if(status != 0)
-        dump('Error! ' + status);
+        WARN('Error: ' + status);
     
     this.disconnectedBaseTransport();
 }
