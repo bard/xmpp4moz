@@ -270,7 +270,6 @@ function connectedBaseTransport() {
     LOG('got security callbacks: ' +
         this._socketTransport.securityInfo.notificationCallbacks);
     
-    this.notifyObservers('start', 'transport', null);
     this.setState('connected');
 
     this.openStream(function() { this.startKeepAlive(); });
@@ -281,13 +280,10 @@ function disconnectedBaseTransport() {
         return;
 
     this._socketTransport.close(0);
-    
-    this.notifyObservers('stop', 'transport', null);
     this.setState('disconnected');
 }
 
 function openedIncomingStream() {
-    this.notifyObservers('open', 'stream-in', null);
     if(JID(this._jid).username)
         this.authenticate();
     else
@@ -297,7 +293,6 @@ function openedIncomingStream() {
 function closedIncomingStream() {
     this.stopKeepAlive();
     this.disconnect();
-    this.notifyObservers('close', 'stream-in', null);    
 }
 
 function receivedElement(element) {
@@ -342,7 +337,6 @@ function authenticate() {
 
 function openStream(continuation) {
     this.write(STREAM_PROLOGUE.replace('<SERVER>', JID(this._jid).hostname));
-    this.notifyObservers('open', 'stream-out', null);
     continuation.call(this);
 }
 

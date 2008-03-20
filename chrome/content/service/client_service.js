@@ -144,24 +144,6 @@ function open(jid, connector, connectionProgressObserver) {
 
             service.notifyObservers(subject, topic, session.name);
             break;
-        case 'stream-in':
-        case 'stream-out':
-            log('legacy - {' + session.name + ',' + topic + '}    ' + asString(subject));
-            service.notifyObservers(subject, topic, session.name);
-            break;
-        case 'transport':
-            switch(asString(subject)) {
-            case 'start':
-                log('{' + session.name + ',transport-out}    start');
-                service.notifyObservers(subject, 'transport-out', session.name);
-                break;
-            case 'stop':
-                log('{' + session.name + ',transport-out}    stop');
-                service.notifyObservers(xpcomize('stop'), 'transport-out', session.name);
-                break;
-            }
-            break;
-
         default:
             dump('WARNING - unexpected connector event -- ' + topic + '\n');
         }
