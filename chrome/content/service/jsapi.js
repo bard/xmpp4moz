@@ -386,9 +386,9 @@ function createChannel(features) {
 function open(jid, opts, continuation) {
     opts = opts || {};
     var password = opts.password;
-    var connectionHost = opts.connectionHost || JID(jid).hostname;
-    var connectionPort = opts.connectionPort || 5223;
-    var ssl = opts.connectionSecurity == 1 || opts.connectionSecurity == undefined;
+    var host     = opts.connectionHost || JID(jid).hostname;
+    var port     = opts.connectionPort || 5223;
+    var security = opts.connectionSecurity == undefined ? 1 : opts.connectionSecurity;
 
     var onResult =
         (continuation ?
@@ -400,7 +400,7 @@ function open(jid, opts, continuation) {
         Cc['@hyperstruct.net/xmpp4moz/connector;1?type=' + connectorTypeFor(jid)]
         .createInstance(Ci.nsIXMPPConnector);
     
-    connector.init(jid, password, connectionHost, connectionPort, ssl);
+    connector.init(jid, password, host, port, security);
     service.open(jid, connector, onResult);
 }
 
