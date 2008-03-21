@@ -353,14 +353,21 @@ function xpcomize(thing) {
 }
 
 function asString(thing) {
-    if(typeof(thing) == 'string')
+    switch(typeof(thing)) {
+    case 'string':
         return thing;
-    else if(thing instanceof Ci.nsISupportsString)
-        return thing.toString();
-    else if(thing instanceof Ci.nsIDOMElement)
-        return serialize(stripInternal(thing));
-    else
-        return '';
+        break;
+    case 'xml':
+        return thing.toXMLString();
+        break;
+    default:
+        if(thing instanceof Ci.nsISupportsString)
+            return thing.toString();
+        else if(thing instanceof Ci.nsIDOMElement)
+            return serialize(stripInternal(thing));
+        else
+            return '';
+    }
 }
 
 function defineLogger(strategy) {
