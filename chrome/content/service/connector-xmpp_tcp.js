@@ -153,10 +153,15 @@ function onEvent_streamElement(element) {
         }
         break;
     case 'auth-waiting-result':
-        if(element.localName == 'success' &&
-           element.namespaceURI == 'urn:ietf:params:xml:ns:xmpp-sasl') {
-            this.openStream();
-        }
+        if(element.namespaceURI == 'urn:ietf:params:xml:ns:xmpp-sasl') {
+            if(element.localName == 'success')
+                this.openStream();
+            else if(element.localName == 'failure')
+                this.setState('error');
+            else
+                throw new Erro('Invalid state');
+        } else
+            throw new Error('Invalid state');
         break;
     case 'binding-resource':
         if(element.localName == 'iq' &&
@@ -182,25 +187,22 @@ function onEvent_streamElement(element) {
     case 'stream-open':
         if(element.localName == 'features' &&
            element.namespaceURI == 'http://etherx.jabber.org/streams') {
-            if(element.getElementsByTagNameNS(
-                'urn:ietf:params:xml:ns:xmpp-tls', 'starttls').length == 1) {
-                if(this._security == SECURITY_STARTTLS) {
-                    this.setState('requested-tls');
-                    this.requestTLS();
-                } else {
-                    this.setState('auth-waiting-result');
-                    this.requestSASLAuth('PLAIN');
-                }
-            } else if(element.getElementsByTagNameNS(
-                'urn:ietf:params:xml:ns:xmpp-sasl', 'mechanisms').length == 1) {
+            if(this._security == SECURITY_STARTTLS &&
+               hasChild(element, 'urn:ietf:params:xml:ns:xmpp-tls', 'starttls')) {
+                this.setState('requested-tls');
+                this.requestTLS();
+            } else if(this._jid && this._password &&
+                      hasChild(element, 'urn:ietf:params:xml:ns:xmpp-sasl', 'mechanisms')) {
                 this.setState('auth-waiting-result');
                 this.requestSASLAuth('PLAIN');
-            } else if(element.getElementsByTagNameNS(
-                'urn:ietf:params:xml:ns:xmpp-bind', 'bind').length == 1) {
-                this.setState('binding-resource')
+            } else if(hasChild(element, 'urn:ietf:params:xml:ns:xmpp-bind', 'bind')) {
+                this.setState('binding-resource');
                 this.bindResource();
             } else {
-                throw new Error('Unexpected.');
+                // no username/password provided, upper layers just
+                // want a bare unauthenticated stream, give it to
+                // them!
+                this.setState('active');
             }
         } else
             // error?
@@ -587,6 +589,10 @@ function createParser() {
     parser.parseAsync(null);
 
     return parser;
+}
+
+function hasChild(element, childNS, childName) {
+    return element.getElementsByTagNameNS(childNS, childName).length > 0;
 }
 
 function asString(thing) {
