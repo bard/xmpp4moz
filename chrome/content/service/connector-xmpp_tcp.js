@@ -67,6 +67,9 @@ function init(jid, password, host, port, security) {
     this._host            = host;
     this._port            = port;
     this._security        = security;
+    this._logging         = true;
+    this._backlog         = [];
+
 
     this._proxyInfo       = srvProxy.resolve(
         srvIO.newURI((security == 0 ? 'http://' : 'https://') + host, null, null), 0);
@@ -123,15 +126,17 @@ function onDataAvailable(request, context, inputStream, offset, count) {
         var stream = Cc['@mozilla.org/scriptableinputstream;1'] 
             .createInstance(Ci.nsIScriptableInputStream);
         stream.init(inputStream);
-    
-        if(stream.read(count).match(/^HTTP\/1.0 200/)) {
+
+        var response = stream.read(count);
+        if(response.match(/^HTTP\/1.0 200/)) {
             if(this._socketTransport.securityInfo) {
                 this._socketTransport.securityInfo.QueryInterface(Ci.nsISSLSocketControl);
                 this._socketTransport.securityInfo.proxyStartSSL();
             }
             this.onEvent_proxyNegoOk();
-        } else
-            this.onEvent_proxyNegoFail();
+        } else {
+            this.onEvent_proxyNegoFail(response);
+        }
 
         break;
     default:
@@ -140,8 +145,7 @@ function onDataAvailable(request, context, inputStream, offset, count) {
 }
 
 function onEvent_streamElement(element) {
-    if(this._state != 'active')
-        LOG('DATA   <<< ', element);
+    this.LOG('DATA   <<< ', element);
     this.assertState('stream-open', 'requested-tls', 'auth-waiting-result',
                      'binding-resource', 'requesting-session', 'active');
 
@@ -149,7 +153,7 @@ function onEvent_streamElement(element) {
     case 'auth-waiting-challenge':
         if(element.localName == 'challenge' &&
            element.namespaceURI == 'urn:ietf:params:xml:ns:xmpp-sasl') {
-            LOG(atob(element.textContent))
+            this.LOG(atob(element.textContent))
         }
         break;
     case 'auth-waiting-result':
@@ -252,9 +256,9 @@ function onEvent_proxyNegoOk() {
     this.openStream();
 }
 
-function onEvent_proxyNegoFail() {
+function onEvent_proxyNegoFail(response) {
     this.assertState('negotiating-proxy');
-    LOG('ERROR proxy negotiation failed; should throw exception');
+    this.LOG('ERROR: proxy negotiation failed, received response: ' + response);
 }
 
 function onEvent_transportDisconnected() {
@@ -307,6 +311,8 @@ function connect() {
 function send(element) {
     // XXX metadata could arrive up to here as it might contain info
     // useful to the transport (so will need to be stripped here)
+    this.LOG('DATA   >>> ', serialize(element));
+    
     this.write(serialize(element));
 }
 
@@ -329,7 +335,7 @@ function startKeepAlive() {
 function write(data) {
     try {
         if(this._state != 'active')
-            LOG('DATA   >>> ', data);
+            this.LOG('DATA   >>> ', data);
         return this._outstream.writeString(asString(data));
     } catch(e if e.name == 'NS_BASE_STREAM_CLOSED') {
         this.onEvent_transportDisconnected();
@@ -383,7 +389,7 @@ function startTLS() {
 }
 
 function setState(name) {
-    LOG('STATE  ' + name);
+    this.LOG('STATE  ' + name);
     this._state = name;
     this.notifyObservers(name, 'connector', null);
 }
@@ -395,16 +401,16 @@ function sendProxyNego() {
 function openStream() {
     this._parseReq = {
         cancel: function(status) {
-            LOG('PARSE REQ - cancel ' + status);
+            this.LOG('PARSE REQ - cancel ' + status);
         },
         isPending: function() {
-            LOG('PARSE REQ - pending')
+            this.LOG('PARSE REQ - pending')
         },
         resume: function() {
-            LOG('PARSE REQ - resume')
+            this.LOG('PARSE REQ - resume')
         },
         suspend: function() {
-            LOG('PARSE REQ - suspend')
+            this.LOG('PARSE REQ - suspend')
         }
     };
     this._parser = this.createParser(this._parseReq);
@@ -443,13 +449,22 @@ function assertState() {
     for(var i=0;i<arguments.length;i++)
         if(this._state == arguments[i])
             return;
-    LOG('ERROR: event ' + arguments.callee.caller.name + ' while in state ' + this._state);
+    this.LOG('ERROR: event ' + arguments.callee.caller.name + ' while in state ' + this._state);
 }
 
 
 function LOG() {
-//    repl.print('DBG xmpp/tcp ' + listToString(arguments) + '\n');
-    dump('DBG xmpp/tcp ' + listToString(arguments) + '\n\n');
+    if(this._logging) {
+        var logLine = ('DBG xmpp/tcp ' + listToString(arguments))
+            .replace(/(<auth mechanism.+?>)([^<]+)/, '$1[password hidden in log]')
+
+        if(this._backlog.length > 200)
+            this._backlog.shift();
+
+        this._backlog.push(logLine);
+
+        dump(logLine); dump('\n\n');
+    }
 }
 
 function getCurrentThreadTarget() {
@@ -513,12 +528,12 @@ function createParser() {
 
     parser.contentHandler = {
         startDocument: function() {
-            LOG('PARSER remote opened stream');
+            connector.LOG('PARSER remote opened stream');
             connector.onEvent_openedIncomingStream();
         },
 
         endDocument: function() {
-            LOG('PARSER remote closed stream');
+            connector.LOG('PARSER remote closed stream');
             connector.onEvent_closedIncomingStream();
         },
 
@@ -556,7 +571,7 @@ function createParser() {
                 this._element.normalize();
 
                 if(!STREAM_LEVEL_ELEMENT[uri + '::' + localName])
-                    LOG('PARSER got non-stream-level element: ' + uri + '::' + localName);
+                    connector.LOG('PARSER got non-stream-level element: ' + uri + '::' + localName);
 
                 connector.onEvent_streamElement(this._element);
                 this._element = null;
