@@ -101,7 +101,7 @@ function init(jid, password, host, port, security) {
 // ----------------------------------------------------------------------
 
 function onStartRequest(request, context) {
-    this.assertState('connected');
+    this.assertState('connected', 'negotiating-proxy');
 }
 
 function onStopRequest(request, context, status) {
@@ -129,6 +129,7 @@ function onDataAvailable(request, context, inputStream, offset, count) {
         stream.init(inputStream);
 
         var response = stream.read(count);
+        this.LOG('DATA   <<< ', response);
         if(response.match(/^HTTP\/1.0 200/)) {
             if(this._socketTransport.securityInfo) {
                 this._socketTransport.securityInfo.QueryInterface(Ci.nsISSLSocketControl);
