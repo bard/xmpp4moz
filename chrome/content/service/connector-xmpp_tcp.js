@@ -72,7 +72,8 @@ function init(jid, password, host, port, security) {
 
 
     this._proxyInfo       = srvProxy.resolve(
-        srvIO.newURI((security == 0 ? 'http://' : 'https://') + host, null, null), 0);
+        srvIO.newURI((security == SECURITY_SSL ? 'https://' : 'http://') + host, null, null),
+        Ci.nsIProtocolProxyService.RESOLVE_NON_BLOCKING);
     switch(this._security) {
     case SECURITY_NONE:
         this._socketTransport =
