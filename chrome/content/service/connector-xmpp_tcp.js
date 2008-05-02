@@ -185,6 +185,7 @@ function onEvent_streamElement(element) {
            element.getAttribute('type') == 'result' &&
            // cheating, should check child instead
            element.getAttribute('id') == 'sess_1') {
+            this.onEvent_sessionActive();
             this.setState('active');
         } else {
             throw new Error('Error getting session.');
@@ -208,6 +209,7 @@ function onEvent_streamElement(element) {
                 // no username/password provided, upper layers just
                 // want a bare unauthenticated stream, give it to
                 // them!
+                this.onEvent_sessionActive();
                 this.setState('active');
             }
         } else
