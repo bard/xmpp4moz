@@ -332,7 +332,12 @@ function disconnect() {
 function startKeepAlive() {
     var transport = this;
     this._keepAliveTimer.initWithCallback({
-        notify: function(timer) { transport.write(' '); }
+        notify: function(timer) {
+            if(transport._state == 'active')
+                transport.write(' ');
+            else
+                transport._keepAliveTimer.cancel();
+        }
     }, 30000, Ci.nsITimer.TYPE_REPEATING_SLACK);
 }
 
