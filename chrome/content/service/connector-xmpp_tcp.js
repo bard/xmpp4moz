@@ -464,7 +464,7 @@ function assertState() {
 
 function LOG() {
     if(this._logging) {
-        var logLine = ('DBG xmpp/tcp ' + listToString(arguments))
+        var logLine = ('DBG xmpp/tcp (' + this._jid.slice(0, 4) + '…) ' + listToString(arguments))
             .replace(/(<auth mechanism.+?>)([^<]+)/, '$1[password hidden in log]')
 
         if(this._backlog.length > 200)
