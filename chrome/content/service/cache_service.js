@@ -89,10 +89,14 @@ function receive(element) {
     }
 }
 
+function serialize(dom) {
+    return Cc['@mozilla.org/xmlextras/xmlserializer;1']
+        .getService(Ci.nsIDOMSerializer)
+        .serializeToString(dom);
+}
+
 function toString() {
-    return (Cc['@mozilla.org/xmlextras/xmlserializer;1']
-            .getService(Ci.nsIDOMSerializer)
-            .serializeToString(this._doc));
+    return serialize(this._doc);
 }
 
 
@@ -225,7 +229,7 @@ var rosterRules = {
 
             cache.replace(updatedIq, previous);
         } else
-            throw new Error('Unhandled case.');
+            throw new Error('Unhandled case: ' + serialize(stanza) + '\n');
     }
 }
 
