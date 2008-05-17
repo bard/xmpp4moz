@@ -1040,7 +1040,6 @@ function asDOM(object) {
         switch(typeof(object)) {
         case 'xml':
             XML.prettyPrinting = false;
-            XML.ignoreWhitespace = true;
             element = parser
                 .parseFromString(object.toXMLString(), 'text/xml')
                 .documentElement;
