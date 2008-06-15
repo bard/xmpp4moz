@@ -390,18 +390,30 @@ function open(jid, opts, continuation) {
     var port     = opts.connectionPort || 5223;
     var security = opts.connectionSecurity == undefined ? 1 : opts.connectionSecurity;
 
-    var onResult =
-        (continuation ?
-         {observe: function(subject, topic, data) {
-             if(asString(subject) == 'active') continuation(); }} :
-         null)
+    var connectionObserver = null;
+    if(continuation) {
+        // connector can go to the 'active' state many times -- we
+        // only want to catch the first time.
+        var connectorAlreadyActive = false;
+
+        connectionObserver = {
+            observe: function(subject, topic, data) {
+                if(!connectorAlreadyActive &&
+                   topic == 'connector' &&
+                   asString(subject) == 'active') {
+                    connectorAlreadyActive = true;
+                    continuation();
+                }
+            }
+        }
+    }
 
     var connector = 
         Cc['@hyperstruct.net/xmpp4moz/connector;1?type=' + connectorTypeFor(jid)]
         .createInstance(Ci.nsIXMPPConnector);
     
     connector.init(jid, password, host, port, security);
-    service.open(jid, connector, onResult);
+    service.open(jid, connector, connectionObserver);
 }
 
 // http://dev.hyperstruct.net/xmpp4moz/wiki/DocLocalAPI#XMPP.close
