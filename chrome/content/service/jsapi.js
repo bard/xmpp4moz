@@ -390,14 +390,46 @@ function open(jid, opts, continuation) {
     var port     = opts.connectionPort || 5223;
     var security = opts.connectionSecurity == undefined ? 1 : opts.connectionSecurity;
 
-    var connectionObserver = null;
-    if(continuation) {
-        connectionObserver = {
-            observe: function(subject, topic, data) {
-                if(topic == 'connector-active') {
-                    connectorAlreadyActive = true;
+    var connectionObserver = {
+        observe: function(subject, topic, data) {
+            switch(topic) {
+            case 'connector-active':
+                if(continuation)
                     continuation();
+                break;
+            case 'connector-error':
+                if(!subject)
+                    break;
+
+                if(asString(subject) == 'badcert') {
+                    var addException = srvPrompt.confirm(
+                        null, 'Bad certificate for Jabber server',
+                        'Jabber server "' + host + '" is presenting an invalid SSL certificate.\n' +
+                            'To connect to it, you need to add an exception.  Do you want to proceed?');
+                    if(!addException)
+                        break;
+
+                    var params = {
+                        exceptionAdded : false,
+                        location       : 'https://' + host + ':' + port,
+                        prefetchCert   : true
+                    };
+
+                    setTimeout(function() {
+                        openDialog('chrome://pippki/content/exceptionDialog.xul',
+                                   '',
+                                   'chrome,centerscreen,modal',
+                                   params);
+
+                        if(params.exceptionAdded)
+                            open(jid, opts, continuation);
+                    });
                 }
+                else if(asString(subject) == 'auth') {
+                    srvPrompt.alert(null, 'Error', 'XMPP: Error during authentication.');
+                }
+
+                break;
             }
         }
     }

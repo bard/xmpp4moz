@@ -110,9 +110,30 @@ function onStopRequest(request, context, status) {
 }
 
 function onTransportStatus(transport, status, progress, progressMax) {
+    var connector = this;
+    
     switch(status) {
     case Ci.nsISocketTransport.STATUS_CONNECTING_TO:
         this.onEvent_transportConnecting();
+        this._socketTransport.securityInfo.QueryInterface(Ci.nsISSLSocketControl);
+        this._socketTransport.securityInfo.notificationCallbacks = {
+            notifyCertProblem: function(socketInfo, status, targetSite) {
+                connector.setState('error', xpcomize('badcert'));
+                return true;
+            },
+
+            getInterface: function(iid) {
+                return this.QueryInterface(iid);
+            },
+
+            QueryInterface: function(iid) {
+                if(iid.equals(Ci.nsISupports) ||
+                   iid.equals(Ci.nsIInterfaceRequestor) ||
+                   iid.equals(Ci.nsIBadCertListener2))
+                    return this;
+                throw Cr.NS_ERROR_NO_INTERFACE;
+            }
+        };
         break;
     case Ci.nsISocketTransport.STATUS_CONNECTED_TO:
         this.onEvent_transportConnected();
@@ -163,7 +184,7 @@ function onEvent_streamElement(element) {
             if(element.localName == 'success')
                 this.openStream();
             else if(element.localName == 'failure')
-                this.setState('error');
+                this.setState('error', xpcomize('auth'));
             else
                 throw new Error('Invalid state');
         } else
@@ -396,12 +417,11 @@ function requestTLS() {
 }
 
 function startTLS() {
-    this._socketTransport.securityInfo.QueryInterface(Ci.nsISSLSocketControl);
     this._socketTransport.securityInfo.StartTLS();
 }
 
 function setState(name, stateData) {
-    this.LOG('STATE  ' + name);
+    this.LOG('STATE  ', name, ' [', stateData, ']');
     this._state = name;
     this.notifyObservers(stateData, name, null);
 }
@@ -616,6 +636,19 @@ function createParser() {
 
 function hasChild(element, childNS, childName) {
     return element.getElementsByTagNameNS(childNS, childName).length > 0;
+}
+
+function xpcomize(thing) {
+    if(typeof(thing) == 'string') {
+        var xpcomString = Cc["@mozilla.org/supports-string;1"]
+            .createInstance(Ci.nsISupportsString);
+        xpcomString.data = thing;
+        return xpcomString;
+    } else if(thing instanceof Ci.nsISupports) {
+        return thing;
+    } else {
+        throw new Error('Neither an XPCOM object nor a string. (' + thing + ')');
+    }
 }
 
 function asString(thing) {

@@ -104,15 +104,8 @@ function init() {
     }, function(connector) {
         document
             .getElementById('xmpp-status').hidden = true;
-        
-        if(window == Cc["@mozilla.org/appshell/window-mediator;1"]
-           .getService(Ci.nsIWindowMediator)
-           .getMostRecentWindow('')) {
-            var message = 'XMPP: Error during authentication.';
-            srvPrompt.alert(null, 'Error', message);
             // response.stanza.error.*[0].name().localName.replace(/-/g, ' ') +
             // ' (' + response.stanza.error.@code + ')';
-        }
     });
 }
 
