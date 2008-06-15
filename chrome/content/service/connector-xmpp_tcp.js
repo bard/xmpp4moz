@@ -105,7 +105,7 @@ function onStartRequest(request, context) {
 }
 
 function onStopRequest(request, context, status) {
-    this.assertState('connected', 'active', 'idle');
+    this.assertState('connected', 'active', 'idle', 'error');
     this.onEvent_transportDisconnected();
 }
 
