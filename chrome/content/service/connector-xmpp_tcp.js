@@ -187,6 +187,7 @@ function onEvent_streamElement(element) {
            element.getAttribute('id') == 'sess_1') {
             this.onEvent_sessionActive();
             this.setState('active');
+            this.setState('idle');
         } else {
             throw new Error('Error getting session.');
         }
@@ -211,6 +212,7 @@ function onEvent_streamElement(element) {
                 // them!
                 this.onEvent_sessionActive();
                 this.setState('active');
+                this.setState('idle');
             }
         } else
             // error?
@@ -227,8 +229,10 @@ function onEvent_streamElement(element) {
         }
         break;
     case 'active':
+        break;
+    case 'idle':
         this.setState('accept-stanza', element);
-        this.setState('active');
+        this.setState('idle');
         break;
     case 'authenticating':
         break;
