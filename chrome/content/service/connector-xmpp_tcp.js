@@ -165,7 +165,7 @@ function onEvent_streamElement(element) {
             else if(element.localName == 'failure')
                 this.setState('error');
             else
-                throw new Erro('Invalid state');
+                throw new Error('Invalid state');
         } else
             throw new Error('Invalid state');
         break;
