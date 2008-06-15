@@ -400,7 +400,7 @@ function startTLS() {
 function setState(name) {
     this.LOG('STATE  ' + name);
     this._state = name;
-    this.notifyObservers(name, 'connector', null);
+    this.notifyObservers(null, name, null);
 }
 
 function sendProxyNego() {
@@ -437,11 +437,7 @@ function removeObserver(observer) {
         this._observers.splice(index, 1);    
 }
 
-function notifyObservers(_subject, topic, data) {
-    var subject = Cc['@mozilla.org/supports-string;1']
-        .createInstance(Ci.nsISupportsString);
-    subject.data = _subject;
-
+function notifyObservers(subject, topic, data) {
     for each(var observer in this._observers) 
         try {
             observer.observe(subject, topic, data);

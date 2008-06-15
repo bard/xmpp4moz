@@ -115,45 +115,39 @@ function open(jid, connector, connectionProgressObserver) {
     sessions.created(session);
 
     var connectorObserver = { observe: function(subject, topic, data) {
+        LOG('{', session.name, ',connector}    ', topic);
+
         switch(topic) {
-        case 'connector':
-            LOG('{', session.name, ',connector}    ', subject);
-
-            switch(asString(subject)) {
-            case 'active':
-                break;
-            case 'error':
-                sessions.closed(session);
-                break;
-            case 'disconnected':
-                // Synthesize events
+        case 'active':
+            break;
+        case 'error':
+            sessions.closed(session);
+            break;
+        case 'disconnected':
+            // Synthesize events
+            
+            var stanzas = cache.all(q()
+                                    .event('presence')
+                                    .account(session.name)
+                                    .compile());
+            for(var i=0; i<stanzas.snapshotLength; i++) {
+                var inverse = syntheticClone(stanzas.snapshotItem(i));
+                inverse.setAttribute('type', 'unavailable');
                 
-                var stanzas = cache.all(q()
-                                        .event('presence')
-                                        .account(session.name)
-                                        .compile());
-                for(var i=0; i<stanzas.snapshotLength; i++) {
-                    var inverse = syntheticClone(stanzas.snapshotItem(i));
-                    inverse.setAttribute('type', 'unavailable');
-                    
-                    if(inverse.getElementsByTagNameNS(ns_x4m_in, 'meta')[0].getAttribute('direction') == 'in')
-                        session.receive(inverse);
-                    else
-                        cache.receive(inverse);
-                }
-
-                sessions.closed(session);
-                break;
+                if(inverse.getElementsByTagNameNS(ns_x4m_in, 'meta')[0].getAttribute('direction') == 'in')
+                    session.receive(inverse);
+                else
+                    cache.receive(inverse);
             }
 
-            if(connectionProgressObserver)
-                connectionProgressObserver.observe(subject, topic, data);
-
-            service.notifyObservers(subject, topic, session.name);
+            sessions.closed(session);
             break;
-        default:
-            dump('WARNING - unexpected connector event -- ' + topic + '\n');
         }
+
+        if(connectionProgressObserver)
+            connectionProgressObserver.observe(xpcomize(topic), 'connector', data);
+
+        service.notifyObservers(xpcomize(topic), 'connector', session.name);
     } };
     
     var service = this;
