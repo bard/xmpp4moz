@@ -221,7 +221,7 @@ function getError(stanza) {
     if(xmppErrorCondition == undefined)
         return mappings[stanza.error.@code];
     else
-        return [xmppErrorCondition.localName(), stanza.error.@type.toString()];
+        return [xmppErrorCondition[0].localName(), stanza.error.@type.toString()];
 }
 
 // http://dev.hyperstruct.net/xmpp4moz/wiki/DocLocalAPI#XMPP.nickFor
