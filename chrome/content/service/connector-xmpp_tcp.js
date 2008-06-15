@@ -105,7 +105,7 @@ function onStartRequest(request, context) {
 }
 
 function onStopRequest(request, context, status) {
-    this.assertState('connected', 'active');
+    this.assertState('connected', 'active', 'idle');
     this.onEvent_transportDisconnected();
 }
 
@@ -149,7 +149,7 @@ function onDataAvailable(request, context, inputStream, offset, count) {
 function onEvent_streamElement(element) {
     this.LOG('DATA   <<< ', element);
     this.assertState('stream-open', 'requested-tls', 'auth-waiting-result',
-                     'binding-resource', 'requesting-session', 'active');
+                     'binding-resource', 'requesting-session', 'active', 'idle');
 
     switch(this._state) {
     case 'auth-waiting-challenge':
@@ -280,7 +280,7 @@ function onEvent_openedIncomingStream() {
 }
 
 function onEvent_closedIncomingStream() {
-    this.assertState('connected', 'authenticating', 'active');
+    this.assertState('connected', 'authenticating', 'active', 'idle');
 }
 
 function onEvent_sessionActive() {
@@ -297,7 +297,8 @@ function isConnected() {
             'stream-open',
             'connected',
             'accept-stanza',
-            'active'].indexOf(this._state) != -1;
+            'active',
+            'idle'].indexOf(this._state) != -1;
 }
 
 function connect() {
