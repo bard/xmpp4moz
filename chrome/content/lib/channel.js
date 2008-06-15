@@ -116,7 +116,7 @@ function asString(object) {
     else if(typeof(object) == 'string')
         return object;
     else
-        throw new Exception('Bad argument.');
+        throw new Error('Bad argument.');
 }
 
 /**
