@@ -1,5 +1,5 @@
-IDLC=/home/pkg/gecko-sdk/bin/xpidl
-INC=-I. -I/home/pkg/gecko-sdk/idl/
+IDLC=/usr/lib/xulrunner-1.9/xpidl
+INC=-I. -I/usr/share/idl/xulrunner-1.9/unstable/
 XPTS=../components/nsIXMPPClientService.xpt \
 	../components/nsIXMPPClientSession.xpt \
 	../components/nsIXMPPConnector.xpt \

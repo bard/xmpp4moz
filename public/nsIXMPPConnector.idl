@@ -19,8 +19,6 @@ interface nsIXMPPConnector: nsISupports
 
     boolean isOpen();
 
-    void setSession(in nsIXMPPClientSession sess);
-
     void connect();
 
     void disconnect();

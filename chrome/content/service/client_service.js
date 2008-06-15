@@ -120,6 +120,9 @@ function open(jid, connector, connectionProgressObserver) {
         switch(topic) {
         case 'active':
             break;
+        case 'accept-stanza':
+            session.receive(subject);
+            break;
         case 'error':
             sessions.closed(session);
             break;
@@ -245,7 +248,6 @@ function open(jid, connector, connectionProgressObserver) {
     connector.addObserver(connectorObserver, null, false);
     session.wrappedJSObject.connector = connector;
 
-    connector.setSession(session);
     connector.connect();
 
     return session;

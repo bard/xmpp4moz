@@ -227,7 +227,8 @@ function onEvent_streamElement(element) {
         }
         break;
     case 'active':
-        this._session.receive(element);
+        this.setState('accept-stanza', element);
+        this.setState('active');
         break;
     case 'authenticating':
         break;
@@ -291,11 +292,8 @@ function isConnected() {
             'auth-waiting-result',
             'stream-open',
             'connected',
+            'accept-stanza',
             'active'].indexOf(this._state) != -1;
-}
-
-function setSession(session) {
-    this._session = session;
 }
 
 function connect() {
@@ -343,7 +341,7 @@ function startKeepAlive() {
 
 function write(data) {
     try {
-        if(this._state != 'active')
+        if(this._state != 'active' && this._state != 'accept-stanza')
             this.LOG('DATA   >>> ', data);
         return this._outstream.writeString(asString(data));
     } catch(e if e.name == 'NS_BASE_STREAM_CLOSED') {
@@ -397,10 +395,10 @@ function startTLS() {
     this._socketTransport.securityInfo.StartTLS();
 }
 
-function setState(name) {
+function setState(name, stateData) {
     this.LOG('STATE  ' + name);
     this._state = name;
-    this.notifyObservers(null, name, null);
+    this.notifyObservers(stateData, name, null);
 }
 
 function sendProxyNego() {
