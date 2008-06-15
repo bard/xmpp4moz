@@ -148,9 +148,10 @@ function open(jid, connector, connectionProgressObserver) {
         }
 
         if(connectionProgressObserver)
-            connectionProgressObserver.observe(xpcomize(topic), 'connector', data);
+            // XXX might just add connectionObserver to observers
+            connectionProgressObserver.observe(null, 'connector-' + topic, data);
 
-        service.notifyObservers(xpcomize(topic), 'connector', session.name);
+        service.notifyObservers(null, 'connector-' + topic, session.name);
     } };
     
     var service = this;

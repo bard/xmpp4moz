@@ -392,15 +392,9 @@ function open(jid, opts, continuation) {
 
     var connectionObserver = null;
     if(continuation) {
-        // connector can go to the 'active' state many times -- we
-        // only want to catch the first time.
-        var connectorAlreadyActive = false;
-
         connectionObserver = {
             observe: function(subject, topic, data) {
-                if(!connectorAlreadyActive &&
-                   topic == 'connector' &&
-                   asString(subject) == 'active') {
+                if(topic == 'connector-active') {
                     connectorAlreadyActive = true;
                     continuation();
                 }

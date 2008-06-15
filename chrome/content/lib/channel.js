@@ -66,12 +66,10 @@ Channel.prototype.receive = function(event) {
 };
 
 Channel.prototype.observe = function(subject, topic, data) {
-    var [_, name, direction] = topic.match(/^(data|stanza|connector)-?(in|out)?$/);
+    var [_, name, info] = topic.match(/^(data|stanza|connector)-?(in|out|.*)?$/);
     var account = data.toString();
 
     var event = {
-        direction: direction,
-
         get account() {
             return (this.stanza ?
                     this.stanza.ns_x4m_in::meta.@account.toXMLString() :
@@ -85,16 +83,18 @@ Channel.prototype.observe = function(subject, topic, data) {
 
     switch(name) {
     case 'connector':
-        event.state = asString(subject);
+        event.state = info;
         event.event = name;
         break;
     case 'data':
         event.content = asString(subject);
         event.event = name;
+        event.direction = info;
         break;
     case 'stanza':
         event.stanza = dom2xml(subject.QueryInterface(Ci.nsIDOMElement));
         event.event = event.stanza.name();
+        event.direction = info;
         break;
     }
 
