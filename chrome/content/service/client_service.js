@@ -92,7 +92,15 @@ function init() {
          }
     }, false);
 
-    defineLogger(pref.getCharPref('logTarget'));
+    Cc['@mozilla.org/observer-service;1']
+        .getService(Ci.nsIObserverService)
+        .addObserver({
+            observe: function(subject, topic, data) {
+                sessions.forEach(function(session) {
+                    session.wrappedJSObject.connector.disconnect();
+                });
+            }
+        }, 'quit-application', false);
 }
 
 
