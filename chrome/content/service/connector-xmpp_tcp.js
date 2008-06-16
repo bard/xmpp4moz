@@ -115,25 +115,28 @@ function onTransportStatus(transport, status, progress, progressMax) {
     switch(status) {
     case Ci.nsISocketTransport.STATUS_CONNECTING_TO:
         this.onEvent_transportConnecting();
-        this._socketTransport.securityInfo.QueryInterface(Ci.nsISSLSocketControl);
-        this._socketTransport.securityInfo.notificationCallbacks = {
-            notifyCertProblem: function(socketInfo, status, targetSite) {
-                connector.setState('error', xpcomize('badcert'));
-                return true;
-            },
 
-            getInterface: function(iid) {
-                return this.QueryInterface(iid);
-            },
+        if('nsIBadCertListener2' in Ci) {
+            this._socketTransport.securityInfo.QueryInterface(Ci.nsISSLSocketControl);
+            this._socketTransport.securityInfo.notificationCallbacks = {
+                notifyCertProblem: function(socketInfo, status, targetSite) {
+                    connector.setState('error', xpcomize('badcert'));
+                    return true;
+                },
 
-            QueryInterface: function(iid) {
-                if(iid.equals(Ci.nsISupports) ||
-                   iid.equals(Ci.nsIInterfaceRequestor) ||
-                   iid.equals(Ci.nsIBadCertListener2))
-                    return this;
-                throw Cr.NS_ERROR_NO_INTERFACE;
-            }
-        };
+                getInterface: function(iid) {
+                    return this.QueryInterface(iid);
+                },
+
+                QueryInterface: function(iid) {
+                    if(iid.equals(Ci.nsISupports) ||
+                       iid.equals(Ci.nsIInterfaceRequestor) ||
+                       iid.equals(Ci.nsIBadCertListener2))
+                        return this;
+                    throw Cr.NS_ERROR_NO_INTERFACE;
+                }
+            };
+        }
         break;
     case Ci.nsISocketTransport.STATUS_CONNECTED_TO:
         this.onEvent_transportConnected();
