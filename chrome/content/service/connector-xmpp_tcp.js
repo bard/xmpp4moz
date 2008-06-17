@@ -360,7 +360,7 @@ function startKeepAlive() {
     var transport = this;
     this._keepAliveTimer.initWithCallback({
         notify: function(timer) {
-            if(transport._state == 'active')
+            if(transport._state == 'idle')
                 transport.write(' ');
             else
                 transport._keepAliveTimer.cancel();
