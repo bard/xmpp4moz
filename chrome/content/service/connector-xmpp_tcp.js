@@ -370,7 +370,7 @@ function startKeepAlive() {
 
 function write(data) {
     try {
-        if(this._state != 'active' && this._state != 'accept-stanza')
+        if(this._state != 'idle' && this._state != 'active' && this._state != 'accept-stanza')
             this.LOG('DATA   >>> ', data);
         return this._outstream.writeString(asString(data));
     } catch(e if e.name == 'NS_BASE_STREAM_CLOSED') {
