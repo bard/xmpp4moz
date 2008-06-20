@@ -54,6 +54,8 @@ var STREAM_LEVEL_ELEMENT = {
     'urn:ietf:params:xml:ns:xmpp-sasl::success': true
 };
 var KEEPALIVE_INTERVAL = 30000;
+var STREAM_WAIT_TIMEOUT = 3000;
+var MAX_CONNECTION_ATTEMPTS = 2;
 
 XML.prettyPrinting = false;
 XML.ignoreWhitespace = true;
@@ -71,30 +73,12 @@ function init(jid, password, host, port, security) {
     this._logging         = true;
     this._backlog         = [];
 
-
-    this._proxyInfo       = srvProxy.resolve(
-        srvIO.newURI((security == SECURITY_SSL ? 'https://' : 'http://') + host, null, null),
-        Ci.nsIProtocolProxyService.RESOLVE_NON_BLOCKING);
-    switch(this._security) {
-    case SECURITY_NONE:
-        this._socketTransport =
-            srvSocketTransport.createTransport([], 0, host, port, this._proxyInfo);
-        break;
-    case SECURITY_SSL:
-        this._socketTransport =
-            srvSocketTransport.createTransport(['ssl'], 1, host, port, this._proxyInfo);
-        break;
-    case SECURITY_STARTTLS:
-        this._socketTransport =
-            srvSocketTransport.createTransport(['starttls'], 1, host, port, this._proxyInfo);
-        break;
-    }
-
-    this._socketTransport.setEventSink(this, getCurrentThreadTarget());
     this._parser = null;
     this._state = 'disconnected';
     this._observers = [];
     this._keepAliveTimer  = Cc['@mozilla.org/timer;1'].createInstance(Ci.nsITimer);
+    this._streamTimeoutTimer = Cc['@mozilla.org/timer;1'].createInstance(Ci.nsITimer);
+    this._connection_attempts = 0;
 }
 
 
@@ -102,11 +86,11 @@ function init(jid, password, host, port, security) {
 // ----------------------------------------------------------------------
 
 function onStartRequest(request, context) {
-    this.assertState('connected', 'negotiating-proxy');
+    this.assertState('connected', 'negotiating-proxy', 'stream-timeout');
 }
 
 function onStopRequest(request, context, status) {
-    this.assertState('connected', 'active', 'idle', 'error');
+    this.assertState('connected', 'active', 'idle', 'error', 'stream-timeout');
     this.onEvent_transportDisconnected();
 }
 
@@ -263,6 +247,20 @@ function onEvent_streamElement(element) {
     }
 }
 
+// Some servers (notably talk.google.com) often does not respond to
+// our first stream initiation if we're over SSL, but it does respond
+// to the second.  So upon stream timeout we attempt another
+// connection.
+
+function onEvent_streamTimeout() {
+    this.setState('stream-timeout');
+    this._socketTransport.close(0);
+    if(this._connection_attempts >= MAX_CONNECTION_ATTEMPTS)
+        this.setState('error', xpcomize('max-attempts'));
+    else
+        this.connect();
+}
+
 function onEvent_transportConnecting() {
     this.setState('connecting');
 }
@@ -301,6 +299,7 @@ function onEvent_transportDisconnected() {
 function onEvent_openedIncomingStream() {
     this.assertState('connected'); // incorrect
     this.setState('stream-open');
+    this._streamTimeoutTimer.cancel();
 }
 
 function onEvent_closedIncomingStream() {
@@ -326,7 +325,29 @@ function isConnected() {
 }
 
 function connect() {
-    var baseOutstream = this._socketTransport.openOutputStream(0,0,0);
+    this._connection_attempts++;
+
+    this._proxyInfo       = srvProxy.resolve(
+        srvIO.newURI((this._security == SECURITY_SSL ? 'https://' : 'http://') + this._host, null, null),
+        Ci.nsIProtocolProxyService.RESOLVE_NON_BLOCKING);
+    switch(this._security) {
+    case SECURITY_NONE:
+        this._socketTransport =
+            srvSocketTransport.createTransport([], 0, this._host, this._port, this._proxyInfo);
+        break;
+    case SECURITY_SSL:
+        this._socketTransport =
+            srvSocketTransport.createTransport(['ssl'], 1, this._host, this._port, this._proxyInfo);
+        break;
+    case SECURITY_STARTTLS:
+        this._socketTransport =
+            srvSocketTransport.createTransport(['starttls'], 1, this._host, this._port, this._proxyInfo);
+        break;
+    }
+    this._socketTransport.setEventSink(this, getCurrentThreadTarget());
+
+
+    baseOutstream = this._socketTransport.openOutputStream(0,0,0);
     this._outstream = Cc['@mozilla.org/intl/converter-output-stream;1']
         .createInstance(Ci.nsIConverterOutputStream);
     this._outstream.init(baseOutstream, 'UTF-8', 0, '?'.charCodeAt(0));
@@ -451,6 +472,16 @@ function openStream() {
     this._parser = this.createParser(this._parseReq);
     this._parser.onStartRequest(this._parseReq, null);
     this.write(STREAM_PROLOGUE.replace('<SERVER>', JID(this._jid).hostname));
+
+    var connector = this;
+    this._streamTimeoutTimer.initWithCallback({
+        notify: function(timer) {
+            // It's not a real timeout if connector has gone to
+            // 'error' state or something else in the meantime
+            if(connector._state == 'connected')
+                connector.onEvent_streamTimeout()
+        }
+    }, STREAM_WAIT_TIMEOUT, Ci.nsITimer.TYPE_ONESHOT);
 }
 
 function addObserver(observer) {
