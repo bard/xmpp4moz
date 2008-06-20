@@ -115,8 +115,7 @@ function onTransportStatus(transport, status, progress, progressMax) {
     switch(status) {
     case Ci.nsISocketTransport.STATUS_CONNECTING_TO:
         this.onEvent_transportConnecting();
-
-        if('nsIBadCertListener2' in Ci) {
+        if('nsIBadCertListener2' in Ci && this._socketTransport.securityInfo) {
             this._socketTransport.securityInfo.QueryInterface(Ci.nsISSLSocketControl);
             this._socketTransport.securityInfo.notificationCallbacks = {
                 notifyCertProblem: function(socketInfo, status, targetSite) {
