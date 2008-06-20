@@ -53,6 +53,7 @@ var STREAM_LEVEL_ELEMENT = {
     'urn:ietf:params:xml:ns:xmpp-tls::proceed': true,
     'urn:ietf:params:xml:ns:xmpp-sasl::success': true
 };
+var KEEPALIVE_INTERVAL = 30000;
 
 XML.prettyPrinting = false;
 XML.ignoreWhitespace = true;
@@ -356,15 +357,15 @@ function disconnect() {
 // ----------------------------------------------------------------------
 
 function startKeepAlive() {
-    var transport = this;
+    var connector = this;
     this._keepAliveTimer.initWithCallback({
         notify: function(timer) {
-            if(transport._state == 'idle')
-                transport.write(' ');
+            if(connector._state == 'idle')
+                connector.write(' ');
             else
-                transport._keepAliveTimer.cancel();
+                connector._keepAliveTimer.cancel();
         }
-    }, 30000, Ci.nsITimer.TYPE_REPEATING_SLACK);
+    }, KEEPALIVE_INTERVAL, Ci.nsITimer.TYPE_REPEATING_SLACK);
 }
 
 function write(data) {
