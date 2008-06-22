@@ -360,7 +360,7 @@ function connect() {
         openSocket({
             onTransportStatus: function(transport, status, progress, progressMax) {
                 if(status == Ci.nsISocketTransport.STATUS_CONNECTED_TO) {
-                    connector.LOG('INFO   Doing connection workaround for Google server ()');
+                    connector.LOG('INFO   Doing connection workaround for Google server.');
                     transport.close(0);
 
                     useSocket(openSocket(connector));
