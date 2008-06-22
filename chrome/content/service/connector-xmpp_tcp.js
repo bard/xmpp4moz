@@ -54,8 +54,6 @@ var STREAM_LEVEL_ELEMENT = {
     'urn:ietf:params:xml:ns:xmpp-sasl::success': true
 };
 var KEEPALIVE_INTERVAL = 30000;
-var STREAM_WAIT_TIMEOUT = 3000;
-var MAX_CONNECTION_ATTEMPTS = 2;
 
 XML.prettyPrinting = false;
 XML.ignoreWhitespace = true;
@@ -77,8 +75,6 @@ function init(jid, password, host, port, security) {
     this._state = 'disconnected';
     this._observers = [];
     this._keepAliveTimer  = Cc['@mozilla.org/timer;1'].createInstance(Ci.nsITimer);
-    this._streamTimeoutTimer = Cc['@mozilla.org/timer;1'].createInstance(Ci.nsITimer);
-    this._connection_attempts = 0;
 }
 
 
@@ -86,11 +82,11 @@ function init(jid, password, host, port, security) {
 // ----------------------------------------------------------------------
 
 function onStartRequest(request, context) {
-    this.assertState('connected', 'negotiating-proxy', 'stream-timeout');
+    this.assertState('connected', 'negotiating-proxy');
 }
 
 function onStopRequest(request, context, status) {
-    this.assertState('connected', 'active', 'idle', 'error', 'stream-timeout');
+    this.assertState('connected', 'active', 'idle', 'error');
     this.onEvent_transportDisconnected();
 }
 
@@ -247,20 +243,6 @@ function onEvent_streamElement(element) {
     }
 }
 
-// Some servers (notably talk.google.com) often does not respond to
-// our first stream initiation if we're over SSL, but it does respond
-// to the second.  So upon stream timeout we attempt another
-// connection.
-
-function onEvent_streamTimeout() {
-    this.setState('stream-timeout');
-    this._socketTransport.close(0);
-    if(this._connection_attempts >= MAX_CONNECTION_ATTEMPTS)
-        this.setState('error', xpcomize('max-attempts'));
-    else
-        this.connect();
-}
-
 function onEvent_transportConnecting() {
     this.setState('connecting');
 }
@@ -299,7 +281,6 @@ function onEvent_transportDisconnected() {
 function onEvent_openedIncomingStream() {
     this.assertState('connected'); // incorrect
     this.setState('stream-open');
-    this._streamTimeoutTimer.cancel();
 }
 
 function onEvent_closedIncomingStream() {
@@ -325,39 +306,69 @@ function isConnected() {
 }
 
 function connect() {
-    this._connection_attempts++;
-
-    this._proxyInfo       = srvProxy.resolve(
+    this._proxyInfo = srvProxy.resolve(
         srvIO.newURI((this._security == SECURITY_SSL ? 'https://' : 'http://') + this._host, null, null),
         Ci.nsIProtocolProxyService.RESOLVE_NON_BLOCKING);
-    switch(this._security) {
-    case SECURITY_NONE:
-        this._socketTransport =
-            srvSocketTransport.createTransport([], 0, this._host, this._port, this._proxyInfo);
-        break;
-    case SECURITY_SSL:
-        this._socketTransport =
-            srvSocketTransport.createTransport(['ssl'], 1, this._host, this._port, this._proxyInfo);
-        break;
-    case SECURITY_STARTTLS:
-        this._socketTransport =
-            srvSocketTransport.createTransport(['starttls'], 1, this._host, this._port, this._proxyInfo);
-        break;
+
+    var connector = this;
+
+    function openSocket(eventSink) {
+        var socketTransport;
+
+        switch(connector._security) {
+        case SECURITY_NONE:
+            socketTransport =
+                srvSocketTransport.createTransport([], 0, connector._host, connector._port, connector._proxyInfo);
+            break;
+        case SECURITY_SSL:
+            socketTransport =
+                srvSocketTransport.createTransport(['ssl'], 1, connector._host, connector._port, connector._proxyInfo);
+            break;
+        case SECURITY_STARTTLS:
+            socketTransport =
+                srvSocketTransport.createTransport(['starttls'], 1, connector._host, connector._port, connector._proxyInfo);
+            break;
+        }
+        socketTransport.setEventSink(eventSink, getCurrentThreadTarget());
+
+        var outstream = socketTransport.openOutputStream(0,0,0);
+        var instream  = socketTransport.openInputStream(0,0,0);
+
+        return [socketTransport, instream, outstream];
     }
-    this._socketTransport.setEventSink(this, getCurrentThreadTarget());
 
+    function useSocket([socketTransport, instream, outstream]) {
+        connector._socketTransport = socketTransport;
+        connector._instream = instream;
+        connector._outstream = Cc['@mozilla.org/intl/converter-output-stream;1']
+            .createInstance(Ci.nsIConverterOutputStream);
+        connector._outstream.init(outstream, 'UTF-8', 0, '?'.charCodeAt(0));
 
-    baseOutstream = this._socketTransport.openOutputStream(0,0,0);
-    this._outstream = Cc['@mozilla.org/intl/converter-output-stream;1']
-        .createInstance(Ci.nsIConverterOutputStream);
-    this._outstream.init(baseOutstream, 'UTF-8', 0, '?'.charCodeAt(0));
-    
-    this._instream = this._socketTransport.openInputStream(0,0,0);
-    var inputPump = Cc['@mozilla.org/network/input-stream-pump;1']
-        .createInstance(Ci.nsIInputStreamPump);
-    inputPump.init(this._instream, -1, -1, 0, 0, false);
-    
-    inputPump.asyncRead(this, null);
+        var inputPump = Cc['@mozilla.org/network/input-stream-pump;1']
+            .createInstance(Ci.nsIInputStreamPump);
+        inputPump.init(instream, -1, -1, 0, 0, false);
+        inputPump.asyncRead(connector, null);
+    }
+
+    if(this._host == 'talk.google.com')
+
+        // Workaround for odd Google server behaviour: first SSL
+        // connection often hangs on incoming stream, second one
+        // doesn't, so we open a fake connection first and immediately
+        // close it. (LP#242098)
+
+        openSocket({
+            onTransportStatus: function(transport, status, progress, progressMax) {
+                if(status == Ci.nsISocketTransport.STATUS_CONNECTED_TO) {
+                    connector.LOG('INFO   Doing connection workaround for Google server ()');
+                    transport.close(0);
+
+                    useSocket(openSocket(connector));
+                }
+            }
+        });
+    else
+        useSocket(openSocket(this));
 }
 
 function send(element) {
@@ -472,16 +483,6 @@ function openStream() {
     this._parser = this.createParser(this._parseReq);
     this._parser.onStartRequest(this._parseReq, null);
     this.write(STREAM_PROLOGUE.replace('<SERVER>', JID(this._jid).hostname));
-
-    var connector = this;
-    this._streamTimeoutTimer.initWithCallback({
-        notify: function(timer) {
-            // It's not a real timeout if connector has gone to
-            // 'error' state or something else in the meantime
-            if(connector._state == 'connected')
-                connector.onEvent_streamTimeout()
-        }
-    }, STREAM_WAIT_TIMEOUT, Ci.nsITimer.TYPE_ONESHOT);
 }
 
 function addObserver(observer) {
