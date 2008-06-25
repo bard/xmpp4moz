@@ -90,66 +90,6 @@ function onStopRequest(request, context, status) {
     this.onEvent_transportDisconnected();
 }
 
-function onTransportStatus(transport, status, progress, progressMax) {
-    var connector = this;
-    
-    switch(status) {
-    case Ci.nsISocketTransport.STATUS_CONNECTING_TO:
-        this.onEvent_transportConnecting();
-        if('nsIBadCertListener2' in Ci && this._socketTransport.securityInfo) {
-            this._socketTransport.securityInfo.QueryInterface(Ci.nsISSLSocketControl);
-            this._socketTransport.securityInfo.notificationCallbacks = {
-                notifyCertProblem: function(socketInfo, status, targetSite) {
-                    connector.setState('error', xpcomize('badcert'));
-                    return true;
-                },
-
-                getInterface: function(iid) {
-                    return this.QueryInterface(iid);
-                },
-
-                QueryInterface: function(iid) {
-                    if(iid.equals(Ci.nsISupports) ||
-                       iid.equals(Ci.nsIInterfaceRequestor) ||
-                       iid.equals(Ci.nsIBadCertListener2))
-                        return this;
-                    throw Cr.NS_ERROR_NO_INTERFACE;
-                }
-            };
-        }
-        break;
-    case Ci.nsISocketTransport.STATUS_CONNECTED_TO:
-        this.onEvent_transportConnected();
-        break;
-    default:
-    }
-}
-
-function onDataAvailable(request, context, inputStream, offset, count) {
-    switch(this._state) {
-    case 'negotiating-proxy':
-        var stream = Cc['@mozilla.org/scriptableinputstream;1'] 
-            .createInstance(Ci.nsIScriptableInputStream);
-        stream.init(inputStream);
-
-        var response = stream.read(count);
-        this.LOG('DATA   <<< ', response);
-        if(response.match(/^HTTP\/1.0 200/)) {
-            if(this._socketTransport.securityInfo) {
-                this._socketTransport.securityInfo.QueryInterface(Ci.nsISSLSocketControl);
-                this._socketTransport.securityInfo.proxyStartSSL();
-            }
-            this.onEvent_proxyNegoOk();
-        } else {
-            this.onEvent_proxyNegoFail(response);
-        }
-
-        break;
-    default:
-        this._parser.onDataAvailable(this._parseReq, null, inputStream, offset, count);
-    }
-}
-
 function onEvent_streamElement(element) {
     this.LOG('DATA   <<< ', element);
     this.assertState('stream-open', 'requested-tls', 'auth-waiting-result',
@@ -252,20 +192,28 @@ function onEvent_userConnect() {
     this.connect();
 }
 
-function onEvent_transportConnected() {
+function onEvent_transportConnected(transport) {
+    this._socketTransport = transport;
     this.assertState('connecting');
     if(this._proxyInfo) {
         this.setState('negotiating-proxy');
         this.sendProxyNego();
     } else {
-        this.setState('connected');
+        // Formerly we were setting "connected" state here.  But a
+        // connected transport does not equal a connected connector --
+        // a connected transport could still hang on the XML stream,
+        // while the connector is only "connected" when the XML stream
+        // is up & running.  Thus, responsibility to set "connected"
+        // state is handed to the input stream listener created in
+        // connect(), as soon as it sees real data coming down on the
+        // transport.
         this.openStream();
     }
 }
 
 function onEvent_proxyNegoOk() {
     this.assertState('negotiating-proxy');
-    this.setState('connected');
+    this.setState('connecting');
     this.openStream();
 }
 
@@ -310,65 +258,129 @@ function connect() {
         srvIO.newURI((this._security == SECURITY_SSL ? 'https://' : 'http://') + this._host, null, null),
         Ci.nsIProtocolProxyService.RESOLVE_NON_BLOCKING);
 
+    var socketTransport;
+    switch(this._security) {
+    case SECURITY_NONE:
+        socketTransport =
+            srvSocketTransport.createTransport([], 0, this._host, this._port, this._proxyInfo);
+        break;
+    case SECURITY_SSL:
+        socketTransport =
+            srvSocketTransport.createTransport(['ssl'], 1, this._host, this._port, this._proxyInfo);
+        break;
+    case SECURITY_STARTTLS:
+        socketTransport =
+            srvSocketTransport.createTransport(['starttls'], 1, this._host, this._port, this._proxyInfo);
+        break;
+    }
+
+    var validSocket = true;
     var connector = this;
+    socketTransport.setEventSink({
+        onTransportStatus: function(transport, status, progress, progressMax) {
+            switch(status) {
+            case Ci.nsISocketTransport.STATUS_CONNECTING_TO:
+                connector.onEvent_transportConnecting();
+                if('nsIBadCertListener2' in Ci && transport.securityInfo) {
+                    transport.securityInfo.QueryInterface(Ci.nsISSLSocketControl);
+                    transport.securityInfo.notificationCallbacks = {
+                        notifyCertProblem: function(socketInfo, status, targetSite) {
+                            connector.setState('error', xpcomize('badcert'));
+                            return true;
+                        },
 
-    function openSocket(eventSink) {
-        var socketTransport;
+                        getInterface: function(iid) {
+                            return this.QueryInterface(iid);
+                        },
 
-        switch(connector._security) {
-        case SECURITY_NONE:
-            socketTransport =
-                srvSocketTransport.createTransport([], 0, connector._host, connector._port, connector._proxyInfo);
-            break;
-        case SECURITY_SSL:
-            socketTransport =
-                srvSocketTransport.createTransport(['ssl'], 1, connector._host, connector._port, connector._proxyInfo);
-            break;
-        case SECURITY_STARTTLS:
-            socketTransport =
-                srvSocketTransport.createTransport(['starttls'], 1, connector._host, connector._port, connector._proxyInfo);
-            break;
-        }
-        socketTransport.setEventSink(eventSink, getCurrentThreadTarget());
-
-        var outstream = socketTransport.openOutputStream(0,0,0);
-        var instream  = socketTransport.openInputStream(0,0,0);
-
-        return [socketTransport, instream, outstream];
-    }
-
-    function useSocket([socketTransport, instream, outstream]) {
-        connector._socketTransport = socketTransport;
-        connector._instream = instream;
-        connector._outstream = Cc['@mozilla.org/intl/converter-output-stream;1']
-            .createInstance(Ci.nsIConverterOutputStream);
-        connector._outstream.init(outstream, 'UTF-8', 0, '?'.charCodeAt(0));
-
-        var inputPump = Cc['@mozilla.org/network/input-stream-pump;1']
-            .createInstance(Ci.nsIInputStreamPump);
-        inputPump.init(instream, -1, -1, 0, 0, false);
-        inputPump.asyncRead(connector, null);
-    }
-
-    if(this._host == 'talk.google.com')
-
-        // Workaround for odd Google server behaviour: first SSL
-        // connection often hangs on incoming stream, second one
-        // doesn't, so we open a fake connection first and immediately
-        // close it. (LP#242098)
-
-        openSocket({
-            onTransportStatus: function(transport, status, progress, progressMax) {
-                if(status == Ci.nsISocketTransport.STATUS_CONNECTED_TO) {
-                    connector.LOG('INFO   Doing connection workaround for Google server.');
-                    transport.close(0);
-
-                    useSocket(openSocket(connector));
+                        QueryInterface: function(iid) {
+                            if(iid.equals(Ci.nsISupports) ||
+                               iid.equals(Ci.nsIInterfaceRequestor) ||
+                               iid.equals(Ci.nsIBadCertListener2))
+                                return this;
+                            throw Cr.NS_ERROR_NO_INTERFACE;
+                        }
+                    };
                 }
+                break;
+            case Ci.nsISocketTransport.STATUS_CONNECTED_TO:
+                connector.onEvent_transportConnected(transport);
+                break;
+            default:
+                break;
             }
-        });
-    else
-        useSocket(openSocket(this));
+        }
+    }, getCurrentThreadTarget());
+
+    var instream  = socketTransport.openInputStream(0,0,0);
+    var outstream = socketTransport.openOutputStream(0,0,0);
+    var utf8outstream = Cc['@mozilla.org/intl/converter-output-stream;1']
+        .createInstance(Ci.nsIConverterOutputStream);
+    utf8outstream.init(outstream, 'UTF-8', 0, '?'.charCodeAt(0));
+    this._outstream = utf8outstream;
+
+    var inputPump = Cc['@mozilla.org/network/input-stream-pump;1']
+        .createInstance(Ci.nsIInputStreamPump);
+    inputPump.init(instream, -1, -1, 0, 0, false);
+
+    var timeout = Cc['@mozilla.org/timer;1'].createInstance(Ci.nsITimer);
+    timeout.initWithCallback({
+        notify: function(timer) {
+            connector.LOG('INFO   First socket timed out');
+            socketTransport.close(0);
+            validSocket = false;
+            connector.connect();
+        }
+    }, 5000, Ci.nsITimer.TYPE_ONESHOT);
+
+    var inputStreamListener = {
+        onStartRequest: function() {
+            if(!validSocket)
+                return;
+            connector.onStartRequest.apply(connector, arguments);
+        },
+        onStopRequest: function() {
+            if(!validSocket)
+                return;
+            connector.onStopRequest.apply(connector, arguments);
+        },
+        onDataAvailable: function(request, context, inputStream, offset, count) {
+            if(!validSocket)
+                return;
+
+            switch(connector._state) {
+            case 'negotiating-proxy':
+                var stream = Cc['@mozilla.org/scriptableinputstream;1'] 
+                    .createInstance(Ci.nsIScriptableInputStream);
+                stream.init(inputStream);
+
+                var response = stream.read(count);
+                connector.LOG('DATA   <<< ', response);
+                if(response.match(/^HTTP\/1.0 200/)) {
+                    if(socketTransport.securityInfo) {
+                        socketTransport.securityInfo.QueryInterface(Ci.nsISSLSocketControl);
+                        socketTransport.securityInfo.proxyStartSSL();
+                    }
+                    connector.onEvent_proxyNegoOk();
+                } else {
+                    connector.onEvent_proxyNegoFail(response);
+                }
+                break;
+            default:
+                if(timeout) {
+                    timeout.cancel();
+                    timeout = null;
+                }
+
+                if(connector._state == 'connecting')
+                    connector.setState('connected');
+
+                connector._parser.onDataAvailable(connector._parseReq, null, inputStream, offset, count);
+            }
+        }
+    };
+
+    inputPump.asyncRead(inputStreamListener, null);
 }
 
 function send(element) {
@@ -591,7 +603,6 @@ function createParser() {
 
     parser.contentHandler = {
         startDocument: function() {
-            connector.LOG('PARSER remote opened stream');
             connector.onEvent_openedIncomingStream();
         },
 
