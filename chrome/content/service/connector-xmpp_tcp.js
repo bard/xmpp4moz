@@ -256,7 +256,7 @@ function isConnected() {
 function connect() {
     this._proxyInfo = srvProxy.resolve(
         srvIO.newURI((this._security == SECURITY_SSL ? 'https://' : 'http://') + this._host, null, null),
-        Ci.nsIProtocolProxyService.RESOLVE_NON_BLOCKING);
+        null);
 
     var socketTransport;
     switch(this._security) {
