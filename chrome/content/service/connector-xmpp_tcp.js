@@ -274,7 +274,7 @@ function connect() {
         break;
     }
 
-    var validSocket = true;
+    var validSocket = null;
     var connector = this;
     socketTransport.setEventSink({
         onTransportStatus: function(transport, status, progress, progressMax) {
@@ -326,26 +326,30 @@ function connect() {
     var timeout = Cc['@mozilla.org/timer;1'].createInstance(Ci.nsITimer);
     timeout.initWithCallback({
         notify: function(timer) {
-            connector.LOG('INFO   First socket timed out');
-            socketTransport.close(0);
-            validSocket = false;
-            connector.connect();
+            if(validSocket === true)
+                return;
+            else {
+                validSocket = false;
+                connector.LOG('INFO   First socket timed out');
+                socketTransport.close(0);
+                connector.connect();
+            }
         }
     }, 5000, Ci.nsITimer.TYPE_ONESHOT);
 
     var inputStreamListener = {
         onStartRequest: function() {
-            if(!validSocket)
+            if(validSocket === false)
                 return;
             connector.onStartRequest.apply(connector, arguments);
         },
         onStopRequest: function() {
-            if(!validSocket)
+            if(validSocket === false)
                 return;
             connector.onStopRequest.apply(connector, arguments);
         },
         onDataAvailable: function(request, context, inputStream, offset, count) {
-            if(!validSocket)
+            if(validSocket === false)
                 return;
 
             switch(connector._state) {
@@ -367,10 +371,7 @@ function connect() {
                 }
                 break;
             default:
-                if(timeout) {
-                    timeout.cancel();
-                    timeout = null;
-                }
+                validSocket = true;
 
                 if(connector._state == 'connecting')
                     connector.setState('connected');
