@@ -237,7 +237,7 @@ function connect() {
             connector.connect();
         },
 
-        onBadCert: function() {
+        onBadCertificate: function() {
             connector.setState('error', xpcomize('badcert'));
         },
 
