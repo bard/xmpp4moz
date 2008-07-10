@@ -81,15 +81,6 @@ function init(jid, password, host, port, security) {
 // REACTIONS
 // ----------------------------------------------------------------------
 
-function onStartRequest(request, context) {
-    this.assertState('connected', 'negotiating-proxy');
-}
-
-function onStopRequest(request, context, status) {
-    this.assertState('connected', 'active', 'idle', 'error');
-    this.onEvent_transportDisconnected();
-}
-
 function onEvent_streamElement(element) {
     this.LOG('DATA   <<< ', element);
     this.assertState('stream-open', 'requested-tls', 'auth-waiting-result',
@@ -104,8 +95,10 @@ function onEvent_streamElement(element) {
         break;
     case 'auth-waiting-result':
         if(element.namespaceURI == 'urn:ietf:params:xml:ns:xmpp-sasl') {
-            if(element.localName == 'success')
+            if(element.localName == 'success') {
+                this.setState('wait-stream');
                 this.openStream();
+            }
             else if(element.localName == 'failure')
                 this.setState('error', xpcomize('auth'));
             else
@@ -165,10 +158,11 @@ function onEvent_streamElement(element) {
         if(element.localName == 'proceed' &&
            element.namespaceURI == 'urn:ietf:params:xml:ns:xmpp-tls') {
             this.setState('negotiating-tls');
-            this.startTLS();
+            this._socket.startTLS();
             // assume this is synchronous and it will throw exception
             // if not successful...
             this.setState('connected');
+            this.setState('wait-stream');
             this.openStream();
         }
         break;
@@ -183,51 +177,16 @@ function onEvent_streamElement(element) {
     }
 }
 
-function onEvent_transportConnecting() {
-    this.setState('connecting');
-}
-
-function onEvent_userConnect() {
-    this.assertState('disconnected');
-    this.connect();
-}
-
-function onEvent_transportConnected(transport) {
-    this._socketTransport = transport;
-    this.assertState('connecting');
-    if(this._proxyInfo) {
-        this.setState('negotiating-proxy');
-        this.sendProxyNego();
-    } else {
-        // Formerly we were setting "connected" state here.  But a
-        // connected transport does not equal a connected connector --
-        // a connected transport could still hang on the XML stream,
-        // while the connector is only "connected" when the XML stream
-        // is up & running.  Thus, responsibility to set "connected"
-        // state is handed to the input stream listener created in
-        // connect(), as soon as it sees real data coming down on the
-        // transport.
-        this.openStream();
-    }
-}
-
-function onEvent_proxyNegoOk() {
-    this.assertState('negotiating-proxy');
-    this.setState('connecting');
-    this.openStream();
-}
-
-function onEvent_proxyNegoFail(response) {
-    this.assertState('negotiating-proxy');
-    this.LOG('ERROR: proxy negotiation failed, received response: ' + response);
-}
-
 function onEvent_transportDisconnected() {
     this.setState('disconnected');
 }
 
+function onEvent_openedOutgoingStream() {
+    this.setState('wait-stream');
+}
+
 function onEvent_openedIncomingStream() {
-    this.assertState('connected'); // incorrect
+    this.assertState('wait-stream');
     this.setState('stream-open');
 }
 
@@ -254,147 +213,77 @@ function isConnected() {
 }
 
 function connect() {
-    this._proxyInfo = srvProxy.resolve(
-        srvIO.newURI((this._security == SECURITY_SSL ? 'https://' : 'http://') + this._host, null, null),
-        null);
-
-    var socketTransport;
-    switch(this._security) {
-    case SECURITY_NONE:
-        socketTransport =
-            srvSocketTransport.createTransport([], 0, this._host, this._port, this._proxyInfo);
-        break;
-    case SECURITY_SSL:
-        socketTransport =
-            srvSocketTransport.createTransport(['ssl'], 1, this._host, this._port, this._proxyInfo);
-        break;
-    case SECURITY_STARTTLS:
-        socketTransport =
-            srvSocketTransport.createTransport(['starttls'], 1, this._host, this._port, this._proxyInfo);
-        break;
-    }
-
-    var validSocket = null;
+    this.setState('connecting');
     var connector = this;
-    socketTransport.setEventSink({
-        onTransportStatus: function(transport, status, progress, progressMax) {
-            switch(status) {
-            case Ci.nsISocketTransport.STATUS_CONNECTING_TO:
-                connector.onEvent_transportConnecting();
-                if('nsIBadCertListener2' in Ci && transport.securityInfo) {
-                    transport.securityInfo.QueryInterface(Ci.nsISSLSocketControl);
-                    transport.securityInfo.notificationCallbacks = {
-                        notifyCertProblem: function(socketInfo, status, targetSite) {
-                            connector.setState('error', xpcomize('badcert'));
-                            return true;
-                        },
 
-                        getInterface: function(iid) {
-                            return this.QueryInterface(iid);
-                        },
-
-                        QueryInterface: function(iid) {
-                            if(iid.equals(Ci.nsISupports) ||
-                               iid.equals(Ci.nsIInterfaceRequestor) ||
-                               iid.equals(Ci.nsIBadCertListener2))
-                                return this;
-                            throw Cr.NS_ERROR_NO_INTERFACE;
-                        }
-                    };
-                }
-                break;
-            case Ci.nsISocketTransport.STATUS_CONNECTED_TO:
-                connector.onEvent_transportConnected(transport);
-                break;
-            default:
-                break;
-            }
-        }
-    }, getCurrentThreadTarget());
-
-    var instream  = socketTransport.openInputStream(0,0,0);
-    var outstream = socketTransport.openOutputStream(0,0,0);
-    var utf8outstream = Cc['@mozilla.org/intl/converter-output-stream;1']
-        .createInstance(Ci.nsIConverterOutputStream);
-    utf8outstream.init(outstream, 'UTF-8', 0, '?'.charCodeAt(0));
-    this._outstream = utf8outstream;
-
-    var inputPump = Cc['@mozilla.org/network/input-stream-pump;1']
-        .createInstance(Ci.nsIInputStreamPump);
-    inputPump.init(instream, -1, -1, 0, 0, false);
-
-    var timeout = Cc['@mozilla.org/timer;1'].createInstance(Ci.nsITimer);
-    timeout.initWithCallback({
-        notify: function(timer) {
-            if(validSocket === true)
-                return;
-            else {
-                validSocket = false;
-                connector.LOG('INFO   First socket timed out');
-                socketTransport.close(0);
-                connector.connect();
-            }
-        }
-    }, 5000, Ci.nsITimer.TYPE_ONESHOT);
-
-    var inputStreamListener = {
-        onStartRequest: function() {
-            if(validSocket === false)
-                return;
-            connector.onStartRequest.apply(connector, arguments);
+    var socket = new Socket(this._host, this._port, this._security, function(msg) { connector.LOG(msg); });
+    socket.setListener({
+        onReady: function() {
+            socket.setReplyTimeout(3000);
+            socket.send(STREAM_PROLOGUE.replace('<SERVER>', JID(connector._jid).hostname));
+            connector.onEvent_openedOutgoingStream();
         },
-        onStopRequest: function() {
-            if(validSocket === false)
-                return;
-            connector.onStopRequest.apply(connector, arguments);
-        },
+
         onDataAvailable: function(request, context, inputStream, offset, count) {
-            if(validSocket === false)
-                return;
+            if(connector._state == 'connecting')
+                connector._state = 'connected';
 
-            switch(connector._state) {
-            case 'negotiating-proxy':
-                var stream = Cc['@mozilla.org/scriptableinputstream;1'] 
-                    .createInstance(Ci.nsIScriptableInputStream);
-                stream.init(inputStream);
+            connector._socket = socket;
+            connector.onDataAvailable.apply(connector, arguments);
+        },
 
-                var response = stream.read(count);
-                connector.LOG('DATA   <<< ', response);
-                if(response.match(/^HTTP\/1.0 200/)) {
-                    if(socketTransport.securityInfo) {
-                        socketTransport.securityInfo.QueryInterface(Ci.nsISSLSocketControl);
-                        socketTransport.securityInfo.proxyStartSSL();
-                    }
-                    connector.onEvent_proxyNegoOk();
-                } else {
-                    connector.onEvent_proxyNegoFail(response);
-                }
-                break;
-            default:
-                validSocket = true;
+        onTimeout: function() {
+            // Socket disables itself.  Retry.
+            connector.connect();
+        },
 
-                if(connector._state == 'connecting')
-                    connector.setState('connected');
+        onBadCert: function() {
+            connector.setState('error', xpcomize('badcert'));
+        },
 
-                connector._parser.onDataAvailable(connector._parseReq, null, inputStream, offset, count);
-            }
+        onClose: function() {
+            // Socket closed.  Only called if we didn't timeout.
+            connector.onEvent_transportDisconnected();
         }
-    };
+    });
 
-    inputPump.asyncRead(inputStreamListener, null);
+    socket.connect();
+}
+
+function onDataAvailable(request, context, inputStream, offset, count) {
+    switch(this._state) {
+    case 'wait-stream':
+        this._parseReq = {
+            cancel: function(status) {
+                this.LOG('PARSE REQ - cancel ' + status);
+            },
+            isPending: function() {
+                this.LOG('PARSE REQ - pending')
+            },
+            resume: function() {
+                this.LOG('PARSE REQ - resume')
+            },
+            suspend: function() {
+                this.LOG('PARSE REQ - suspend')
+            }
+        };
+        this._parser = this.createParser(this._parseReq);
+        this._parser.onStartRequest(this._parseReq, null);
+        this._parser.onDataAvailable(this._parseReq, null, inputStream, offset, count);
+        break;
+    default:
+        this._parser.onDataAvailable(this._parseReq, null, inputStream, offset, count);
+    }
 }
 
 function send(element) {
-    // XXX metadata could arrive up to here as it might contain info
-    // useful to the transport (so will need to be stripped here)
     this.LOG('DATA   >>> ', serialize(element));
-    
-    this.write(serialize(element));
+    this._write(serialize(element));
 }
 
 function disconnect() {
-    this.write(STREAM_EPILOGUE);
-    this._socketTransport.close(0);
+    this._write(STREAM_EPILOGUE);
+    this._socket.close();
 }
 
 
@@ -406,25 +295,26 @@ function startKeepAlive() {
     this._keepAliveTimer.initWithCallback({
         notify: function(timer) {
             if(connector._state == 'idle')
-                connector.write(' ');
+                connector._write(' ');
             else
                 connector._keepAliveTimer.cancel();
         }
     }, KEEPALIVE_INTERVAL, Ci.nsITimer.TYPE_REPEATING_SLACK);
 }
 
-function write(data) {
-    try {
-        if(this._state != 'idle' && this._state != 'active' && this._state != 'accept-stanza')
-            this.LOG('DATA   >>> ', data);
-        return this._outstream.writeString(asString(data));
-    } catch(e if e.name == 'NS_BASE_STREAM_CLOSED') {
-        this.onEvent_transportDisconnected();
-    }
+function _write(data) {
+    return this._socket.send(data);
+    // try {
+    //     if(this._state != 'idle' && this._state != 'active' && this._state != 'accept-stanza')
+    //         this.LOG('DATA   >>> ', data);
+    //     return this._outstream.writeString(asString(data));
+    // } catch(e if e.name == 'NS_BASE_STREAM_CLOSED') {
+    //     this.onEvent_transportDisconnected();
+    // }
 }
 
 function bindResource() {
-    this.write(<iq id='bind_2' type='set'>
+    this._write(<iq id='bind_2' type='set'>
                <bind xmlns='urn:ietf:params:xml:ns:xmpp-bind'>
                <resource>{JID(this._jid).resource}</resource>
                </bind>
@@ -432,7 +322,7 @@ function bindResource() {
 }
 
 function requestSession() {
-    this.write(<iq id='sess_1' type='set'>
+    this._write(<iq id='sess_1' type='set'>
                <session xmlns='urn:ietf:params:xml:ns:xmpp-session'/>
                </iq>);
 }
@@ -443,7 +333,7 @@ function requestSASLAuth(mechanism) {
         var auth = btoa(JID(this._jid).address + '\0' +
                         JID(this._jid).username + '\0' +
                         this._password);
-        this.write(<auth xmlns='urn:ietf:params:xml:ns:xmpp-sasl' mechanism='PLAIN'>{auth}</auth>);
+        this._write(<auth xmlns='urn:ietf:params:xml:ns:xmpp-sasl' mechanism='PLAIN'>{auth}</auth>);
         break;
     default:
         throw new Error('Unsupported mechanism. + (' + mechanism + ')');
@@ -451,7 +341,7 @@ function requestSASLAuth(mechanism) {
 }
 
 function requestLegacyAuth() {
-    this.write(<iq type="set" id="auth01">
+    this._write(<iq type="set" id="auth01">
                <query xmlns="jabber:iq:auth">
                <username>{JID(this._jid).username}</username>
                <resource>{JID(this._jid).resource}</resource>
@@ -461,11 +351,7 @@ function requestLegacyAuth() {
 }
 
 function requestTLS() {
-    this.write(<starttls xmlns='urn:ietf:params:xml:ns:xmpp-tls'/>);
-}
-
-function startTLS() {
-    this._socketTransport.securityInfo.StartTLS();
+    this._write(<starttls xmlns='urn:ietf:params:xml:ns:xmpp-tls'/>);
 }
 
 function setState(name, stateData) {
@@ -474,28 +360,8 @@ function setState(name, stateData) {
     this.notifyObservers(stateData, name, null);
 }
 
-function sendProxyNego() {
-    this.write('CONNECT ' + this._host + ':' + this._port + ' HTTP/1.0\r\n\r\n');    
-}
-
 function openStream() {
-    this._parseReq = {
-        cancel: function(status) {
-            this.LOG('PARSE REQ - cancel ' + status);
-        },
-        isPending: function() {
-            this.LOG('PARSE REQ - pending')
-        },
-        resume: function() {
-            this.LOG('PARSE REQ - resume')
-        },
-        suspend: function() {
-            this.LOG('PARSE REQ - suspend')
-        }
-    };
-    this._parser = this.createParser(this._parseReq);
-    this._parser.onStartRequest(this._parseReq, null);
-    this.write(STREAM_PROLOGUE.replace('<SERVER>', JID(this._jid).hostname));
+    this._write(STREAM_PROLOGUE.replace('<SERVER>', JID(this._jid).hostname));
 }
 
 function addObserver(observer) {
@@ -787,3 +653,269 @@ function atob(input) {
    return output;
 }
 }
+
+
+// SOCKET
+// ----------------------------------------------------------------------
+
+function Socket(host, port, security, logger) {
+    this._id = (new Date()).getTime();
+    this._host = host;
+    this._port = port;
+    this._security = security || SECURITY_NONE;
+    this._proxy_info = srvProxy.resolve(
+        srvIO.newURI((this._security == SECURITY_SSL ? 'https://' : 'http://') + this._host, null, null),
+        null);
+    this._listener = null;
+    this._transport = null;
+    this._reply_timeout = null;
+    this._logger = logger;
+    this._state = 'disconnected';
+    this._stateInfo = null;
+}
+
+Socket.prototype = {
+
+    // API
+    // ----------------------------------------------------------------------
+
+    // Sets a listener which will get events from the socket.
+    //
+    // Listener must implement the following interface:
+    //
+    // - onReady()
+    // - onTimeout()
+    // - onDataAvailable(request, context, inputStream, offset, count)
+    // - onClose()
+    // - onBadCertificate()
+
+    setListener: function(listener) {
+        if(this._listener)
+            throw new Error('Listener already set.');
+        this._listener = listener;
+    },
+
+    // Sets a timeout before which we must receive data (any data)
+    // from the other side, otherwise the sock disables itself and
+    // invokes listener's onTimeout().
+    //
+    // Needed for LP#242098.
+
+    setReplyTimeout: function(msecs) {
+        this._log('DEBUG ::: setting reply timeout to ' + msecs);
+        var socket = this;
+        this._reply_timeout = Cc['@mozilla.org/timer;1'].createInstance(Ci.nsITimer);
+        this._reply_timeout.initWithCallback({
+            notify: function(timer) {
+                socket._setState('timeout');
+                socket.close();
+           }
+        }, msecs, Ci.nsITimer.TYPE_ONESHOT);
+    },
+
+    // Connects the socket.
+
+    connect: function() {
+        this._transport = this._createTransport();
+        this._transport.setEventSink(this, getCurrentThreadTarget());
+
+        var outstream = this._transport.openOutputStream(0,0,0);
+        this._outstream = Cc['@mozilla.org/intl/converter-output-stream;1']
+            .createInstance(Ci.nsIConverterOutputStream);
+        this._outstream.init(outstream, 'UTF-8', 0, '?'.charCodeAt(0));
+
+        var instream  = this._transport.openInputStream(0,0,0);
+        var inputPump = Cc['@mozilla.org/network/input-stream-pump;1']
+            .createInstance(Ci.nsIInputStreamPump);
+        inputPump.init(instream, -1, -1, 0, 0, false);
+        inputPump.asyncRead(this, null);
+    },
+
+    // Closes the socket.
+
+    close: function() {
+        if(this._transport)
+            this._transport.close(0);
+    },
+
+    send: function(data) {
+        if(!(this._state == 'ready' ||
+             this._state == 'active'))
+            throw new Error('Trying to send data over inactive socket.');
+
+        return this._send(data);
+    },
+
+    startTLS: function() {
+        this._transport.securityInfo.StartTLS();
+    },
+
+    // INTERNALS
+
+    onTransportStatus: function(transport, status, progress, progressMax) {
+        switch(status) {
+        case Ci.nsISocketTransport.STATUS_RESOLVING:
+            this._setState('resolving');
+            break;
+        case Ci.nsISocketTransport.STATUS_CONNECTING_TO:
+            this._setState('connecting');
+            var socket = this;
+            if('nsIBadCertListener2' in Ci && this._transport.securityInfo) {
+                this._transport.securityInfo.QueryInterface(Ci.nsISSLSocketControl);
+                this._transport.securityInfo.notificationCallbacks = {
+                    notifyCertProblem: function(socketInfo, status, targetSite) {
+                        socket._setState('error', 'badcert');
+                        return true;
+                    },
+
+                    getInterface: function(iid) {
+                        return this.QueryInterface(iid);
+                    },
+
+                    QueryInterface: function(iid) {
+                        if(iid.equals(Ci.nsISupports) ||
+                           iid.equals(Ci.nsIInterfaceRequestor) ||
+                           iid.equals(Ci.nsIBadCertListener2))
+                            return this;
+                        throw Cr.NS_ERROR_NO_INTERFACE;
+                    }
+                };
+            }
+            break;
+        case Ci.nsISocketTransport.STATUS_CONNECTED_TO:
+            this._setState('connected');
+            if(this._proxy_info) {
+                this._setState('proxynego');
+                this._send('CONNECT ' + this._host + ':' + this._port + ' HTTP/1.0\r\n\r\n');
+            } else {
+                this._setState('ready');
+            }
+            break;
+        }
+    },
+
+    onStartRequest: function() {
+        this._log('DEBUG ::: request started');
+    },
+
+    onStopRequest: function() {
+        this._log('DEBUG ::: request stopped');
+        this._setState('disconnected');
+    },
+
+    onDataAvailable: function(request, context, inputStream, offset, count) {
+        switch(this._state) {
+        case 'proxynego':
+            var stream = Cc['@mozilla.org/scriptableinputstream;1']
+                .createInstance(Ci.nsIScriptableInputStream);
+            stream.init(inputStream);
+            var response = stream.read(count);
+            this._log('RECV  ::: ' + response);
+
+            this._handleProxyResponse(response);
+            break;
+        case 'ready':
+            if(this._reply_timeout) {
+                this._reply_timeout.cancel();
+                this._reply_timeout = null;
+                this._log('DEBUG ::: got data, timeout cancelled');
+            }
+            this._setState('active', arguments);
+            break;
+        case 'active':
+            this._setState('active', arguments);
+            break;
+        }
+    },
+
+    _send: function(data) {
+        // Low-level _send() needs to be used in more states than
+        // send(), which is public API and just used during "active"
+        // and "ready" state.
+        if(!(this._state == 'ready' ||
+             this._state == 'proxynego' ||
+             this._state == 'active'))
+            throw new Error('Trying to send data outside of a reasonable state.');
+
+        this._log('SEND  ::: ' + asString(data));
+
+        try {
+            return this._outstream.writeString(asString(data))
+        } catch(e if e.name == 'NS_BASE_STREAM_CLOSED') {
+            this._setState('disconnected');
+        }
+    },
+
+    _setState: function(state, stateInfo) {
+        this._log('STATE ::: ' + state + ' [' + (stateInfo || '') + ']');
+        this._state = state;
+        this._stateInfo = stateInfo;
+        switch(state) {
+        case 'ready':
+            this._listener.onReady();
+            break;
+        case 'active':
+            this._listener.onDataAvailable.apply(null, stateInfo);
+            break;
+        case 'timeout':
+            this._listener.onTimeout();
+            break;
+        case 'disconnected':
+            if(this._state == 'active')
+                this._listener.onClose();
+            break;
+        case 'error':
+            if(stateInfo == 'badcert')
+                this._listener.onBadCertificate();
+            break;
+        }
+    },
+
+    _createTransport: function() {
+        switch(this._security) {
+        case SECURITY_NONE:
+            return srvSocketTransport.createTransport([], 0, this._host, this._port, this._proxy_info);
+            break;
+        case SECURITY_SSL:
+            return srvSocketTransport.createTransport(['ssl'], 1, this._host, this._port, this._proxy_info);
+            break;
+        case SECURITY_STARTTLS:
+            return srvSocketTransport.createTransport(['starttls'], 1, this._host, this._port, this._proxy_info);
+            break;
+        }
+    },
+
+    _handleProxyResponse: function(response) {
+        var [match, code] = response.match(/^HTTP\/1.\d (\d{3})/);
+        if(!match) {
+            this._setState('error', ['bad proxy response', response]);
+            this.close();
+            this._log('DEBUG ::: proxy nego fail');
+            return; // break?
+        } else {
+            switch(code) {
+            case '200':
+                if(this._transport.securityInfo) {
+                    this._transport.securityInfo.QueryInterface(Ci.nsISSLSocketControl);
+                    this._transport.securityInfo.proxyStartSSL();
+                }
+                this._log('DEBUG ::: proxy nego ok');
+
+                this._setState('ready');
+                break;
+            default:
+                this._setState('error', ['proxy refused connection', code]);
+                this._setState('disconnected');
+                this._log('DEBUG ::: proxy nego fail');
+                break;
+            }
+        }
+    },
+
+    _log: function(msg) {
+        if(this._logger)
+            this._logger('SOCKET-' + this._id + '/' + msg);
+    }
+};
+
+
