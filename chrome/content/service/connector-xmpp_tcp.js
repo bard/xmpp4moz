@@ -82,7 +82,7 @@ function init(jid, password, host, port, security) {
 // ----------------------------------------------------------------------
 
 function onEvent_streamElement(element) {
-    this.LOG('DATA   <<< ', element);
+    this.LOG('RECV   ', element);
     this.assertState('stream-open', 'requested-tls', 'auth-waiting-result',
                      'binding-resource', 'requesting-session', 'active', 'idle');
 
@@ -158,12 +158,7 @@ function onEvent_streamElement(element) {
         if(element.localName == 'proceed' &&
            element.namespaceURI == 'urn:ietf:params:xml:ns:xmpp-tls') {
             this.setState('negotiating-tls');
-            this._socket.startTLS();
-            // assume this is synchronous and it will throw exception
-            // if not successful...
-            this.setState('connected');
-            this.setState('wait-stream');
-            this.openStream();
+            this.startTLS();
         }
         break;
     case 'active':
@@ -253,21 +248,7 @@ function connect() {
 function onDataAvailable(request, context, inputStream, offset, count) {
     switch(this._state) {
     case 'wait-stream':
-        this._parseReq = {
-            cancel: function(status) {
-                this.LOG('PARSE REQ - cancel ' + status);
-            },
-            isPending: function() {
-                this.LOG('PARSE REQ - pending')
-            },
-            resume: function() {
-                this.LOG('PARSE REQ - resume')
-            },
-            suspend: function() {
-                this.LOG('PARSE REQ - suspend')
-            }
-        };
-        this._parser = this.createParser(this._parseReq);
+        [this._parser, this._parseReq] = this.createParser();
         this._parser.onStartRequest(this._parseReq, null);
         this._parser.onDataAvailable(this._parseReq, null, inputStream, offset, count);
         break;
@@ -300,6 +281,13 @@ function startKeepAlive() {
                 connector._keepAliveTimer.cancel();
         }
     }, KEEPALIVE_INTERVAL, Ci.nsITimer.TYPE_REPEATING_SLACK);
+}
+
+function startTLS() {
+    this._socket.startTLS();
+    this.setState('wait-stream');
+    this._socket.setReplyTimeout(3000);
+    this.openStream();
 }
 
 function _write(data) {
@@ -365,7 +353,7 @@ function openStream() {
 }
 
 function addObserver(observer) {
-    this._observers.push(observer);    
+    this._observers.push(observer);
 }
 
 function removeObserver(observer) {
@@ -470,6 +458,7 @@ function createParser() {
 
     parser.contentHandler = {
         startDocument: function() {
+            connector.LOG('PARSER remote opened stream');
             connector.onEvent_openedIncomingStream();
         },
 
@@ -544,7 +533,14 @@ function createParser() {
 
     parser.parseAsync(null);
 
-    return parser;
+    var parseReq = {
+        cancel: function(status) {},
+        isPending: function() {},
+        resume: function() {},
+        suspend: function() {}
+    };
+    
+    return [parser, parseReq];
 }
 
 function hasChild(element, childNS, childName) {
@@ -706,8 +702,9 @@ Socket.prototype = {
         this._reply_timeout = Cc['@mozilla.org/timer;1'].createInstance(Ci.nsITimer);
         this._reply_timeout.initWithCallback({
             notify: function(timer) {
-                socket._setState('timeout');
+                socket._reply_timeout = null;
                 socket.close();
+                socket._setState('timeout');
            }
         }, msecs, Ci.nsITimer.TYPE_ONESHOT);
     },
@@ -745,7 +742,7 @@ Socket.prototype = {
         return this._send(data);
     },
 
-    startTLS: function() {
+    startTLS: function(onSuccess) {
         this._transport.securityInfo.StartTLS();
     },
 
@@ -791,12 +788,7 @@ Socket.prototype = {
             }
             break;
         case Ci.nsISocketTransport.STATUS_RECEIVING_FROM:
-            if(this._state == 'ready' &&
-               this._reply_timeout) {
-                this._reply_timeout.cancel();
-                this._reply_timeout = null;
-                this._log('DEBUG ::: got data, timeout cancelled');
-            }
+            this._clearReplyTimeout();
             break;
         default:
             break;
@@ -809,6 +801,7 @@ Socket.prototype = {
 
     onStopRequest: function() {
         this._log('DEBUG ::: request stopped');
+        this._clearReplyTimeout();
         this._setState('disconnected');
     },
 
@@ -848,6 +841,15 @@ Socket.prototype = {
         }
     },
 
+    _clearReplyTimeout: function() {
+        if(!this._reply_timeout)
+            return;
+
+        this._log('DEBUG ::: cancelling timeout');
+        this._reply_timeout.cancel();
+        this._reply_timeout = null;
+    },
+
     _setState: function(state, stateInfo) {
         var previousState = this._state;
         this._log('STATE ::: ' + previousState + ' -> ' + state + ' [' + (stateInfo || '') + ']');
@@ -860,7 +862,9 @@ Socket.prototype = {
             this._listener.onDataAvailable.apply(null, stateInfo);
             break;
         case 'timeout':
-            this._listener.onTimeout();
+            if(previousState == 'ready' ||
+               previousState == 'active') // Avoid calling onTimeout if we're in error state
+                this._listener.onTimeout();
             break;
         case 'disconnected':
             if(previousState == 'active')
@@ -916,7 +920,7 @@ Socket.prototype = {
 
     _log: function(msg) {
         if(this._logger)
-            this._logger('SOCKET-' + this._id + '/' + msg);
+            this._logger('SOCKET ' + this._id + '/' + msg);
     }
 };
 
