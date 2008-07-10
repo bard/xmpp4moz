@@ -790,6 +790,16 @@ Socket.prototype = {
                 this._setState('ready');
             }
             break;
+        case Ci.nsISocketTransport.STATUS_RECEIVING_FROM:
+            if(this._state == 'ready' &&
+               this._reply_timeout) {
+                this._reply_timeout.cancel();
+                this._reply_timeout = null;
+                this._log('DEBUG ::: got data, timeout cancelled');
+            }
+            break;
+        default:
+            break;
         }
     },
 
@@ -814,13 +824,6 @@ Socket.prototype = {
             this._handleProxyResponse(response);
             break;
         case 'ready':
-            if(this._reply_timeout) {
-                this._reply_timeout.cancel();
-                this._reply_timeout = null;
-                this._log('DEBUG ::: got data, timeout cancelled');
-            }
-            this._setState('active', arguments);
-            break;
         case 'active':
             this._setState('active', arguments);
             break;
