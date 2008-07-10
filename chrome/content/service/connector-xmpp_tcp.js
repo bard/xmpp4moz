@@ -671,7 +671,6 @@ function Socket(host, port, security, logger) {
     this._reply_timeout = null;
     this._logger = logger;
     this._state = 'disconnected';
-    this._stateInfo = null;
 }
 
 Socket.prototype = {
@@ -847,9 +846,9 @@ Socket.prototype = {
     },
 
     _setState: function(state, stateInfo) {
-        this._log('STATE ::: ' + state + ' [' + (stateInfo || '') + ']');
+        var previousState = this._state;
+        this._log('STATE ::: ' + previousState + ' -> ' + state + ' [' + (stateInfo || '') + ']');
         this._state = state;
-        this._stateInfo = stateInfo;
         switch(state) {
         case 'ready':
             this._listener.onReady();
@@ -861,7 +860,7 @@ Socket.prototype = {
             this._listener.onTimeout();
             break;
         case 'disconnected':
-            if(this._state == 'active')
+            if(previousState == 'active')
                 this._listener.onClose();
             break;
         case 'error':
