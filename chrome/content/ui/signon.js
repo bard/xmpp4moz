@@ -29,16 +29,16 @@ xmpp.ui = xmpp.ui || {};
 
 var Cc = Components.classes;
 var Ci = Components.interfaces;
+var Cu = Components.utils;
 
 
 // GLOBAL STATE
 // ----------------------------------------------------------------------
 
-var prefBranch = Components
-    .classes["@mozilla.org/preferences-service;1"]
-    .getService(Components.interfaces.nsIPrefService)
+var prefBranch = Cc["@mozilla.org/preferences-service;1"]
+    .getService(Ci.nsIPrefService)
     .getBranch("xmpp.account.")
-    .QueryInterface(Components.interfaces.nsIPrefBranch2);
+    .QueryInterface(Ci.nsIPrefBranch2);
 
 var request;
 
@@ -97,7 +97,7 @@ function openPreferences(paneID) {
     try {
         instantApply = Cc['@mozilla.org/preferences-service;1']
             .getService(Ci.nsIPrefBranch)
-            .getBoolPref('browser.preferences.instantApply', false);
+            .getBoolPref('browser.preferences.instantApply');
     } catch(e) {
         instantApply = false;
         Cu.reportError(e);
@@ -158,7 +158,7 @@ function doCancel() {
 
 var prefObserver = {
     observe: function(subject, topic, data) {
-        refreshAccountList();
+        refreshAccounts();
     }
 };
 
@@ -170,12 +170,4 @@ function _(id) {
     return document.getElementById(id);
 }
 
-function deleteChildren(container) {
-    var i = container.childNodes.length - 1;
-    while(i >= 0) {
-        var child = container.childNodes[i];
-        container.removeChild(child);
-        i--;
-    }
-}
 

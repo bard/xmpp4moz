@@ -31,7 +31,8 @@
         buttonlabelextra1="Configure..."
         buttonaccesskeyextra1="C"
         buttons="accept,cancel,extra1"
-        onload="init();">
+        onload="init();"
+        onunload="finish();">
 
   <script type="application/x-javascript" src="../xmpp.js"/>
   <script type="application/x-javascript" src="signon.js"/>

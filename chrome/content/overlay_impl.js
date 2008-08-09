@@ -30,11 +30,6 @@ var Cr = Components.results;
 
 var prefBranch = Cc["@mozilla.org/preferences-service;1"]
     .getService(Ci.nsIPrefBranch);
-var srvPrompt = Cc["@mozilla.org/embedcomp/prompt-service;1"]
-    .getService(Ci.nsIPromptService); 
-
-var ns_muc      = 'http://jabber.org/protocol/muc';
-var ns_auth     = 'jabber:iq:auth';
 
 
 // GLOBAL STATE

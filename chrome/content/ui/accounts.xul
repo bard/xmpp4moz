@@ -30,7 +30,4 @@
 
   <menupopup id="xmpp-popup-accounts"
              onpopupshowing="xmpp.ui.refreshAccounts(this);"/>
-
-  <menupopup id="xmpp-popup-accounts-secondary"
-             onpopupshowing="xmpp.ui.refreshAccounts(this);"/>
 </overlay>

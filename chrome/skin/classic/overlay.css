@@ -22,7 +22,6 @@
 
 
 #xmpp-toolbox-tooltip [role="account"],
-#xmpp-toolbox-tooltip [role="address"],
 #xmpp-toolbox-toolbar [role="address"] {
     font-weight: bold;
 }
