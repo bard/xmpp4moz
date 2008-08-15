@@ -829,18 +829,18 @@ function _promptAccount(jid) {
 }
 
 function _up(account, continuation) {
-    var password;
+    var password, userInput;
 
     if(account) {
         if(account.password)
             password = account.password;
         else {
-            var userInput = _promptAccount(account.jid);
+            userInput = _promptAccount(account.jid);
             if(userInput.confirm)
                 password = userInput.password;
         }
     } else {
-        var userInput = _promptAccount();
+        userInput = _promptAccount();
         if(userInput.confirm) {
             account = getAccountByJid(userInput.jid);
             password = userInput.password;
