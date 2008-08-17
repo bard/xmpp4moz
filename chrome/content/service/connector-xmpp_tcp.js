@@ -263,8 +263,10 @@ function send(element) {
 }
 
 function disconnect() {
-    this._write(STREAM_EPILOGUE);
-    this._socket.close();
+    if(this._state == 'active' || this._state == 'idle')
+        this._write(STREAM_EPILOGUE);
+    if(this._socket)
+        this._socket.close();
 }
 
 
