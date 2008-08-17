@@ -60,6 +60,7 @@
 
     <em:name>xmpp4moz</em:name>
     <em:description>XMPP integration layer for Mozilla</em:description>
+    <em:iconURL>chrome://xmpp4moz/skin/status/available-big.png</em:iconURL>
     <em:creator>Massimiliano Mirra</em:creator>
     <em:updateURL/>
     <em:homepageURL>http://dev.hyperstruct.net/xmpp4moz</em:homepageURL>
