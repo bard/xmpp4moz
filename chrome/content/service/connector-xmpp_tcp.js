@@ -837,7 +837,7 @@ Socket.prototype = {
         this._log('SEND  ::: ' + asString(data));
 
         try {
-            return this._outstream.writeString(asString(data))
+            return this._outstream.writeString(asString(data));
         } catch(e if e.name == 'NS_BASE_STREAM_CLOSED') {
             this._setState('disconnected');
         }
