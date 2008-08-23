@@ -301,7 +301,8 @@ function send(sessionName, element, observer) {
         session.send(element, observer);
 }
 
-function addObserver(observer) {
+function addObserver(observer, topic, ownsWeak) {
+    // topic and ownsWeak are not used
     observers.push(observer);
 }
 
@@ -312,12 +313,12 @@ function notifyObservers(subject, topic, data) {
         } catch(e) {
             Cu.reportError(e);
             LOG('Observer raised exception: unregistered.');
-            this.removeObserver(observer);
+            this.removeObserver(observer, null);
         }
 }
 
-// XXX add other parameters as required by IDL
-function removeObserver(observer) {
+function removeObserver(observer, topic, ownsWeak) {
+    // topic and ownsWeak are not used
     var index = observers.indexOf(observer);
     if(index != -1) 
         observers.splice(index, 1);

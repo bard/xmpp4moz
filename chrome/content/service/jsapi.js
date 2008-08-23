@@ -370,7 +370,7 @@ function createChannel(features) {
     var channel = new Channel();
     
     channel.onRelease = function() {
-        service.removeObserver(this, null, null);
+        service.removeObserver(this, null);
         if(features)
             for each(var feature in features.ns_disco_info::feature) {
                 service.removeFeature(feature.toXMLString());
@@ -382,7 +382,7 @@ function createChannel(features) {
             service.addFeature(feature.toXMLString());
         }
 
-    service.addObserver(channel, null, null);
+    service.addObserver(channel, null, false);
     return channel;
 }
 
