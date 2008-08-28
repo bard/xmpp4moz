@@ -301,12 +301,17 @@ function up(account, extra) {
         if(extra.continuation)
             continuation = extra.continuation;
     }
-    
+
     if(!account)
         account = {};
     else if(typeof(account) == 'string')
-        account = getAccountByJid(account);
-    
+        let(a = getAccountByJid(account)) {
+            if(!a)
+                throw new Error('No such account. ("' + account + '")');
+            else
+                account = a;
+        }
+
     continuation = continuation || function() {};
     if(account.jid)
         _up(account, continuation);
