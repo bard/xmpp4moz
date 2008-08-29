@@ -416,6 +416,8 @@ function isMUCPresence(domStanza) {
        domStanza.hasAttribute('to')) {
         var x = domStanza.getElementsByTagName('x')[0];
         return (x && x.getAttribute('xmlns') == 'http://jabber.org/protocol/muc');
+    } else {
+        return false;
     }
 }
 
