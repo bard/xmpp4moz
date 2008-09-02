@@ -26,7 +26,7 @@
 
 function init(name) {
     this._isOpen = false;
-    this._idPrefix = Date.now().toString();
+    this._idPrefix = '_' + Date.now().toString();
     this._idCounter = 1000;
     this._pending = {};
     this._observer = null;
