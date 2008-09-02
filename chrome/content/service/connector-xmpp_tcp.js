@@ -242,7 +242,11 @@ function connect() {
         }
     });
 
-    socket.connect();
+    try {
+        socket.connect();
+    } catch(e if e.name == 'NS_ERROR_OFFLINE') {
+        connector.onEvent_transportDisconnected();
+    }
 }
 
 function onDataAvailable(request, context, inputStream, offset, count) {
@@ -869,7 +873,8 @@ Socket.prototype = {
                 this._listener.onTimeout();
             break;
         case 'disconnected':
-            if(previousState == 'active')
+            if(previousState == 'active' ||
+               previousState == 'disconnected')
                 this._listener.onClose();
             break;
         case 'error':
