@@ -126,8 +126,12 @@ Query.prototype = {
             meta.push('@direction="' + this._direction + '"');
         if(this._account)
             meta.push('@account="' + this._account + '"');
-        if(meta.length > 0)
-            q += '/x4m:meta[' + meta.join(' and ') + ']'
+        if(meta.length > 0) // XXX test
+            q += '/*[' +
+            'local-name() = "meta" and ' +
+            'namespace-uri() = "http://hyperstruct.net/xmpp4moz/protocol/internal" and '
+            + meta.join(' and ') +
+            ']';
 
         // XPath fragments
 
