@@ -158,7 +158,7 @@ function doCancel() {
 
 var prefObserver = {
     observe: function(subject, topic, data) {
-        xmpp.ui.refreshAccounts();
+        xmpp.ui.refreshAccounts(_('xmpp-popup-accounts'));
     }
 };
 
