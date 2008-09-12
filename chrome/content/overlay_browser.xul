@@ -23,7 +23,7 @@
 
 <?xml-stylesheet href="chrome://xmpp4moz/skin/overlay.css" type="text/css"?>
 
-<!DOCTYPE overlay>
+<!DOCTYPE overlay SYSTEM "chrome://xmpp4moz/locale/overlay_browser.dtd">
 <overlay id="xmpp-overlay"
          xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
 
@@ -51,7 +51,7 @@
   <!-- STATUS BAR -->
 
   <statusbar id="status-bar">
-    <statusbarpanel id="xmpp-status"  after="statusbarpanel-progress" hidden="true">
+    <statusbarpanel id="xmpp-status" after="statusbarpanel-progress" hidden="true">
       <label id="xmpp-connecting-account"/>
       <progressmeter mode="undetermined" width="50"/>
     </statusbarpanel>
@@ -70,12 +70,12 @@
 
           <rows>
             <row>
-              <label value="Account:"/>
+              <label value="&x4m.account.label;"/>
               <label role="account"/>
             </row>
 
             <row>
-              <label value="Address:"/>
+              <label value="&x4m.address.label;"/>
               <label role="address"/>
             </row>
           </rows>
@@ -85,14 +85,15 @@
 
       <toolbar fullscreentoolbar="true" id="xmpp-toolbox-toolbar">
         <toolbaritem align="center" tooltip="xmpp-toolbox-tooltip">
-          <label value="Connected to:"/>
+          <label value="&x4m.connectedTo.label;"/>
           <label role="address"/>
         </toolbaritem>
 
         <toolbarspring/>
 
-        <toolbarbutton label="Disconnect" oncommand="xmpp4moz.disableContent();"/>
+        <toolbarbutton label="&x4m.disconnect.label;" oncommand="xmpp4moz.disableContent();"/>
       </toolbar>
     </toolbox>
   </vbox>
 </overlay>
+
