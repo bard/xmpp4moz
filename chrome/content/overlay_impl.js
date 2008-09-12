@@ -99,8 +99,13 @@ function init() {
     }, function(connector) {
         document
             .getElementById('xmpp-status').hidden = true;
-            // response.stanza.error.*[0].name().localName.replace(/-/g, ' ') +
-            // ' (' + response.stanza.error.@code + ')';
+        // alert(connector.info.toXMLString());
+        // alert(connector.event);
+        // alert(connector.state);
+        // alert(XMPP.getStreamErrorCondition(connector.info));
+        // alert(XMPP.getStreamErrorMessage(XMPP.getStreamErrorCondition(connector.info)));
+        // response.stanza.error.*[0].name().localName.replace(/-/g, ' ') +
+        // ' (' + response.stanza.error.@code + ')';
     });
 }
 

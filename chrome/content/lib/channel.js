@@ -85,6 +85,8 @@ Channel.prototype.observe = function(subject, topic, data) {
     case 'connector':
         event.state = info;
         event.event = name;
+        if(subject instanceof Ci.nsIDOMElement)
+            event.info = dom2xml(subject.QueryInterface(Ci.nsIDOMElement));
         break;
     case 'stanza':
         event.stanza = dom2xml(subject.QueryInterface(Ci.nsIDOMElement));

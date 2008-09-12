@@ -67,7 +67,9 @@ const serializer = Cc['@mozilla.org/xmlextras/xmlserializer;1']
 
 const srvPrompt = Cc["@mozilla.org/embedcomp/prompt-service;1"]
     .getService(Ci.nsIPromptService);
-
+const errorMessages = Components.classes["@mozilla.org/intl/stringbundle;1"]
+     .getService(Components.interfaces.nsIStringBundleService)
+     .createBundle("chrome://xmpp4moz/locale/streamErrors.properties");
 const ns_x4m_in     = 'http://hyperstruct.net/xmpp4moz/protocol/internal';
 const ns_muc        = 'http://jabber.org/protocol/muc';
 const ns_roster     = 'jabber:iq:roster';
@@ -76,6 +78,7 @@ const ns_chatstates = 'http://jabber.org/protocol/chatstates';
 const ns_event      = 'jabber:x:event';
 const ns_private    = 'jabber:iq:private';
 const ns_bookmarks  = 'storage:bookmarks';
+const ns_stream     = 'urn:ietf:params:xml:ns:xmpp-streams';
 
 
 
@@ -224,6 +227,13 @@ function getError(stanza) {
         return [xmppErrorCondition[0].localName(), stanza.error.@type.toString()];
 }
 
+function getStreamErrorMessage(condition) {
+    return errorsMessages.GetStringFromName(condition);
+}
+
+function getStreamErrorCondition(error) {
+    return error.ns_stream::*[0].localName();
+}
 // http://dev.hyperstruct.net/xmpp4moz/wiki/DocLocalAPI#XMPP.nickFor
 
 function nickFor(account, address) {
@@ -403,10 +413,10 @@ function open(jid, opts, continuation) {
                     continuation();
                 break;
             case 'connector-error':
-                if(!subject)
+                if(!subject || subject instanceof Ci.nsIDOMElement) {
                     break;
-
-                if(asString(subject) == 'badcert') {
+                }
+                else if(asString(subject) == 'badcert') {
                     var addException = srvPrompt.confirm(
                         null, 'Bad certificate for Jabber server',
                         'Jabber server "' + host + '" is presenting an invalid SSL certificate.\n' +

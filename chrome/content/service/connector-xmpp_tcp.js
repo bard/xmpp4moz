@@ -41,8 +41,10 @@ var STREAM_PROLOGUE =
     'xmlns:stream="http://etherx.jabber.org/streams" ' +
     'version="1.0" ' +
     'to="<SERVER>">';
+
 var STREAM_EPILOGUE =
     '</stream:stream>';
+
 // An array could be used, but hashes can be looked up without
 // iterating, and this is a lookup we'll be performing often.
 var STREAM_LEVEL_ELEMENT = {
@@ -51,8 +53,37 @@ var STREAM_LEVEL_ELEMENT = {
     'jabber:client::iq'             : true,
     'http://etherx.jabber.org/streams::features': true,
     'urn:ietf:params:xml:ns:xmpp-tls::proceed': true,
-    'urn:ietf:params:xml:ns:xmpp-sasl::success': true
+    'urn:ietf:params:xml:ns:xmpp-sasl::success': true,
+    'urn:ietf:params:xml:ns:xmpp-streams::error': true
 };
+
+var ERROR_CONDITIONS = [
+    'bad-format',
+    'bad-namespace-prefix',
+    'conflict',
+    'connection-timeout',
+    'host-gone',
+    'host-unknown',
+    'improper-addressing',
+    'internal-server-error',
+    'invalid-from',
+    'invalid-id',
+    'invalid-namespace',
+    'invalid-xml',
+    'not-authorized',
+    'policy-violation',
+    'remote-connection-failed',
+    'resource-constraint',
+    'restricted-xml',
+    'see-other-host',
+    'system-shutdown',
+    'undefined-condition',
+    'unsupported-encoding',
+    'unsupported-stanza-type',
+    'unsupported-version',
+    'xml-not-well-formed'
+];
+
 var KEEPALIVE_INTERVAL = 30000;
 
 XML.prettyPrinting = false;
@@ -85,6 +116,15 @@ function onEvent_streamElement(element) {
     this.LOG('RECV   ', element);
     this.assertState('stream-open', 'requested-tls', 'auth-waiting-result',
                      'binding-resource', 'requesting-session', 'active', 'idle');
+
+    if(element.localName == 'error' && element.namespaceURI == 'http://etherx.jabber.org/streams') {
+        for(var i=0; i<ERROR_CONDITIONS.length; i++) {
+            if(hasChild(element, 'urn:ietf:params:xml:ns:xmpp-streams', ERROR_CONDITIONS[i])) {
+                this.setState('error', element);
+                return;
+            }
+        }
+    }
 
     switch(this._state) {
     case 'auth-waiting-challenge':
