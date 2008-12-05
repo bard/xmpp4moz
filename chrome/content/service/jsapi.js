@@ -497,14 +497,8 @@ function comparePresences(p1, p2) {
 }
 
 function connectorTypeFor(jid) {
-    if(JID(jid).hostname == 'x4m.localhost')
-        return 'virtual';
-    else if(JID(jid).hostname.match(/^(.+)\.x4m\.localhost$/)) {
-        return RegExp.$1;
-    } else {
-        var m = JID(jid).hostname.match(/^(.+)\.x4m\.localhost$/);
-        return m ? m[1] : 'tcp';
-    }
+    var m = JID(jid).hostname.match(/^(.+)\.x4m\.localhost$/);
+    return m ? m[1] : 'tcp';
 }
 
 function q() {
