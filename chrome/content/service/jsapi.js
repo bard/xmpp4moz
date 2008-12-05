@@ -931,10 +931,13 @@ AccountWrapper.prototype = {
     }
 };
 
+
+// TODO should turn into a fully dynamic list
 [
     'address',
     'resource',
     'autoLogin',
+    'lastPresence',
     'connectionHost',
     'connectionPort',
     'connectionSecurity'
