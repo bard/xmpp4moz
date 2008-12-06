@@ -915,7 +915,7 @@ AccountWrapper.prototype = {
     'address',
     'resource',
     'autoLogin',
-    'lastPresence',
+    'presenceHistory',
     'connectionHost',
     'connectionPort',
     'connectionSecurity'
