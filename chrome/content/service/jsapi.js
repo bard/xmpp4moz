@@ -292,26 +292,7 @@ function JID(string) {
 
 // http://dev.hyperstruct.net/xmpp4moz/wiki/DocLocalAPI#XMPP.up
 
-function up(account, extra) {
-    // Normalize arguments (including deprecated ones) so that _up()
-    // can concentrate on the real job.
-
-    var continuation;
-    if(typeof(extra) == 'function')
-        continuation = extra;
-    else if(typeof(extra) == 'object') {
-        deprecation(
-            'opts parameter will be removed, use account instead.');
-        if(extra.ssl)
-            account.connectionSecurity = 1;
-        if(extra.host)
-            account.connectionHost = extra.host;
-        if(extra.port)
-            account.connectionPort = extra.port;
-        if(extra.continuation)
-            continuation = extra.continuation;
-    }
-
+function up(account, onSessionActive) {
     if(!account)
         account = {};
     else if(typeof(account) == 'string')
@@ -322,13 +303,14 @@ function up(account, extra) {
                 account = a;
         }
 
-    continuation = continuation || function() {};
+    onSessionActive = onSessionActive || function() {};
+
     if(account.jid)
-        _up(account, continuation);
+        _up(account, onSessionActive);
     else
         _up(null, function(jid) {
-            account.jid = jid;
-                continuation(jid);
+            account.jid = jid; // TODO: why this?
+            onSessionActive(jid);
         });
 }
 
@@ -837,7 +819,7 @@ function _promptAccount(jid) {
     return params;
 }
 
-function _up(account, continuation) {
+function _up(account, onSessionActive) {
     var password, userInput;
 
     if(account) {
@@ -861,9 +843,9 @@ function _up(account, continuation) {
 
     if(!(account.jid && password))
         return;
-        
+
     if(isUp(account.jid)) { // remove in case of strange loops
-        continuation(account.jid);
+        onSessionActive(account.jid);
         return;
     }
 
@@ -873,15 +855,17 @@ function _up(account, continuation) {
         connectionPort: account.connectionPort,
         connectionSecurity: account.connectionSecurity,
     }, function() {
-        send(account.jid,
-             <iq type='get'>
-             <query xmlns='jabber:iq:roster'/>
-             </iq>,
-             function() {
-                 send(account.jid, <presence/>);
-                 if(continuation)
-                     continuation(account.jid)
-             })        
+        onSessionActive(account.jid);
+        // assign this responsibility to the caller
+        // send(account.jid,
+        //      <iq type='get'>
+        //      <query xmlns='jabber:iq:roster'/>
+        //      </iq>,
+        //      function() {
+        //          send(account.jid, <presence/>);
+        //          if(onSessionActive)
+        //              onSessionActive(account.jid)
+        //      })
     });
 }
 
