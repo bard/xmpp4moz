@@ -270,11 +270,8 @@ function send(sessionName, element, observer) {
     if(element.nodeName == 'iq' &&
        element.getAttribute('type') == 'get' &&
        element.getElementsByTagNameNS(ns_x4m_in, 'cache-control').length > 0) {
-        
-        // XXX should be made more general
-        
-        var query = (element.getElementsByTagName('query')[0] ||
-                     element.getElementsByTagName('vCard')[0]);
+
+        var iqChild = stripInternal(element).firstChild;
 
         var cachedReply = cache.first(q()
                                       .event('iq')
@@ -282,7 +279,7 @@ function send(sessionName, element, observer) {
                                       .from(element.getAttribute('to'))
                                       .type('result')
                                       .direction('in')
-                                      .child(query.namespaceURI, query.nodeName)
+                                      .child(iqChild.namespaceURI, iqChild.nodeName)
                                       .compile());
     }
 
