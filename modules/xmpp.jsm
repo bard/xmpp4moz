@@ -99,6 +99,12 @@ var [Channel] = load('chrome://xmpp4moz/content/lib/channel.js', 'Channel');
 Components.utils.import('resource://xmpp4moz/utils.jsm');
 Components.utils.import('resource://xmpp4moz/accounts.jsm');
 
+if(typeof(JSON) == 'undefined') {
+    Cu.import('resource://gre/modules/JSON.jsm');
+    JSON.parse = JSON.fromString;
+    JSON.stringify = JSON.toString;
+}
+
 
 // DEVELOPER INTERFACE
 // ----------------------------------------------------------------------
@@ -880,8 +886,20 @@ function _send(jid, stanza, handler) {
     service.send(jid, asDOM(stanza), replyObserver);
 }
 
+function changedPresence(presence) {
+    var account = getAccountByJid(presence.account);
+    var stanza = presence.stanza.copy();
+    delete stanza.@id;
+    delete stanza.ns_x4m_in::meta;
 
+    var history = JSON.parse(account.presenceHistory || '[]');
 
+    if(history.length >= 5)
+        history.splice(0, 4);
+
+    history.push(stanza.toXMLString());
+    pref.setCharPref('account.' + account.key + '.presenceHistory', JSON.stringify(history));
+}
 
 function getAccountByJid(jid) {
     var result;
@@ -970,5 +988,30 @@ function log(msg) {
         console.logStringMessage('xmpp4moz: ' + msg);
     }
     log(msg);
+}
+
+
+// INITIALIZATION
+// ----------------------------------------------------------------------
+
+let(channel = createChannel()) {
+    channel.on({
+        // TODO for some reason, this does not catch <presence
+        // type="unavailable"/> when synthesized, only when sent to the
+        // network, which at the moment means "only when user
+        // disconnects account explicitly".  This does what we want,
+        // but it's not future-proof: if we decide that xmpp4moz will
+        // need to behave nicely and send a <presence
+        // type="unavailable"/> before closing the stream, we will
+        // always record that, thus breaking the restore-presence
+        // functionality.
+
+        event     : 'presence',
+        direction : 'out',
+        stanza    : function(s) {
+            return ((s.@type == undefined || s.@type == 'unavailable') &&
+                    (s.@to == undefined));
+        }
+    }, function(presence) changedPresence(presence));
 }
 
