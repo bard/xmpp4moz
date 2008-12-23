@@ -101,18 +101,22 @@ Query.prototype = {
         // stanza-level attributes
 
         var attrs = [];
-        if(this._id)
+        // Below, we compare against "undefined" instead of doing just
+        // if(foo) because we might have been passed xml objects
+        // (e.g. stanza.@to) which by themselves evaluate to
+        // non-false, even if they represent empty strings.
+        if(this._id != undefined)
             attrs.push('@id="' + this._id + '"');
-        if(this._type)
+        if(this._type != undefined)
             attrs.push('@type="' + this._type + '"');
-        if(this._from)
+        if(this._from != undefined)
             attrs.push(this._from.indexOf('/') == -1 ?
                        // "from" doesn't contain a resource, so we're
                        // either asking the bare jid itself, or for
                        // the jid with any resource.
                        '(@from = "' + this._from + '" or starts-with(@from, "' + this._from + '/"))' :
                        '@from="' + this._from + '"');
-        if(this._to)
+        if(this._to != undefined)
             attrs.push(this._to.indexOf('/') == -1 ?
                        // since "to" doesn't contain a resource,
                        // make it a substring check.
