@@ -85,6 +85,9 @@ const ns_stream     = 'urn:ietf:params:xml:ns:xmpp-streams';
 var [Query] = load('chrome://xmpp4moz/content/lib/query.js', 'Query');
 var [Channel] = load('chrome://xmpp4moz/content/lib/channel.js', 'Channel');
 
+Components.utils.import('resource://xmpp4moz/utils.jsm', this);
+Components.utils.import('resource://xmpp4moz/accounts.jsm', this);
+
 
 // DEVELOPER INTERFACE
 // ----------------------------------------------------------------------
@@ -178,7 +181,7 @@ function isMUC(account, address) {
         account   : account,
         stanza    : function(s) {
             return (s.@to != undefined &&
-                    XMPP.JID(s.@to).address == address &&
+                    JID(s.@to).address == address &&
                     s.ns_muc::x != undefined);
         }
     }).length > 0 || XMPP.cache.fetch({
@@ -265,30 +268,6 @@ function nickFor(account, address) {
     return name || JID(address).username || address;
 }
 
-// http://dev.hyperstruct.net/xmpp4moz/wiki/DocLocalAPI#XMPP.JID
-
-function JID(string) {
-    var memo = arguments.callee.memo || (arguments.callee.memo = {});
-    if(string in memo)
-        return memo[string];
-    var m = string.match(/^(.+?@)?(.+?)(?:\/|$)(.*$)/);
-
-    var jid = {};
-
-    if(m[1])
-        jid.username = m[1].slice(0, -1);
-
-    jid.hostname = m[2];
-    jid.resource = m[3];
-    jid.nick     = m[3];
-    jid.full     = m[3] ? string : null;
-    jid.address  = jid.username ?
-        jid.username + '@' + jid.hostname :
-        jid.hostname;
-
-    memo[string] = jid;
-    return jid;    
-}
 
 // http://dev.hyperstruct.net/xmpp4moz/wiki/DocLocalAPI#XMPP.up
 
@@ -904,75 +883,8 @@ function _send(jid, stanza, handler) {
     service.send(jid, asDOM(stanza), replyObserver);
 }
 
-function AccountWrapper(key) {
-    this.key = key;
-}
-
-AccountWrapper.prototype = {
-    _prefRead: function(_name) {
-        var name = 'account.' + this.key + '.' + _name;
-
-        var prefType = pref.getPrefType(name);
-        if(prefType == pref.PREF_STRING)
-            return pref.getCharPref(name);
-        else if(prefType == pref.PREF_INT)
-            return pref.getIntPref(name);
-        else if(prefType == pref.PREF_BOOL)
-            return pref.getBoolPref(name);
-        else
-            return null;
-    },
-        
-    get jid() {
-        return this.address + '/' + this.resource;
-    }
-};
 
 
-// TODO should turn into a fully dynamic list
-[
-    'address',
-    'resource',
-    'autoLogin',
-    'presenceHistory',
-    'connectionHost',
-    'connectionPort',
-    'connectionSecurity'
-].forEach(function(property) {
-    AccountWrapper.prototype.__defineGetter__(property, function() {
-        return this._prefRead(property);
-    });
-});
-
-AccountWrapper.prototype.__defineGetter__('password', function() {
-    return getPassword(this.address) || this._prefRead('password');
-});
-
-
-this.__defineGetter__('accounts', function() {
-    var keys = uniq(
-        pref.getChildList('account.', {})
-            .map(function(item) {
-                try {
-                    return item.split('.')[1];
-                } catch(e) {
-                    // Cases where item.split() would result in
-                    // an error and prevent accounts from being
-                    // read were reported.  No additional
-                    // information is available, though, so we
-                    // just catch the exception and report the
-                    // error to the console.
-                    Cu.reportError(e);
-                    return undefined;
-                }})
-            .filter(function(key) {
-                return key != undefined;
-            }));
-
-    return keys.map(function(key) {
-        return new AccountWrapper(key);
-    });
-});
 
 function getAccountByJid(jid) {
     var result;
@@ -996,93 +908,6 @@ function getAccountByKey(key) {
                 result = account;
         });
     return result;
-}
-
-
-function getLoginInfo(url, username) {
-    var logins = Cc['@mozilla.org/login-manager;1']
-        .getService(Ci.nsILoginManager)
-        .findLogins({}, url, null, url);
-    for(var i=0; i<logins.length; i++)
-        if(logins[i].username == username)
-            return logins[i];
-}
-
-function getPassword(address) {
-    var url = 'xmpp://' + JID(address).hostname;
-    var username = JID(address).username;
-
-    if('@mozilla.org/passwordmanager;1' in Cc) {
-        var passwordManager = Cc['@mozilla.org/passwordmanager;1']
-            .getService(Ci.nsIPasswordManager);
-        
-        var e = passwordManager.enumerator;
-        while(e.hasMoreElements()) {
-            try {
-                var pass = e.getNext().QueryInterface(Ci.nsIPassword);
-                if(pass.host == url && pass.user == username)
-                    return pass.password;
-            } catch (ex) {
-
-            }
-        }
-        
-    } else if('@mozilla.org/login-manager;1' in Cc) {
-        var loginInfo = getLoginInfo(url, username);
-        if(loginInfo)
-            return loginInfo.password;
-    }
-}
-
-function delPassword(address) {
-    var url = 'xmpp://' + JID(address).hostname;
-    var username = JID(address).username;
-
-    if('@mozilla.org/passwordmanager;1' in Cc) {
-        var passwordManager = Cc['@mozilla.org/passwordmanager;1']
-            .getService(Ci.nsIPasswordManager);
-        
-        try { passwordManager.removeUser(url, username); } catch (e) {}
-    } else if('@mozilla.org/login-manager;1' in Cc) {
-        var loginInfo = getLoginInfo(url, username);
-        if(loginInfo)
-            loginManager.removeLogin(loginInfo)
-    }
-}
-
-function setPassword(address, password) {
-    var url = 'xmpp://' + JID(address).hostname;
-    var username = JID(address).username;
-
-    if('@mozilla.org/passwordmanager;1' in Cc) {
-        var passwordManager = Cc['@mozilla.org/passwordmanager;1']
-            .getService(Ci.nsIPasswordManager);
-        
-        try { passwordManager.removeUser(url, username); } catch (e) {}
-        passwordManager.addUser(url, username, password);
-    }
-    else if('@mozilla.org/login-manager;1' in Cc) {
-        var loginManager = Cc['@mozilla.org/login-manager;1']
-            .getService(Ci.nsILoginManager)
-
-        var loginInfo = Cc['@mozilla.org/login-manager/loginInfo;1']
-            .createInstance(Ci.nsILoginInfo);
-        loginInfo.init(
-            url,                        // hostname
-            null,                       // submit url - forms only
-            url,                        // realm - it's important that this be same as url, as firefox2->3 migration will make it so for accounts in firefox2
-            username,                   // username
-            password,                   // password
-            '',                       // username field - forms only
-            '');                      // password field - forms only
-        
-        var oldLoginInfo = getLoginInfo(url, username);
-
-        if(oldLoginInfo)
-            loginManager.modifyLogin(oldLoginInfo, loginInfo)
-        else
-            loginManager.addLogin(loginInfo);
-    }
 }
 
 function asDOM(object) {
