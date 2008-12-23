@@ -69,9 +69,11 @@ Query.prototype = {
     },
 
     child: function(namespace, name) {
-        this._fragments.push('/*[local-name() = "' + name + '" and ' +
-                             'namespace-uri() = "' + namespace + '"]');
-
+        if(namespace == '*')
+            this._fragments.push('/*[local-name() = "' + name + '"]');
+        else
+            this._fragments.push('/*[local-name() = "' + name + '" and ' +
+                                 'namespace-uri() = "' + namespace + '"]');
         return this;
     },
 
