@@ -360,18 +360,18 @@ function send(account, stanza, handler) {
 
 function createChannel(features) {
     var channel = new Channel();
-    
+
     channel.onRelease = function() {
         service.removeObserver(this, null);
         if(features)
             for each(var feature in features.ns_disco_info::feature) {
-                service.removeFeature(feature.toXMLString());
+                service.removeFeature(feature.@var);
             }
     }
 
     if(features)
         for each(var feature in features.ns_disco_info::feature) {
-            service.addFeature(feature.toXMLString());
+            service.addFeature(feature.@var);
         }
 
     service.addObserver(channel, null, false);

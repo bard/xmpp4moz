@@ -39,7 +39,7 @@ load('chrome://xmpp4moz/content/lib/query.js', ['Query']);
 // GLOBAL STATE
 // ----------------------------------------------------------------------
 
-var observers = [], features = [], cache;
+var observers = [], features = {}, cache;
 
 var sessions = {
     _list: {},
@@ -219,25 +219,23 @@ function open(jid, connector, connectionProgressObserver) {
                     }
                 }
             }
-            
-            if(topic == 'stanza-in' && subject.nodeName == 'iq' &&
-               subject.getAttribute('type') == 'get') {
-                if(subject.getElementsByTagNameNS(ns_disco_info, 'query')[0]) {
-                    var stanza =
-                        <iq type="result" to={subject.getAttribute('from')}
-                    id={subject.getAttribute('id')}>
-                        <query xmlns="http://jabber.org/protocol/disco#info">
-                        <identity category="client" type="pc" name="xmpp4moz"/>
-                        <feature var="http://jabber.org/protocol/disco#info"/>
-                        </query>
-                        </iq>;
-                    for each(var feature in features) {
-                        // XXX should make sure that every feature is reported just once...
-                        stanza.ns_disco_info::query.appendChild(new XML(feature));
-                    }
 
-                    session.send(asDOM(stanza), null);
-                }
+            if(topic == 'stanza-in' &&
+               subject.nodeName == 'iq' &&
+               subject.getAttribute('type') == 'get' &&
+               subject.getElementsByTagNameNS(ns_disco_info, 'query')[0]) {
+                var response =
+                    <iq type="result" to={subject.getAttribute('from')} id={subject.getAttribute('id')}>
+                    <query xmlns="http://jabber.org/protocol/disco#info">
+                    <identity category="client" type="pc" name="xmpp4moz"/>
+                    <feature var="http://jabber.org/protocol/disco#info"/>
+                    </query>
+                    </iq>;
+                for (var featureURI in features)
+                    if(features[featureURI] > 0)
+                        response.ns_disco_info::query.appendChild(<feature var={featureURI}/>)
+
+                session.send(asDOM(response), null);
             }
         }
     }
@@ -325,11 +323,27 @@ function removeObserver(observer, topic, ownsWeak) {
 }
 
 function addFeature(discoInfoFeature) {
-    features.push(discoInfoFeature);
+    if(discoInfoFeature.match(/^</)) {
+        discoInfoFeature = new XML(discoInfoFeature).@var;
+        Components.utils.reportError('Deprecation notice: someone is registering feature using XML string.');
+    }
+
+    if(!(discoInfoFeature in features))
+        features[discoInfoFeature] = 0;
+
+    features[discoInfoFeature]++;
 }
 
 function removeFeature(discoInfoFeature) {
-    features.splice(features.indexOf(discoInfoFeature), 1);
+    if(discoInfoFeature.match(/^</)) {
+        discoInfoFeature = new XML(discoInfoFeature).@var;
+        Components.utils.reportError('Deprecation notice: someone is registering feature using XML string.');
+    }
+
+    if(!discoInfoFeature in features)
+        throw new Error('Attempted to remove a feature that hasn\'t been added. ("' + discoInfoFeature + '")');
+
+    features[discoInfoFeature]--;
 }
 
 
