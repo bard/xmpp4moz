@@ -914,6 +914,7 @@ Socket.prototype = {
             break;
         case 'disconnected':
             if(previousState == 'active' ||
+               previousState == 'connecting' ||
                previousState == 'disconnected')
                 this._listener.onClose();
             break;
