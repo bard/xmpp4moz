@@ -434,7 +434,7 @@ function open(jid, opts, continuation) {
     var connector = 
         Cc['@hyperstruct.net/xmpp4moz/connector;1?type=' + connectorTypeFor(jid)]
         .createInstance(Ci.nsIXMPPConnector);
-    
+
     connector.init(jid, password, host, port, security);
     service.open(jid, connector, connectionObserver);
 }
@@ -849,23 +849,42 @@ function _up(account, onSessionActive) {
         return;
     }
 
+
+    var defaultInitialPresenceStanza = <presence/>;
+
     open(account.jid, {
         password: password,
         connectionHost: account.connectionHost,
         connectionPort: account.connectionPort,
         connectionSecurity: account.connectionSecurity,
     }, function() {
-        onSessionActive(account.jid);
-        // assign this responsibility to the caller
-        // send(account.jid,
-        //      <iq type='get'>
-        //      <query xmlns='jabber:iq:roster'/>
-        //      </iq>,
-        //      function() {
-        //          send(account.jid, <presence/>);
-        //          if(onSessionActive)
-        //              onSessionActive(account.jid)
-        //      })
+        var presenceHistory = JSON.parse(account.presenceHistory || '[]');
+        var newPresenceStanza;
+
+        if(presenceHistory.length < 1)
+            newPresenceStanza = defaultInitialPresenceStanza;
+        else if(presenceHistory.length >= 1) {
+            var candidatePresenceStanza = new XML(presenceHistory[presenceHistory.length - 1]);
+            if(candidatePresenceStanza &&
+               candidatePresenceStanza.@type != 'unavailable' &&
+               connectorTypeFor(account.jid) == 'tcp')
+                // Play it safe: just plain presence for non-XMPP+TCP
+                // accounts now, to avoid getting in the way of the
+                // Twitter connector.
+                newPresenceStanza = candidatePresenceStanza;
+            else
+                newPresenceStanza = defaultInitialPresenceStanza;
+        }
+
+        send(account.jid,
+             <iq type='get'>
+             <query xmlns='jabber:iq:roster'/>
+             </iq>,
+             function() {
+                 send(account, newPresenceStanza);
+                 if(onSessionActive)
+                     onSessionActive(account.jid)
+             });
     });
 }
 
