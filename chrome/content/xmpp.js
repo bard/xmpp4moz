@@ -21,11 +21,7 @@
  */
 
 var XMPP = {};
-
-Components
-.classes['@mozilla.org/moz/jssubscript-loader;1']
-.getService(Components.interfaces.mozIJSSubScriptLoader)
-    .loadSubScript('chrome://xmpp4moz/content/service/jsapi.js', XMPP);
+Components.utils.import('resource://xmpp4moz/xmpp.jsm', XMPP);
 
 // Apparently, in some Mozilla applications it is necessary to
 // kickstart e4x before it works from a script loaded with subscript

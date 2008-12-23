@@ -1,55 +1,68 @@
 /*
  * Copyright 2006-2007 by Massimiliano Mirra
- * 
+ *
  * This file is part of xmpp4moz.
- * 
+ *
  * xmpp4moz is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
  * Free Software Foundation; either version 3 of the License, or (at your
  * option) any later version.
- * 
+ *
  * xmpp4moz is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  * Author: Massimiliano Mirra, <bard [at] hyperstruct [dot] net>
- *  
+ *
  */
 
 
-/**
- * This is a convenience stateless wrapper to the bare XPCOM service,
- * to allow using it more comfortably from javascript.
- *
- * Creating a channel that filters incoming events:
- *
- *     var channel = XMPP.createChannel();
- *     channel.on(
- *         {event: 'message', direction: 'in'},
- *         function(message) { alert(message.stanza); } );
- *
- * Bringing up a session: 
- *     
- *     XMPP.up(
- *         'user@server.org/Resource',
- *         {password: 'secret'});
- *
- * Sending a stanza:
- *
- *     XMPP.send(
- *         'user@server.org/Resource',
- *         <message to="contact@server.org">
- *         <body>hello</body>
- *         </message>);
- *     
- */
+var EXPORTED_SYMBOLS = [
+    'accounts', // re-exported
+    'JID', // re-exported
+    'cache',
+    'isMUC',
+    'getError',
+    'getStreamErrorMessage',
+    'getStreamErrorCondition',
+    'nickFor',
+    'up',
+    'down',
+    'isUp',
+    'isDown',
+    'send',
+    'createChannel',
+    'open',
+    'close',
+    'q',
+    'presencesOf',
+    'presenceSummary', // deprecated
+    'enableContentDocument', // deprecated
+    'connectPanel',
+    'disableContentDocument',
+    'getAccountByJid',
+    'getAccountByKey',
+    'account'
+]
+
 
 // GLOBAL DEFINITIONS
 // ----------------------------------------------------------------------
+
+function load(url) {
+    var loader = (Cc['@mozilla.org/moz/jssubscript-loader;1']
+                  .getService(Ci.mozIJSSubScriptLoader));
+
+    var context = {};
+    loader.loadSubScript(url, context);
+
+    var names = Array.slice(arguments, 1);
+    return names.map(function(name) { return context[name]; });
+}
 
 const Cc = Components.classes;
 const Ci = Components.interfaces;
@@ -57,7 +70,7 @@ const Cu = Components.utils;
 
 const service = Cc['@hyperstruct.net/xmpp4moz/xmppservice;1']
     .getService(Ci.nsIXMPPClientService);
-    
+
 const pref = Cc['@mozilla.org/preferences-service;1']
     .getService(Ci.nsIPrefService)
     .getBranch('xmpp.');
@@ -80,13 +93,11 @@ const ns_private    = 'jabber:iq:private';
 const ns_bookmarks  = 'storage:bookmarks';
 const ns_stream     = 'urn:ietf:params:xml:ns:xmpp-streams';
 
-
-
 var [Query] = load('chrome://xmpp4moz/content/lib/query.js', 'Query');
 var [Channel] = load('chrome://xmpp4moz/content/lib/channel.js', 'Channel');
 
-Components.utils.import('resource://xmpp4moz/utils.jsm', this);
-Components.utils.import('resource://xmpp4moz/accounts.jsm', this);
+Components.utils.import('resource://xmpp4moz/utils.jsm');
+Components.utils.import('resource://xmpp4moz/accounts.jsm');
 
 
 // DEVELOPER INTERFACE
@@ -120,18 +131,18 @@ var cache = {
                 localPattern[member] = pattern[member];
             } else {
                 remotePattern[member] = pattern[member];
-            } 
+            }
 
         var stanzas = service.wrappedJSObject.cache.all(
             this._patternToQuery(remotePattern).compile());
-        
+
         var wrappedPartialResults = [];
-        for(var i=0; i<stanzas.snapshotLength; i++) { 
+        for(var i=0; i<stanzas.snapshotLength; i++) {
             var stanza = stanzas.snapshotItem(i);
-            
+
             wrappedPartialResults.push(this._wrapResult(stanza));
         }
-        
+
         return wrappedPartialResults.filter(function(event) { return match(event, localPattern); });
     },
 
@@ -158,7 +169,7 @@ var cache = {
                 else if(ruleName == 'from' && pattern[ruleName].address)
                     query = query.from(pattern[ruleName].address)
                 else if(ruleName == 'from' && pattern[ruleName].full)
-                    query = query.from(pattern[ruleName].address)                
+                    query = query.from(pattern[ruleName].address)
                 else
                     throw new Error('Unhandled case when converting pattern to query. (' +
                                     ruleName + ': ' + pattern[ruleName].toSource() + ')');
@@ -172,10 +183,8 @@ var cache = {
     }
 };
 
-// http://dev.hyperstruct.net/xmpp4moz/wiki/DocLocalAPI#XMPP.isMUC
-
 function isMUC(account, address) {
-    return XMPP.cache.fetch({ // XXX use optimized query here
+    return cache.fetch({ // XXX use optimized query here
         event     : 'presence',
         direction : 'out',
         account   : account,
@@ -184,7 +193,7 @@ function isMUC(account, address) {
                     JID(s.@to).address == address &&
                     s.ns_muc::x != undefined);
         }
-    }).length > 0 || XMPP.cache.fetch({
+    }).length > 0 || cache.fetch({
         event     : 'iq',
         direction : 'in',
         account   : account,
@@ -196,8 +205,6 @@ function isMUC(account, address) {
         }
     }).length > 0;
 }
-
-// http://dev.hyperstruct.net/xmpp4moz/wiki/DocLocalAPI#XMPP.getError
 
 function getError(stanza) {
     const ns_stanzas = 'urn:ietf:params:xml:ns:xmpp-stanzas';
@@ -223,7 +230,7 @@ function getError(stanza) {
     };
 
     var xmppErrorCondition = stanza.error..ns_stanzas::*;
-    
+
     if(xmppErrorCondition == undefined)
         return mappings[stanza.error.@code];
     else
@@ -237,7 +244,6 @@ function getStreamErrorMessage(condition) {
 function getStreamErrorCondition(error) {
     return error.ns_stream::*[0].localName();
 }
-// http://dev.hyperstruct.net/xmpp4moz/wiki/DocLocalAPI#XMPP.nickFor
 
 function nickFor(account, address) {
 //     const ns_vcard_update = 'vcard-temp:x:update';
@@ -257,7 +263,7 @@ function nickFor(account, address) {
             .direction('in')
             .account(account)
             .child('jabber:iq:roster', 'query'));
-    
+
     var name;
     if(roster) {
         var item = roster.stanza..ns_roster::item
@@ -268,8 +274,14 @@ function nickFor(account, address) {
     return name || JID(address).username || address;
 }
 
-
-// http://dev.hyperstruct.net/xmpp4moz/wiki/DocLocalAPI#XMPP.up
+function account(thing) {
+    if(typeof(thing) == 'string')
+        return getAccountByJid(thing);
+    else if(!('jid' in thing))
+        throw new Error('Not an account object. (' + thing + ')');
+    else
+        return thing;
+}
 
 function up(account, onSessionActive) {
     if(!account)
@@ -293,13 +305,11 @@ function up(account, onSessionActive) {
         });
 }
 
-// http://dev.hyperstruct.net/xmpp4moz/wiki/DocLocalAPI#XMPP.down
-
 function down(account) {
     if(isDown(account))
         return;
 
-    var jid = 
+    var jid =
         (typeof(account) == 'object' && account.jid) ?
         account.jid : account;
 
@@ -307,20 +317,14 @@ function down(account) {
     service.close(jid);
 }
 
-// http://dev.hyperstruct.net/xmpp4moz/wiki/DocLocalAPI#XMPP.isUp
-
 function isUp(account) {
     return service.isUp(
         typeof(account) == 'object' ? account.jid : account);
 }
 
-// http://dev.hyperstruct.net/xmpp4moz/wiki/DocLocalAPI#XMPP.isDown
-
 function isDown(account) {
     return !isUp(account);
 }
-
-// http://dev.hyperstruct.net/xmpp4moz/wiki/DocLocalAPI#XMPP.send
 
 function send(account, stanza, handler) {
     if(isUp(account))
@@ -334,8 +338,6 @@ function send(account, stanza, handler) {
     else
         up(account, function(jid) { _send(jid, stanza, handler); });
 }
-
-// http://dev.hyperstruct.net/xmpp4moz/wiki/DocLocalAPI#XMPP.createChannel
 
 function createChannel(features) {
     var channel = new Channel();
@@ -356,8 +358,6 @@ function createChannel(features) {
     service.addObserver(channel, null, false);
     return channel;
 }
-
-// http://dev.hyperstruct.net/xmpp4moz/wiki/DocLocalAPI#XMPP.open
 
 function open(jid, opts, continuation) {
     opts = opts || {};
@@ -410,15 +410,13 @@ function open(jid, opts, continuation) {
         }
     }
 
-    var connector = 
+    var connector =
         Cc['@hyperstruct.net/xmpp4moz/connector;1?type=' + connectorTypeFor(jid)]
         .createInstance(Ci.nsIXMPPConnector);
 
     connector.init(jid, password, host, port, security);
     service.open(jid, connector, connectionObserver);
 }
-
-// http://dev.hyperstruct.net/xmpp4moz/wiki/DocLocalAPI#XMPP.close
 
 function close(jid) {
     service.close(jid);
@@ -472,7 +470,7 @@ function load(url) {
 
     var context = {};
     loader.loadSubScript(url, context);
-    
+
     var names = Array.slice(arguments, 1);
     return names.map(function(name) { return context[name]; });
 }
@@ -487,7 +485,7 @@ function match(object, template) {
     for(var member in template) {
         value = object[member];
         pattern = template[member];
-        
+
         if(pattern === undefined)
             ;
         else if(pattern && typeof(pattern) == 'function') {
@@ -504,7 +502,7 @@ function match(object, template) {
         }
         else if(pattern != value)
             return false;
-    } 
+    }
 
     return true;
 }
@@ -523,7 +521,7 @@ function match(object, template) {
 function dom2xml(element) {
     if(!element.__dom2xml_memo)
         element.__dom2xml_memo = new XML(serializer.serializeToString(element)).normalize();
-    
+
     return element.__dom2xml_memo;
 }
 
@@ -565,9 +563,8 @@ function rosterSegment(account, address) {
 }
 
 function presencesOf(account, address) {
-    return XMPP
-        .cache
-        .all(XMPP.q()
+    return cache
+        .all(q()
              .event('presence')
              .account(account)
              .from(address))
@@ -588,7 +585,7 @@ function presenceSummary(account, address) {
                 return p.stanza.ns_muc::x == undefined && p.stanza.@to == undefined;
             })
             .sort(comparePresences);
-        
+
         return presences[0] || {
             account   : account,
             direction : 'out',
@@ -623,7 +620,7 @@ function connectPanel(panel, account, address, createSocket) {
     var type = isMUC(account, address) ? 'groupchat' : 'chat';
 
     var appDoc = panel.contentDocument;
-    if(createSocket) 
+    if(createSocket)
         for each(var socketPartId in ['xmpp-incoming', 'xmpp-outgoing'])
             if(!appDoc.getElementById(socketPartId)) {
                 var socketPart = appDoc.createElement('div');
@@ -631,13 +628,13 @@ function connectPanel(panel, account, address, createSocket) {
                 socketPart.setAttribute('id', socketPartId);
                 appDoc.documentElement.appendChild(socketPart);
             }
-    
+
     if(!(appDoc.getElementById('xmpp-incoming') &&
          appDoc.getElementById('xmpp-outgoing'))) {
         log('Missing xmpp sockets in shared application.');
         return;
     }
-        
+
 
     function gotDataFromPage(stanza) {
         var caps = {
@@ -673,18 +670,18 @@ function connectPanel(panel, account, address, createSocket) {
             // When tracking IQs, remove id as set by remote
             // application by remember it, so that it can be set again
             // on the response.
-            
+
             var requestId = stanza.@id.toString();
             delete stanza.@id;
 
             replyHandler = function(reply) {
                 var s = reply.stanza.copy();
-                
+
                 if(requestId)
                     s.@id = requestid;
                 else
                     delete s.@id;
-                
+
                 gotDataFromXMPP(s);
             };
         }
@@ -702,10 +699,10 @@ function connectPanel(panel, account, address, createSocket) {
     panel.setAttribute('account', account);
     panel.setAttribute('address', address);
     panel.contentWindow.addEventListener('unload', function(event) {
-        if(event.target == panel.contentDocument) 
+        if(event.target == panel.contentDocument)
             disableContentDocument(panel);
     }, true);
-    
+
     // Presence from contact
 
     var contactPresence = presenceSummary(account, address);
@@ -720,8 +717,8 @@ function connectPanel(panel, account, address, createSocket) {
                       .event('presence')
                       .direction('out')
                       .account(account)
-                      .to(address)); 
-       var mucPresencesIn = 
+                      .to(address));
+       var mucPresencesIn =
             cache.all(q()
                       .event('presence')
                       .direction('in')
@@ -740,7 +737,7 @@ function connectPanel(panel, account, address, createSocket) {
         }, false);
 
     // Select subset of XMPP traffic to listen to
-    
+
     var channel = createChannel();
     panel.xmppChannel = channel;
 
@@ -749,7 +746,7 @@ function connectPanel(panel, account, address, createSocket) {
         account   : account,
         stanza    : function(s) { return s != undefined && (JID(s.@from).address == address); }
     }, function(event) { gotDataFromXMPP(event.stanza); });
-    
+
     channel.on({
         direction : 'out',
         event     : 'message',
@@ -785,7 +782,7 @@ function disableContentDocument(panel) {
 // INTERNALS
 // ----------------------------------------------------------------------
 
-function _promptAccount(jid) {        
+function _promptAccount(jid) {
     var params = {
         confirm: false,
         jid: jid,
@@ -914,7 +911,7 @@ function asDOM(object) {
     var parser = Cc['@mozilla.org/xmlextras/domparser;1'].getService(Ci.nsIDOMParser);
 
     asDOM = function(object) {
-        var element;    
+        var element;
         switch(typeof(object)) {
         case 'xml':
             XML.prettyPrinting = false;
@@ -930,7 +927,7 @@ function asDOM(object) {
         default:
             throw new Error('Argument error. (' + typeof(object) + ')');
         }
-        
+
         return element;
     };
 
@@ -947,7 +944,7 @@ function asString(xpcomString) {
 
 function deprecation(msg) {
     var frame = Components.stack.caller;
-    
+
     dump('xmpp4moz :: DEPRECATION NOTICE :: "' + msg + '" in: \n');
     while(frame) {
         dump('  ' + frame + '\n');
@@ -974,3 +971,4 @@ function log(msg) {
     }
     log(msg);
 }
+
