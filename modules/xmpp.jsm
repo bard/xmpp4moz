@@ -911,27 +911,13 @@ function changedPresence(presence) {
 }
 
 function getAccountByJid(jid) {
-    var result;
-    accounts.forEach(
-        function(account) {
-            if(result)
-                return;
-            if(account.jid == jid)
-                result = account;
-        });
-    return result;
+    deprecation('XMPP.getAccountByJid');
+    return accounts.get({jid: jid});
 }
 
 function getAccountByKey(key) {
-    var result;
-    accounts.forEach(
-        function(account) {
-            if(result)
-                return;
-            if(account.key == key)
-                result = account;
-        });
-    return result;
+    deprecation('XMPP.getAccountByKey');
+    return accounts.get({key: key});
 }
 
 function asDOM(object) {

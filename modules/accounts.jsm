@@ -46,7 +46,7 @@ var prefBranch = Cc['@mozilla.org/preferences-service;1']
 
 prefBranch.addObserver('', {
     observe: function(subject, topic, data) {
-        refreshAccounts();
+        accounts._refresh();
     }
 }, false);
 
@@ -113,35 +113,90 @@ AccountWrapper.prototype.__defineGetter__('password', function() {
 });
 
 
-function refreshAccounts() {
-    accounts.splice(accounts.length);
 
-    var keys = uniq(
-        pref.getChildList('account.', {})
-            .map(function(item) {
-                try {
-                    return item.split('.')[1];
-                } catch(e) {
-                    // Cases where item.split() would result in
-                    // an error and prevent accounts from being
-                    // read were reported.  No additional
-                    // information is available, though, so we
-                    // just catch the exception and report the
-                    // error to the console.
-                    Cu.reportError(e);
-                    return undefined;
-                }})
-            .filter(function(key) {
-                return key != undefined;
-            }));
+var accounts = {
+    _store: [],
 
-    keys.forEach(function(key) accounts.push(new AccountWrapper(key)));
-}
+    _refresh: function() {
+        var keys = uniq(
+            pref.getChildList('account.', {})
+                .map(function(item) {
+                    try {
+                        return item.split('.')[1];
+                    } catch(e) {
+                        // Cases where item.split() would result in
+                        // an error and prevent accounts from being
+                        // read were reported.  No additional
+                        // information is available, though, so we
+                        // just catch the exception and report the
+                        // error to the console.
+                        Cu.reportError(e);
+                        return undefined;
+                    }})
+                .filter(function(key) {
+                    return key != undefined;
+                }));
+
+        this._store = keys.map(function(key) new AccountWrapper(key));
+    },
+
+    forEach: function() {
+        return this._store.forEach.apply(this._store, arguments);
+    },
+
+    map: function() {
+        return this._store.map.apply(this._store, arguments);
+    },
+
+    filter: function() {
+        return this._store.filter.apply(this._store, arguments);
+    },
+
+    some: function() {
+        return this._store.some.apply(this._store, arguments);
+    },
+
+    every: function() {
+        return this._store.every.apply(this._store, arguments);
+    },
+
+    _find: function(criteria) {
+        switch(typeof(criteria)) {
+        case 'function':
+            for(var i=0,l=this._store.length; i<l;i++)
+                if(criteria(this._store[i]))
+                    return [i, this._store[i]]
+            return [-1, null];
+            break;
+        case 'object':
+            for(var propName in criteria)
+                break;
+
+            for(var i=0,l=this._store.length; i<l;i++)
+                if(this._store[i][propName] == criteria[propName])
+                    return [i, this._store[i]]
+            return [-1, null];
+            break;
+        }
+    },
+
+    get: function(criteria) {
+        var [index, account] = this._find(criteria);
+        return account;
+    },
+
+    remove: function(criteria) {
+        var [index, account] = this._find(criteria);
+        if(!account)
+            throw new Error('Account not found. (' + criteria.toSource() + ')');
+
+        pref.deleteBranch('account.' + account.key + '.');
+        this._store.splice(index, 1);
+    }
+};
 
 
 // STATE
 // ----------------------------------------------------------------------
 
-var accounts = [];
-refreshAccounts();
-
+accounts._refresh();
