@@ -402,7 +402,8 @@ function open(jid, opts, continuation) {
                     };
 
                     setTimeout(function() {
-                        openDialog('chrome://pippki/content/exceptionDialog.xul',
+                        openDialog(null,
+                                   'chrome://pippki/content/exceptionDialog.xul',
                                    '',
                                    'chrome,centerscreen,modal',
                                    params);
@@ -604,6 +605,33 @@ function presenceSummary(account, address) {
     }
 }
 
+function setTimeout(action, delay) {
+    if(typeof(delay) == 'undefined')
+        delay = 0;
+
+    return Cc['@mozilla.org/timer;1']
+        .createInstance(Ci.nsITimer)
+        .initWithCallback({ notify: action }, delay, Ci.nsITimer.TYPE_ONE_SHOT);
+}
+
+function clearTimeout(timer) {
+    timeout.cancel();
+}
+
+function openDialog(parentWindow, url, windowName, features) {
+    var array = Cc['@mozilla.org/array;1']
+        .createInstance(Ci.nsIMutableArray);
+    for(var i=4; i<arguments.length; i++) {
+        var variant = Cc['@mozilla.org/variant;1']
+            .createInstance(Ci.nsIWritableVariant);
+        variant.setFromVariant(arguments[i]);
+        array.appendElement(variant, false);
+    }
+
+    return Cc['@mozilla.org/embedcomp/window-watcher;1']
+        .getService(Ci.nsIWindowWatcher)
+        .openWindow(parentWindow, url, windowName, features, array);
+}
 
 // HYBRID-APP SUPPORT
 // ----------------------------------------------------------------------
