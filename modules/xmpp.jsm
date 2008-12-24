@@ -24,6 +24,9 @@
 var EXPORTED_SYMBOLS = [
     'accounts', // re-exported
     'JID', // re-exported
+    'getPassword',
+    'delPassword',
+    'setPassword',
     'cache',
     'isMUC',
     'getError',
@@ -46,7 +49,8 @@ var EXPORTED_SYMBOLS = [
     'disableContentDocument',
     'getAccountByJid',
     'getAccountByKey',
-    'account'
+    'account',
+    'connectorTypeFor'
 ]
 
 
