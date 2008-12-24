@@ -352,13 +352,13 @@ function createChannel(features) {
         service.removeObserver(this, null);
         if(features)
             for each(var feature in features.ns_disco_info::feature) {
-                service.removeFeature(feature.@var);
+                service.removeFeature(feature.attribute('var'));
             }
     }
 
     if(features)
         for each(var feature in features.ns_disco_info::feature) {
-            service.addFeature(feature.@var);
+            service.addFeature(feature.attribute('var'));
         }
 
     service.addObserver(channel, null, false);

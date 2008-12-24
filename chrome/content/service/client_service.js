@@ -321,7 +321,7 @@ function removeObserver(observer, topic, ownsWeak) {
 
 function addFeature(discoInfoFeature) {
     if(discoInfoFeature.match(/^</)) {
-        discoInfoFeature = new XML(discoInfoFeature).@var;
+        discoInfoFeature = new XML(discoInfoFeature).attribute('var');
         Components.utils.reportError('Deprecation notice: someone is registering feature using XML string.');
     }
 
@@ -333,7 +333,7 @@ function addFeature(discoInfoFeature) {
 
 function removeFeature(discoInfoFeature) {
     if(discoInfoFeature.match(/^</)) {
-        discoInfoFeature = new XML(discoInfoFeature).@var;
+        discoInfoFeature = new XML(discoInfoFeature).attribute('var');
         Components.utils.reportError('Deprecation notice: someone is registering feature using XML string.');
     }
 
