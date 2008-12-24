@@ -858,6 +858,11 @@ function _up(account, onSessionActive) {
                 newPresenceStanza = defaultInitialPresenceStanza;
         }
 
+        var ns_caps = 'http://jabber.org/protocol/caps';
+        var caps = <c xmlns={ns_caps} hash='sha-1' node='http://hyperstruct.net/xmpp4moz' ver={service.getCapsHash()}/>;
+        delete newPresenceStanza.ns_caps::*;
+        newPresenceStanza.appendChild(caps);
+
         send(account.jid,
              <iq type='get'>
              <query xmlns='jabber:iq:roster'/>

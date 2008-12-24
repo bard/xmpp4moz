@@ -32,4 +32,6 @@ interface nsIXMPPClientService: nsISupports
     void addFeature(in string discoInfoFeature);
 
     void removeFeature(in string discoInfoFeature);
-};  
+
+    string getCapsHash();
+};

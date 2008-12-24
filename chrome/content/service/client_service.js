@@ -264,6 +264,40 @@ function close(jid) {
     sessions.get(jid).wrappedJSObject.connector.disconnect();
 }
 
+function getCapsHash() {
+    function sha1(s) {
+        var stream = Cc['@mozilla.org/io/string-input-stream;1']
+            .createInstance(Ci.nsIStringInputStream);
+        stream.setData(s, s.length);
+
+        var ch = Cc['@mozilla.org/security/hash;1']
+            .createInstance(Ci.nsICryptoHash);
+        ch.init(ch.SHA1);
+        const PR_UINT32_MAX = 0xffffffff;
+        ch.updateFromStream(stream, PR_UINT32_MAX);
+        return ch.finish(false);
+    }
+
+    var identity = <identity category='client' type='pc' name='xmpp4moz'/>;
+
+    var featureURIs = [];
+    for (var featureURI in features)
+        if(features[featureURI] > 0)
+            featureURIs.push(featureURI);
+
+    var ns_xml = 'http://www.w3.org/XML/1998/namespace';
+
+    var s = '';
+    s += identity.@category + '/';
+    s += identity.@type + '/';
+    s += identity.@ns_xml::lang + '/';
+    s += identity.@name + '<';
+    s += featureURIs.sort().join('<');
+    s += '<';
+
+    return btoa(sha1(s));
+}
+
 function send(sessionName, element, observer) {
     var cachedReply = null;
 
