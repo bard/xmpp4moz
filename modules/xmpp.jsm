@@ -919,6 +919,8 @@ function _send(jid, stanza, handler) {
 
 function changedPresence(presence) {
     var account = accounts.get({jid: presence.account});
+    if(!account)
+        return;
     var stanza = presence.stanza.copy();
     delete stanza.@id;
     delete stanza.ns_x4m_in::meta;
