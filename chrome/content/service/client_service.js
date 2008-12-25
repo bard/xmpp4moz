@@ -227,10 +227,10 @@ function open(jid, connector, connectionProgressObserver) {
                 var response =
                     <iq type="result"
                 to={subject.getAttribute('from')}
-                id={subject.getAttribute('id')}
-                node={'http://hyperstruct.net/xmpp4moz#' + getCapsHash()}
-                    >
-                    <query xmlns="http://jabber.org/protocol/disco#info">
+                id={subject.getAttribute('id')}>
+                    <query
+                xmlns="http://jabber.org/protocol/disco#info"
+                node={'http://hyperstruct.net/xmpp4moz#' + getCapsHash()}>
                     <identity category="client" type="pc" name="xmpp4moz"/>
                     <feature var="http://jabber.org/protocol/disco#info"/>
                     </query>
