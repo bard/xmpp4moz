@@ -286,7 +286,7 @@ function nickFor(account, address) {
 
 function account(thing) {
     if(typeof(thing) == 'string')
-        return getAccountByJid(thing);
+        return accounts.get({jid: thing});
     else if(!('jid' in thing))
         throw new Error('Not an account object. (' + thing + ')');
     else
@@ -297,7 +297,7 @@ function up(account, onSessionActive) {
     if(!account)
         account = {};
     else if(typeof(account) == 'string')
-        let(a = getAccountByJid(account)) {
+        let(a = accounts.get({jid: account})) {
             if(!a)
                 throw new Error('No such account. ("' + account + '")');
             else
@@ -847,7 +847,7 @@ function _up(account, onSessionActive) {
     } else {
         userInput = _promptAccount();
         if(userInput.confirm) {
-            account = getAccountByJid(userInput.jid);
+            account = accounts.get({jid: userInput.jid});
             password = userInput.password;
         }
     }
@@ -924,7 +924,7 @@ function _send(jid, stanza, handler) {
 }
 
 function changedPresence(presence) {
-    var account = getAccountByJid(presence.account);
+    var account = accounts.get({jid: presence.account});
     var stanza = presence.stanza.copy();
     delete stanza.@id;
     delete stanza.ns_x4m_in::meta;
