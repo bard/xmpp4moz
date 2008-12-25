@@ -70,6 +70,20 @@ function prefRead(key, leafName) {
         return null;
 }
 
+function prefWrite(key, leafName, value) {
+    var name = 'account.' + key + '.' + leafName;
+
+    var prefType = pref.getPrefType(name);
+    if(prefType == pref.PREF_STRING)
+        return pref.setCharPref(name, value);
+    else if(prefType == pref.PREF_INT)
+        return pref.setIntPref(name, value);
+    else if(prefType == pref.PREF_BOOL)
+        return pref.setBoolPref(name, value);
+    else
+        return null;
+}
+
 function uniq(array) {
     var encountered = [];
 
@@ -109,6 +123,10 @@ AccountWrapper.prototype.__defineGetter__('password', function() {
 ].forEach(function(property) {
     AccountWrapper.prototype.__defineGetter__(property, function() {
         return prefRead(this.key, property);
+    });
+
+    AccountWrapper.prototype.__defineSetter__(property, function(value) {
+        return prefWrite(this.key, property, value);
     });
 });
 

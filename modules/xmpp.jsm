@@ -74,14 +74,8 @@ const Cu = Components.utils;
 
 const service = Cc['@hyperstruct.net/xmpp4moz/xmppservice;1']
     .getService(Ci.nsIXMPPClientService);
-
-const pref = Cc['@mozilla.org/preferences-service;1']
-    .getService(Ci.nsIPrefService)
-    .getBranch('xmpp.');
-
 const serializer = Cc['@mozilla.org/xmlextras/xmlserializer;1']
     .getService(Ci.nsIDOMSerializer);
-
 const srvPrompt = Cc["@mozilla.org/embedcomp/prompt-service;1"]
     .getService(Ci.nsIPromptService);
 const errorMessages = Components.classes["@mozilla.org/intl/stringbundle;1"]
@@ -935,7 +929,7 @@ function changedPresence(presence) {
         history.splice(0, 4);
 
     history.push(stanza.toXMLString());
-    pref.setCharPref('account.' + account.key + '.presenceHistory', JSON.stringify(history));
+    account.presenceHistory = JSON.stringify(history);
 }
 
 function getAccountByJid(jid) {
