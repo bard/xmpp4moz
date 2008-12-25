@@ -980,11 +980,12 @@ function asString(xpcomString) {
 function deprecation(msg) {
     var frame = Components.stack.caller;
 
-    dump('xmpp4moz :: DEPRECATION NOTICE :: "' + msg + '" in: \n');
+    var s = 'xmpp4moz :: DEPRECATION NOTICE :: "' + msg + '" in: \n';
     while(frame) {
-        dump('  ' + frame + '\n');
+        s += '  ' + frame + '\n';
         frame = frame.caller
     }
+    Cu.reportError(s);
 }
 
 function getStackTrace() {
