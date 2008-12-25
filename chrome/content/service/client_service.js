@@ -39,7 +39,11 @@ load('chrome://xmpp4moz/content/lib/query.js', ['Query']);
 // GLOBAL STATE
 // ----------------------------------------------------------------------
 
-var observers = [], features = {}, cache;
+var observers = [];
+var cache;
+var features = {
+    'http://jabber.org/protocol/disco#info': 1
+};
 
 var sessions = {
     _list: {},
@@ -225,14 +229,9 @@ function open(jid, connector, connectionProgressObserver) {
                subject.getAttribute('type') == 'get' &&
                subject.getElementsByTagNameNS(ns_disco_info, 'query')[0]) {
                 var response =
-                    <iq type="result"
-                to={subject.getAttribute('from')}
-                id={subject.getAttribute('id')}>
-                    <query
-                xmlns="http://jabber.org/protocol/disco#info"
-                node={'http://hyperstruct.net/xmpp4moz#' + getCapsHash()}>
+                    <iq type="result" to={subject.getAttribute('from')} id={subject.getAttribute('id')}>
+                    <query xmlns={ns_disco_info} node={'http://hyperstruct.net/xmpp4moz#' + getCapsHash()}>
                     <identity category="client" type="pc" name="xmpp4moz"/>
-                    <feature var="http://jabber.org/protocol/disco#info"/>
                     </query>
                     </iq>;
                 for (var featureURI in features)
