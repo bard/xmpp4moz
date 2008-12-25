@@ -826,10 +826,10 @@ function _promptAccount(jid) {
         jid: jid,
         password: undefined
     };
-    window.openDialog(
-        'chrome://xmpp4moz/content/ui/signon.xul',
-        'xmpp-signon', 'modal,centerscreen',
-        params);
+    openDialog(null,
+               'chrome://xmpp4moz/content/ui/signon.xul',
+               'xmpp-signon', 'modal,centerscreen',
+               params);
     return params;
 }
 
