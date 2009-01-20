@@ -89,6 +89,8 @@ var KEEPALIVE_INTERVAL = 30000;
 XML.prettyPrinting = false;
 XML.ignoreWhitespace = true;
 
+Cu.import('resource://xmpp4moz/log.jsm');
+
 
 // INITIALIZATION
 // ----------------------------------------------------------------------
@@ -99,8 +101,10 @@ function init(jid, password, host, port, security) {
     this._host            = host;
     this._port            = port;
     this._security        = security;
-    this._logging         = true;
-    this._backlog         = [];
+
+    this._logger          = new Logger('xmpp/tcp/' + this._jid.slice(0, 4) + '…');
+    var me = this;
+    this.__defineGetter__('_backlog', function() me._log.backlog);
 
     this._parser = null;
     this._state = 'disconnected';
@@ -113,7 +117,7 @@ function init(jid, password, host, port, security) {
 // ----------------------------------------------------------------------
 
 function onEvent_streamElement(element) {
-    this.LOG('RECV   ', element);
+    this._log('RECV   ', element);
     this.assertState('stream-open', 'requested-tls', 'auth-waiting-result',
                      'binding-resource', 'requesting-session', 'active', 'idle');
 
@@ -130,7 +134,7 @@ function onEvent_streamElement(element) {
     case 'auth-waiting-challenge':
         if(element.localName == 'challenge' &&
            element.namespaceURI == 'urn:ietf:params:xml:ns:xmpp-sasl') {
-            this.LOG(atob(element.textContent))
+            this._log(atob(element.textContent))
         }
         break;
     case 'auth-waiting-result':
@@ -251,7 +255,10 @@ function connect() {
     this.setState('connecting');
     var connector = this;
 
-    var socket = new Socket(this._host, this._port, this._security, function(msg) { connector.LOG(msg); });
+    var socketLogger = new Logger('xmpp/tcp/' + this._jid.slice(0, 4) + '…/sock.' + (new Date()).getTime());
+    socketLogger.postproc = function(s) s.replace(/(<auth mechanism.+?>)([^<]+)/, '$1[password hidden in log]');
+    var socket = new Socket(this._host, this._port, this._security, socketLogger);
+
     socket.setListener({
         onReady: function() {
             socket.setReplyTimeout(3000);
@@ -302,7 +309,7 @@ function onDataAvailable(request, context, inputStream, offset, count) {
 }
 
 function send(element) {
-    this.LOG('DATA   >>> ', serialize(element));
+    this._log('DATA   >>> ', serialize(element));
     this._write(serialize(element));
 }
 
@@ -340,7 +347,7 @@ function _write(data) {
     return this._socket.send(data);
     // try {
     //     if(this._state != 'idle' && this._state != 'active' && this._state != 'accept-stanza')
-    //         this.LOG('DATA   >>> ', data);
+    //         this._log('DATA   >>> ', data);
     //     return this._outstream.writeString(asString(data));
     // } catch(e if e.name == 'NS_BASE_STREAM_CLOSED') {
     //     this.onEvent_transportDisconnected();
@@ -389,7 +396,7 @@ function requestTLS() {
 }
 
 function setState(name, stateData) {
-    this.LOG('STATE  ', name, ' [', stateData, ']');
+    this._log('STATE  ', name, ' [', stateData, ']');
     this._state = name;
     this.notifyObservers(stateData, name, null);
 }
@@ -425,22 +432,12 @@ function assertState() {
     for(var i=0;i<arguments.length;i++)
         if(this._state == arguments[i])
             return;
-    this.LOG('ERROR: event ' + arguments.callee.caller.name + ' while in state ' + this._state);
+    this._log('ERROR: event ' + arguments.callee.caller.name + ' while in state ' + this._state);
 }
 
 
-function LOG() {
-    if(this._logging) {
-        var logLine = ('DBG xmpp/tcp (' + this._jid.slice(0, 4) + '…) ' + listToString(arguments))
-            .replace(/(<auth mechanism.+?>)([^<]+)/, '$1[password hidden in log]')
-
-        if(this._backlog.length > 200)
-            this._backlog.shift();
-
-        this._backlog.push(logLine);
-
-        dump(logLine); dump('\n\n');
-    }
+function _log() {
+    this._logger.debug.apply(this._logger, arguments);
 }
 
 function getCurrentThreadTarget() {
@@ -504,12 +501,12 @@ function createParser() {
 
     parser.contentHandler = {
         startDocument: function() {
-            connector.LOG('PARSER remote opened stream');
+            connector._log('PARSER remote opened stream');
             connector.onEvent_openedIncomingStream();
         },
 
         endDocument: function() {
-            connector.LOG('PARSER remote closed stream');
+            connector._log('PARSER remote closed stream');
             connector.onEvent_closedIncomingStream();
         },
 
@@ -547,7 +544,7 @@ function createParser() {
                 this._element.normalize();
 
                 if(!STREAM_LEVEL_ELEMENT[uri + '::' + localName])
-                    connector.LOG('PARSER got non-stream-level element: ' + uri + '::' + localName);
+                    connector._log('PARSER got non-stream-level element: ' + uri + '::' + localName);
 
                 connector.onEvent_streamElement(this._element);
                 this._element = null;
@@ -701,7 +698,6 @@ function atob(input) {
 // ----------------------------------------------------------------------
 
 function Socket(host, port, security, logger) {
-    this._id = (new Date()).getTime();
     this._host = host;
     this._port = port;
     this._security = security || SECURITY_NONE;
@@ -968,7 +964,7 @@ Socket.prototype = {
 
     _log: function(msg) {
         if(this._logger)
-            this._logger('SOCKET ' + this._id + '/' + msg);
+            this._logger.debug(this._id, msg);
     }
 };
 
