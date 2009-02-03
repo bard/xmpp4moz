@@ -523,9 +523,11 @@ function createParser() {
             var e = (uri == 'jabber:client' ?
                      doc.createElement(qName) :
                      doc.createElementNS(uri, qName))
+
             for(var i=0; i<attributes.length; i++)
-                e.setAttribute(attributes.getQName(i),
-                               attributes.getValue(i));
+                e.setAttributeNS(attributes.getURI(i),
+                                 attributes.getQName(i),
+                                 attributes.getValue(i));
 
             if(this._element) {
                 this._element.appendChild(e);
