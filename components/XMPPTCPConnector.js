@@ -33,7 +33,13 @@ Component.prototype = {
         return this;
     }
 };
-loader.loadSubScript(SOURCE, Component.prototype);
+
+try {
+    loader.loadSubScript(SOURCE, Component.prototype);
+} catch(e) {
+    dump(e + "\n");
+    dump(e.toSource() + "\n");
+}
 
 var Factory = {
     createInstance: function(aOuter, aIID) {
