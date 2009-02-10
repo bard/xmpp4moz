@@ -35,6 +35,8 @@ const ns_x4m_in = 'http://hyperstruct.net/xmpp4moz/protocol/internal';
 loader.loadSubScript('chrome://xmpp4moz/content/lib/misc.js');
 load('chrome://xmpp4moz/content/lib/query.js', ['Query']);
 
+Cu.import('resource://xmpp4moz/log.jsm');
+
 
 // GLOBAL STATE
 // ----------------------------------------------------------------------
@@ -82,6 +84,9 @@ function init() {
     cache = Cc['@hyperstruct.net/xmpp4moz/xmppcache;1']
         .getService(Ci.nsIXMPPCacheService);
 
+    this._logger = new Logger('Service: ', 'sysconsole');
+
+    var service = this;
     pref.addObserver('', {
         observe: function(subject, topic, data) {
             if(topic != 'nsPref:changed')
@@ -89,7 +94,7 @@ function init() {
 
             switch(data) {
             case 'logTarget':
-                defineLogger(pref.getCharPref('logTarget'));
+                service._logger.target = pref.getCharPref('logTarget');
                 break;
             default:
             }
@@ -126,8 +131,9 @@ function open(jid, connector, connectionProgressObserver) {
     session.init(jid);
     sessions.created(session);
 
+    var service = this;
     var connectorObserver = { observe: function(subject, topic, data) {
-        LOG('{', session.name, ',connector}    ', topic);
+        service._log('{', session.name, ',connector}    ', topic);
 
         switch(topic) {
         case 'active':
@@ -173,7 +179,7 @@ function open(jid, connector, connectionProgressObserver) {
             // Log
 
             if(topic == 'stanza-out' || topic == 'stanza-in')
-                LOG('{', session.name, ',', topic, '}    ', subject);
+                service._log('{', session.name, ',', topic, '}    ', subject);
 
             // Submit data to cache (which will decide what to keep
             // and what to throw away)
@@ -339,12 +345,13 @@ function addObserver(observer, topic, ownsWeak) {
 }
 
 function notifyObservers(subject, topic, data) {
-    for each(var observer in observers) 
+    for each(var observer in observers)
         try {
             observer.observe(subject, topic, data);
         } catch(e) {
             Cu.reportError(e);
-            LOG('Observer raised exception: unregistered.');
+            //Cu.reportError('HERERERERERERERERERE')
+            Cu.reportError('Channel raised exception: unregistered.');
             this.removeObserver(observer, null);
         }
 }
@@ -431,33 +438,8 @@ function asString(thing) {
     }
 }
 
-function defineLogger(strategy) {
-    const srvConsole = Cc['@mozilla.org/consoleservice;1']
-        .getService(Ci.nsIConsoleService);
-
-    function listToString(list) {
-        var parts = [];
-        for(var i=0,l=list.length; i<l; i++)
-            parts.push(asString(list[i]));
-        return parts.join('');
-    }
-    
-    switch(strategy) {
-    case 'console':
-        LOG = function(msg) { srvConsole.logStringMessage('XMPP ' + listToString(arguments)); };
-        break;
-    case 'sysconsole':
-        LOG = function(msg) { dump('XMPP ' + listToString(arguments) + '\n'); };
-        break;
-    default:
-        LOG = function(msg) {};
-    }
-}
-
-function LOG(msg) {
-    // this is dynamically redefined by defineLogger(), called once
-    // during initialization and then whenever the xmpp.logTarget
-    // pref changes.
+function _log() {
+    this._logger.debug.apply(this._logger, arguments);
 }
 
 function isMUCPresence(domStanza) {
