@@ -35,24 +35,23 @@ var EXPORTED_SYMBOLS = [
 var Cc = Components.classes;
 var Ci = Components.interfaces;
 var Cu = Components.utils;
+var srvConsole = Cc['@mozilla.org/consoleservice;1']
+    .getService(Ci.nsIConsoleService);
 
 
 // API
 // ----------------------------------------------------------------------
 
-function Logger(name) {
+function Logger(name, target) {
     this._name = name;
     this._postProc = function(s) s;
     this._backlog = [];
     this._maxBacklog = 200;
+    this._target = target || 'sysconsole';
 }
 
 Logger.prototype.debug = function() {
-    try {
     this._log.apply(this, ['DBG'].concat(Array.slice(arguments)));
-    }catch(e) {
-        dump(e+'\n'+e.stack)
-    }
 };
 
 Logger.prototype.error = function() {
@@ -65,6 +64,8 @@ Logger.prototype.__defineSetter__('postproc', function(fn) {
     this._postProc = fn;
 });
 
+Logger.prototype.__defineSetter__('target', function(val) this._target = val);
+
 
 // INTERNALS
 // ----------------------------------------------------------------------
@@ -76,7 +77,17 @@ Logger.prototype._log = function(type) {
         this._backlog.shift();
     this._backlog.push(logLine);
 
-    dump(logLine); dump('\n\n');
+    switch(this._target) {
+    case 'sysconsole':
+        dump(logLine); dump('\n\n');
+        break;
+    case 'jsconsole':
+        srvConsole.logStringMessage(logLine);
+        break;
+    case 'file':
+        // NOT IMPLEMENTED
+        break;
+    }
 };
 
 
