@@ -33,8 +33,7 @@ const ns_disco_info = 'http://jabber.org/protocol/disco#info';
 const ns_x4m_in = 'http://hyperstruct.net/xmpp4moz/protocol/internal';
 
 loader.loadSubScript('chrome://xmpp4moz/content/lib/misc.js');
-load('chrome://xmpp4moz/content/lib/query.js', ['Query']);
-
+Cu.import('resource://xmpp4moz/query.jsm');
 Cu.import('resource://xmpp4moz/log.jsm');
 
 

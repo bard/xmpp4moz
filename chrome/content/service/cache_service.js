@@ -33,7 +33,7 @@ var ns_roster    = 'jabber:iq:roster';
 
 
 loader.loadSubScript('chrome://xmpp4moz/content/lib/misc.js');
-load('chrome://xmpp4moz/content/lib/query.js', ['Query']);
+Cu.import('resource://xmpp4moz/query.jsm');
 
 
 // INITIALIZATION
