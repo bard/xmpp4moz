@@ -22,11 +22,7 @@
 
 
 var EXPORTED_SYMBOLS = [
-    'accounts', // re-exported
-    'JID', // re-exported
-    'getPassword',
-    'delPassword',
-    'setPassword',
+    // local
     'cache',
     'isMUC',
     'getError',
@@ -43,14 +39,23 @@ var EXPORTED_SYMBOLS = [
     'close',
     'q',
     'presencesOf',
-    'presenceSummary', // deprecated
-    'enableContentDocument', // deprecated
     'connectPanel',
+    'account',
+    'connectorTypeFor',
+
+    // re-exproted
+    'accounts',
+    'JID',
+    'getPassword',
+    'delPassword',
+    'setPassword',
+
+    // deprecated
+    'presenceSummary',
+    'enableContentDocument',
     'disableContentDocument',
     'getAccountByJid',
-    'getAccountByKey',
-    'account',
-    'connectorTypeFor'
+    'getAccountByKey'
 ]
 
 
