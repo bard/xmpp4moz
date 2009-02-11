@@ -24,16 +24,10 @@
 // DEFINITIONS
 // ----------------------------------------------------------------------
 
-var ns_x4m_in    = 'http://hyperstruct.net/xmpp4moz/protocol/internal';
-var ns_roster    = 'jabber:iq:roster';
-var ns_muc       = 'http://jabber.org/protocol/muc';
-var ns_muc_user  = 'http://jabber.org/protocol/muc#user';
-var ns_bookmarks = 'storage:bookmarks';
-var ns_roster    = 'jabber:iq:roster';
-
-
 loader.loadSubScript('chrome://xmpp4moz/content/lib/misc.js');
+
 Cu.import('resource://xmpp4moz/query.jsm');
+Cu.import('resource://xmpp4moz/namespaces.jsm');
 
 
 // INITIALIZATION

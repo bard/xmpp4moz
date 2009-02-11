@@ -36,7 +36,7 @@ const Cc = Components.classes;
 const Ci = Components.interfaces;
 const Cu = Components.utils;
 
-const ns_x4m_in = 'http://hyperstruct.net/xmpp4moz/protocol/internal';
+Cu.import('resource://xmpp4moz/namespaces.jsm');
 
 
 // DOMAIN
