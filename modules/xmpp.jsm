@@ -101,12 +101,7 @@ var [Channel] = load('chrome://xmpp4moz/content/lib/channel.js', 'Channel');
 Cu.import('resource://xmpp4moz/query.jsm');
 Cu.import('resource://xmpp4moz/utils.jsm');
 Cu.import('resource://xmpp4moz/accounts.jsm');
-
-if(typeof(JSON) == 'undefined') {
-    Cu.import('resource://gre/modules/JSON.jsm');
-    JSON.parse = JSON.fromString;
-    JSON.stringify = JSON.toString;
-}
+Cu.import('resource://xmpp4moz/json.jsm');
 
 
 // DEVELOPER INTERFACE
