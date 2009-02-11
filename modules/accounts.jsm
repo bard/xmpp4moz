@@ -34,71 +34,16 @@ var EXPORTED_SYMBOLS = [
 var Cc = Components.classes;
 var Ci = Components.interfaces;
 var Cu = Components.utils;
+Cu.import('resource://xmpp4moz/utils.jsm');
+Cu.import('resource://xmpp4moz/log.jsm');
 
 var pref = Cc['@mozilla.org/preferences-service;1']
     .getService(Ci.nsIPrefService)
-    .getBranch('xmpp.');
-
-var prefBranch = Cc['@mozilla.org/preferences-service;1']
-    .getService(Ci.nsIPrefService)
-    .getBranch('xmpp.account.')
+    .getBranch('xmpp.')
     .QueryInterface(Ci.nsIPrefBranch2);
 
-prefBranch.addObserver('', {
-    observe: function(subject, topic, data) {
-        accounts._refresh();
-    }
-}, false);
 
-Components.utils.import('resource://xmpp4moz/utils.jsm');
-
-
-// UTILITIES
-// ----------------------------------------------------------------------
-
-function prefRead(key, leafName) {
-    var name = 'account.' + key + '.' + leafName;
-
-    var prefType = pref.getPrefType(name);
-    if(prefType == pref.PREF_STRING)
-        return pref.getCharPref(name);
-    else if(prefType == pref.PREF_INT)
-        return pref.getIntPref(name);
-    else if(prefType == pref.PREF_BOOL)
-        return pref.getBoolPref(name);
-    else
-        return null;
-}
-
-function prefWrite(key, leafName, value) {
-    var name = 'account.' + key + '.' + leafName;
-
-    var prefType = pref.getPrefType(name);
-    if(prefType == pref.PREF_STRING)
-        return pref.setCharPref(name, value);
-    else if(prefType == pref.PREF_INT)
-        return pref.setIntPref(name, value);
-    else if(prefType == pref.PREF_BOOL)
-        return pref.setBoolPref(name, value);
-    else
-        return null;
-}
-
-function uniq(array) {
-    var encountered = [];
-
-    return array.filter(
-        function(item) {
-            if(encountered.indexOf(item) == -1) {
-                encountered.push(item);
-                return true;
-            } else
-                return false;
-        });
-}
-
-
-// CLASSES
+// ACCOUNT WRAPPER (PREFERENCE BACKEND)
 // ----------------------------------------------------------------------
 
 function AccountWrapper(key) {
@@ -110,7 +55,7 @@ AccountWrapper.prototype.__defineGetter__('jid', function() {
 });
 
 AccountWrapper.prototype.__defineGetter__('password', function() {
-    return getPassword(this.address) || prefRead('password');
+    return getPassword(this.address);
 });
 
 [ 'address',
@@ -122,18 +67,111 @@ AccountWrapper.prototype.__defineGetter__('password', function() {
   'connectionSecurity'
 ].forEach(function(property) {
     AccountWrapper.prototype.__defineGetter__(property, function() {
-        return prefRead(this.key, property);
+        var name = 'account.' + this.key + '.' + property;
+
+        var prefType = pref.getPrefType(name);
+        if(prefType == pref.PREF_STRING)
+            return pref.getCharPref(name);
+        else if(prefType == pref.PREF_INT)
+            return pref.getIntPref(name);
+        else if(prefType == pref.PREF_BOOL)
+            return pref.getBoolPref(name);
+        else
+            return null;
     });
 
     AccountWrapper.prototype.__defineSetter__(property, function(value) {
-        return prefWrite(this.key, property, value);
+        var name = 'account.' + this.key + '.' + property;
+
+        var prefType = pref.getPrefType(name);
+        if(prefType == pref.PREF_STRING)
+            return pref.setCharPref(name, value);
+        else if(prefType == pref.PREF_INT)
+            return pref.setIntPref(name, value);
+        else if(prefType == pref.PREF_BOOL)
+            return pref.setBoolPref(name, value);
+        else
+            return null;
     });
 });
 
 
+// ACCOUNTS OBJECT
+//----------------------------------------------------------------------
 
 var accounts = {
     _store: [],
+
+    init: function() {
+        this._listeners = {
+            'change': [],
+            __proto__: null
+        };
+
+        pref.addObserver('account.', {
+            observe: function(subject, topic, data) {
+                accounts._refresh();
+                accounts._fire('change');
+            }
+        }, false);
+
+        this._refresh();
+    },
+
+    forEach: function() {
+        return this._store.forEach.apply(this._store, arguments);
+    },
+
+    map: function() {
+        return this._store.map.apply(this._store, arguments);
+    },
+
+    filter: function() {
+        return this._store.filter.apply(this._store, arguments);
+    },
+
+    some: function() {
+        return this._store.some.apply(this._store, arguments);
+    },
+
+    every: function() {
+        return this._store.every.apply(this._store, arguments);
+    },
+
+    get: function(criteria) {
+        var [index, account] = this._find(criteria);
+        return account;
+    },
+
+    remove: function(criteria) {
+        var [index, account] = this._find(criteria);
+        if(!account)
+            throw new Error('Account not found. (' + criteria.toSource() + ')');
+
+        pref.deleteBranch('account.' + account.key + '.');
+        this._store.splice(index, 1);
+    },
+
+    get length() {
+        return this._store.length;
+    },
+
+    on: function(eventName, eventListener) {
+        if(!(eventName) in this._listeners)
+            throw new Error('Unknown account event. (' + eventName + ')');
+
+        if(this._listeners[eventName].indexOf(eventListener) == -1)
+            this._listeners[eventName].push(eventListener);
+    },
+
+    forget: function(eventName, eventListener) {
+        if(!(eventName) in this._listeners)
+            throw new Error('Unknown account event. (' + eventName + ')');
+
+        var listenerIndex = this._listeners.indexOf(eventListener);
+        if(listenerIndex != -1)
+            this.splice(listenerIndex, 1);
+    },
 
     _refresh: function() {
         var keys = uniq(
@@ -158,24 +196,14 @@ var accounts = {
         this._store = keys.map(function(key) new AccountWrapper(key));
     },
 
-    forEach: function() {
-        return this._store.forEach.apply(this._store, arguments);
-    },
-
-    map: function() {
-        return this._store.map.apply(this._store, arguments);
-    },
-
-    filter: function() {
-        return this._store.filter.apply(this._store, arguments);
-    },
-
-    some: function() {
-        return this._store.some.apply(this._store, arguments);
-    },
-
-    every: function() {
-        return this._store.every.apply(this._store, arguments);
+    _fire: function(eventName) {
+        for each(var listener in this._listeners[eventName]) {
+            try {
+                listener();
+            } catch(e) {
+                Cu.reportError(e);
+            }
+        }
     },
 
     _find: function(criteria) {
@@ -196,25 +224,27 @@ var accounts = {
             return [-1, null];
             break;
         }
-    },
-
-    get: function(criteria) {
-        var [index, account] = this._find(criteria);
-        return account;
-    },
-
-    remove: function(criteria) {
-        var [index, account] = this._find(criteria);
-        if(!account)
-            throw new Error('Account not found. (' + criteria.toSource() + ')');
-
-        pref.deleteBranch('account.' + account.key + '.');
-        this._store.splice(index, 1);
     }
 };
 
 
-// STATE
+// UTILITIES
 // ----------------------------------------------------------------------
 
-accounts._refresh();
+function uniq(array) {
+    var encountered = [];
+
+    return array.filter(function(item) {
+        if(encountered.indexOf(item) == -1) {
+            encountered.push(item);
+            return true;
+        } else
+            return false;
+    });
+}
+
+
+// INITIALIZATION
+// ----------------------------------------------------------------------
+
+accounts.init();
