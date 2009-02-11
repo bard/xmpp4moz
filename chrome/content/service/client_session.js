@@ -105,19 +105,6 @@ function notifyObservers(subject, topic, data) {
     }
 }
 
-
-function getStackTrace() {
-    var frame = Components.stack.caller;
-    var str = "<top>";
-
-    while (frame) {
-        str += '\n' + frame;
-        frame = frame.caller;
-    }
-
-    return str;
-}
-
 function setMeta(domStanza, account, direction) {
     var outDomStanza = stripMeta(domStanza);
 

@@ -62,17 +62,6 @@ var EXPORTED_SYMBOLS = [
 // GLOBAL DEFINITIONS
 // ----------------------------------------------------------------------
 
-function load(url) {
-    var loader = (Cc['@mozilla.org/moz/jssubscript-loader;1']
-                  .getService(Ci.mozIJSSubScriptLoader));
-
-    var context = {};
-    loader.loadSubScript(url, context);
-
-    var names = Array.slice(arguments, 1);
-    return names.map(function(name) { return context[name]; });
-}
-
 const Cc = Components.classes;
 const Ci = Components.interfaces;
 const Cu = Components.utils;
@@ -460,16 +449,6 @@ function q() {
     return new Query();
 }
 
-function load(url) {
-    var loader = (Cc['@mozilla.org/moz/jssubscript-loader;1']
-                  .getService(Ci.mozIJSSubScriptLoader));
-
-    var context = {};
-    loader.loadSubScript(url, context);
-
-    var names = Array.slice(arguments, 1);
-    return names.map(function(name) { return context[name]; });
-}
 
 /**
  * Pattern matcher as used in channel.on().

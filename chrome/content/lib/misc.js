@@ -103,21 +103,3 @@ function load(url) {
         }
     }
 }
-
-function logToConsole(msg) {
-    Cc['@mozilla.org/consoleservice;1']
-        .getService(Ci.nsIConsoleService)
-        .logStringMessage('XMPP Cache ' + msg);
-}
-
-function getStackTrace() {
-    var frame = Components.stack.caller;
-    var str = "<top>";
-
-    while (frame) {
-        str += '\n' + frame;
-        frame = frame.caller;
-    }
-
-    return str;
-}
