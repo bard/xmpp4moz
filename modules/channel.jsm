@@ -1,24 +1,32 @@
 /*
  * Copyright 2006-2007 by Massimiliano Mirra
- * 
+ *
  * This file is part of xmpp4moz.
- * 
+ *
  * xmpp4moz is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
  * Free Software Foundation; either version 3 of the License, or (at your
  * option) any later version.
- * 
+ *
  * xmpp4moz is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  * Author: Massimiliano Mirra, <bard [at] hyperstruct [dot] net>
- *  
+ *
  */
+
+
+// EXPORTS
+// ----------------------------------------------------------------------
+
+var EXPORTED_SYMBOLS = [
+    'Channel'
+];
 
 
 // GLOBAL DEFINITIONS
@@ -50,7 +58,7 @@ Channel.prototype.on = function(pattern, handler) {
 
 Channel.prototype.forget = function(watcher) {
     var index = this._listeners.indexOf(watcher);
-    if(index != -1) 
+    if(index != -1)
         this._listeners.splice(index, 1);
 };
 
@@ -130,7 +138,7 @@ function asString(object) {
 function dom2xml(element) {
     if(!element.__dom2xml_memo)
         element.__dom2xml_memo = new XML(serialize(element));
-    
+
     return element.__dom2xml_memo;
 }
 
@@ -139,7 +147,7 @@ function match(object, template) {
     for(var member in template) {
         value = object[member];
         pattern = template[member];
-        
+
         if(pattern === undefined)
             ;
         else if(pattern && typeof(pattern) == 'function') {
@@ -156,7 +164,7 @@ function match(object, template) {
         }
         else if(pattern != value)
             return false;
-    } 
+    }
 
     return true;
 }

@@ -96,8 +96,7 @@ const ns_private    = 'jabber:iq:private';
 const ns_bookmarks  = 'storage:bookmarks';
 const ns_stream     = 'urn:ietf:params:xml:ns:xmpp-streams';
 
-var [Channel] = load('chrome://xmpp4moz/content/lib/channel.js', 'Channel');
-
+Cu.import('resource://xmpp4moz/channel.jsm');
 Cu.import('resource://xmpp4moz/query.jsm');
 Cu.import('resource://xmpp4moz/utils.jsm');
 Cu.import('resource://xmpp4moz/accounts.jsm');
