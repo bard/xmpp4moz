@@ -36,6 +36,7 @@ const Cc = Components.classes;
 const Ci = Components.interfaces;
 const Cu = Components.utils;
 
+Cu.import('resource://xmpp4moz/utils.jsm');
 Cu.import('resource://xmpp4moz/namespaces.jsm');
 
 
@@ -115,15 +116,6 @@ Channel.prototype.release = function() {
 // UTILITIES
 // ----------------------------------------------------------------------
 
-function asString(object) {
-    if(object instanceof Ci.nsISupportsString)
-        return object.toString();
-    else if(typeof(object) == 'string')
-        return object;
-    else
-        throw new Error('Bad argument.');
-}
-
 /**
  * Convert a DOM element to an E4X XML object.
  *
@@ -167,11 +159,4 @@ function match(object, template) {
     }
 
     return true;
-}
-
-function serialize(element) {
-    var _ = arguments.callee;
-    _.serializer = _.serializer ||
-        Cc['@mozilla.org/xmlextras/xmlserializer;1'].getService(Ci.nsIDOMSerializer);
-    return _.serializer.serializeToString(element);
 }

@@ -31,6 +31,7 @@ var EXPORTED_SYMBOLS = [
     'delPassword',
     'asDOM',
     'asXML',
+    'asString',
     'serialize'
 ];
 
@@ -175,6 +176,19 @@ function asDOM(object) {
     }
 
     return element;
+}
+
+function asString(thing) {
+    if(typeof(thing) == 'string')
+        return thing;
+    else if(typeof(thing) == 'xml')
+        return thing.toXMLString();
+    else if(thing instanceof Ci.nsISupportsString)
+        return thing.toString();
+    else if(thing instanceof Ci.nsIDOMElement)
+        return serialize(thing);
+    else
+        throw new Error('Bad argument.');
 }
 
 function serialize(element) {

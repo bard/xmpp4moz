@@ -38,6 +38,7 @@ var Cu = Components.utils;
 var srvConsole = Cc['@mozilla.org/consoleservice;1']
     .getService(Ci.nsIConsoleService);
 
+Cu.import('resource://xmpp4moz/utils.jsm');
 
 // API
 // ----------------------------------------------------------------------
@@ -96,28 +97,10 @@ Logger.prototype._log = function(type) {
 
 function listToString(list) {
     var parts = [];
-    for(var i=0,l=list.length; i<l; i++)
-        parts.push(asString(list[i]));
+    for(var i=0,l=list.length; i<l; i++) {
+        try {
+            parts.push(asString(list[i]))
+        } catch(e) {}
+    }
     return parts.join('');
-}
-
-function asString(thing) {
-    if(typeof(thing) == 'string')
-        return thing;
-    else if(typeof(thing) == 'xml')
-        return thing.toXMLString();
-    else if(thing instanceof Ci.nsISupportsString)
-        return thing.toString();
-    else if(thing instanceof Ci.nsIDOMElement)
-        return serialize(thing);
-    else
-        return '';
-}
-
-function serialize(element) {
-    var serializer = Cc['@mozilla.org/xmlextras/xmlserializer;1'].getService(Ci.nsIDOMSerializer);
-    serialize = function(element) {
-        return serializer.serializeToString(element);
-    };
-    return serialize(element);
 }
