@@ -40,16 +40,32 @@ var srvConsole = Cc['@mozilla.org/consoleservice;1']
 
 Cu.import('resource://xmpp4moz/utils.jsm');
 
+
+// GLOBAL STATE
+// ----------------------------------------------------------------------
+
+var loggers = {};
+
+
 // API
 // ----------------------------------------------------------------------
 
-function Logger(name, target) {
+function Logger(name) {
     this._name = name;
     this._postProc = function(s) s;
     this._backlog = [];
     this._maxBacklog = 200;
-    this._target = target || 'sysconsole';
+    this._target = 'sysconsole';
+    loggers[name] = this;
 }
+
+Logger.get = function(name) {
+    return loggers[name];
+};
+
+Logger.__defineGetter__('all', function() {
+    return loggers;
+});
 
 Logger.prototype.debug = function() {
     this._log.apply(this, ['DBG'].concat(Array.slice(arguments)));

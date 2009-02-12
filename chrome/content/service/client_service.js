@@ -81,7 +81,7 @@ function init() {
     cache = Cc['@hyperstruct.net/xmpp4moz/xmppcache;1']
         .getService(Ci.nsIXMPPCacheService);
 
-    this._logger = new Logger('Service: ', 'sysconsole');
+    this._logger = new Logger('service');
 
     var service = this;
     pref.addObserver('', {
