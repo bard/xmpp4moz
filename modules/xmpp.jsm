@@ -68,8 +68,6 @@ const Cu = Components.utils;
 
 const service = Cc['@hyperstruct.net/xmpp4moz/xmppservice;1']
     .getService(Ci.nsIXMPPClientService);
-const serializer = Cc['@mozilla.org/xmlextras/xmlserializer;1']
-    .getService(Ci.nsIDOMSerializer);
 const srvPrompt = Cc["@mozilla.org/embedcomp/prompt-service;1"]
     .getService(Ci.nsIPromptService);
 const errorMessages = Components.classes["@mozilla.org/intl/stringbundle;1"]
@@ -495,7 +493,7 @@ function match(object, template) {
 
 function dom2xml(element) {
     if(!element.__dom2xml_memo)
-        element.__dom2xml_memo = new XML(serializer.serializeToString(element)).normalize();
+        element.__dom2xml_memo = new XML(serialize(element)).normalize();
 
     return element.__dom2xml_memo;
 }
@@ -912,37 +910,6 @@ function getAccountByJid(jid) {
 function getAccountByKey(key) {
     deprecation('XMPP.getAccountByKey');
     return accounts.get({key: key});
-}
-
-function asDOM(object) {
-    var parser = Cc['@mozilla.org/xmlextras/domparser;1'].getService(Ci.nsIDOMParser);
-
-    asDOM = function(object) {
-        var element;
-        switch(typeof(object)) {
-        case 'xml':
-            XML.prettyPrinting = false;
-            element = parser
-                .parseFromString(object.toXMLString(), 'text/xml')
-                .documentElement;
-            break;
-        case 'string':
-            element = parser
-                .parseFromString(object, 'text/xml')
-                .documentElement;
-            break;
-        default:
-            throw new Error('Argument error. (' + typeof(object) + ')');
-        }
-
-        return element;
-    };
-
-    return asDOM(object);
-}
-
-function asString(xpcomString) {
-   return xpcomString.QueryInterface(Ci.nsISupportsString).toString();
 }
 
 
