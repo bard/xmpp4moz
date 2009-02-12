@@ -29,7 +29,7 @@ const pref = Cc['@mozilla.org/preferences-service;1']
     .getBranch('xmpp.')
     .QueryInterface(Ci.nsIPrefBranch2);
 
-loader.loadSubScript('chrome://xmpp4moz/content/lib/misc.js');
+Cu.import('resource://xmpp4moz/utils.jsm');
 Cu.import('resource://xmpp4moz/namespaces.jsm');
 Cu.import('resource://xmpp4moz/query.jsm');
 Cu.import('resource://xmpp4moz/log.jsm');

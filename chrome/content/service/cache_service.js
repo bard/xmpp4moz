@@ -24,8 +24,7 @@
 // DEFINITIONS
 // ----------------------------------------------------------------------
 
-loader.loadSubScript('chrome://xmpp4moz/content/lib/misc.js');
-
+Cu.import('resource://xmpp4moz/utils.jsm');
 Cu.import('resource://xmpp4moz/query.jsm');
 Cu.import('resource://xmpp4moz/namespaces.jsm');
 

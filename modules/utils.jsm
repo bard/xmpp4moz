@@ -20,20 +20,33 @@
  *
  */
 
+
+// EXPORTS
 // ----------------------------------------------------------------------
 
 var EXPORTED_SYMBOLS = [
     'JID',
     'getPassword',
     'setPassword',
-    'delPassword'
+    'delPassword',
+    'asDOM',
+    'asXML',
+    'serialize'
 ];
 
+
+// DEFINITIONS
 // ----------------------------------------------------------------------
 
 var Cc = Components.classes;
 var Ci = Components.interfaces;
 var Cu = Components.utils;
+
+var parser = Cc['@mozilla.org/xmlextras/domparser;1']
+    .getService(Ci.nsIDOMParser);
+var serializer = Cc['@mozilla.org/xmlextras/xmlserializer;1']
+    .getService(Ci.nsIDOMSerializer);
+
 
 // ----------------------------------------------------------------------
 
@@ -137,6 +150,39 @@ function setPassword(address, password) {
     }
 }
 
+function asXML(element) {
+    return new XML(serialize(element));
+}
+
+function asDOM(object) {
+    if(object instanceof Ci.nsIDOMElement)
+        return object;
+
+    var element;
+    switch(typeof(object)) {
+    case 'xml':
+        element = parser
+            .parseFromString(object.toXMLString(), 'text/xml')
+            .documentElement;
+        break;
+    case 'string':
+        element = parser
+            .parseFromString(object, 'text/xml')
+            .documentElement;
+        break;
+    default:
+        throw new Error('Argument error. (' + typeof(object) + ')');
+    }
+
+    return element;
+}
+
+function serialize(element) {
+    return serializer.serializeToString(element);
+}
+
+
+// INTERNALS
 // ----------------------------------------------------------------------
 
 function getLoginInfo(url, username) {
@@ -147,4 +193,5 @@ function getLoginInfo(url, username) {
         if(logins[i].username == username)
             return logins[i];
 }
+
 
