@@ -341,9 +341,7 @@ function resolver(prefix) {
 
 function verify() {
     if(!('assert' in this))
-        Cc['@mozilla.org/moz/jssubscript-loader;1']
-            .getService(Ci.mozIJSSubScriptLoader)
-            .loadSubScript('chrome://xmpp4moz/content/lib/test.js');
+        Cu.import('resource://xmpp4moz/test.jsm', arguments.callee);
 
     function Cache() { init.call(this); }
     for each(var name in ['receive', 'insert', 'replace', 'remove', 'all', 'first', 'addRule']) {
