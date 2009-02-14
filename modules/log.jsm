@@ -56,16 +56,28 @@ function Logger(name) {
     this._backlog = [];
     this._maxBacklog = 200;
     this._target = 'sysconsole';
-    loggers[name] = this;
+    loggers[this._name] = this;
 }
 
-Logger.get = function(name) {
-    return loggers[name];
+Logger.get = function(criteria) {
+    if(typeof(criteria) == 'string')
+        return loggers[criteria];
+    else if(typeof(criteria.match) == 'function') {
+        let selection = [];
+        for(let name in loggers)
+            if(name.match(criteria))
+                selection.push(loggers[name]);
+        return selection;
+    }
 };
 
-Logger.__defineGetter__('all', function() {
+Logger.__defineGetter__('list', function() {
     return loggers;
 });
+
+Logger.prototype.close = function() {
+    delete loggers[this._name];
+};
 
 Logger.prototype.debug = function() {
     this._log.apply(this, ['DBG'].concat(Array.slice(arguments)));

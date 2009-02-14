@@ -217,6 +217,7 @@ function onEvent_streamElement(element) {
 }
 
 function onEvent_transportDisconnected() {
+    this._logger.close();
     this.setState('disconnected');
 }
 
@@ -275,6 +276,7 @@ function connect() {
         },
 
         onTimeout: function() {
+            socketLogger.close();
             // Socket disables itself.  Retry.
             connector.connect();
         },
@@ -284,6 +286,7 @@ function connect() {
         },
 
         onClose: function() {
+            socketLogger.close();
             // Socket closed.  Only called if we didn't timeout.
             connector.onEvent_transportDisconnected();
         }
