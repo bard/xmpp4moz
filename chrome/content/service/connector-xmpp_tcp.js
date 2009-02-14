@@ -102,7 +102,7 @@ function init(jid, password, host, port, security) {
     this._port            = port;
     this._security        = security;
 
-    this._logger          = new Logger('xmpp/tcp/' + this._jid.slice(0, 4) + '…');
+    this._logger          = new log.Source('xmpp/tcp/' + this._jid.slice(0, 4) + '…');
     var me = this;
     this.__defineGetter__('_backlog', function() me._log.backlog);
 
@@ -217,7 +217,6 @@ function onEvent_streamElement(element) {
 }
 
 function onEvent_transportDisconnected() {
-    this._logger.close();
     this.setState('disconnected');
 }
 
@@ -256,7 +255,7 @@ function connect() {
     this.setState('connecting');
     var connector = this;
 
-    var socketLogger = new Logger('xmpp/tcp/' + this._jid.slice(0, 4) + '…/sock.' + (new Date()).getTime());
+    var socketLogger = new log.Source('xmpp/tcp/' + this._jid.slice(0, 4) + '…/sock.' + (new Date()).getTime());
     socketLogger.postproc = function(s) s.replace(/(<auth mechanism.+?>)([^<]+)/, '$1[password hidden in log]');
     var socket = new Socket(this._host, this._port, this._security, socketLogger);
 
@@ -276,7 +275,6 @@ function connect() {
         },
 
         onTimeout: function() {
-            socketLogger.close();
             // Socket disables itself.  Retry.
             connector.connect();
         },
@@ -286,7 +284,6 @@ function connect() {
         },
 
         onClose: function() {
-            socketLogger.close();
             // Socket closed.  Only called if we didn't timeout.
             connector.onEvent_transportDisconnected();
         }

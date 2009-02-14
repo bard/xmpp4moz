@@ -25,7 +25,7 @@
 // ----------------------------------------------------------------------
 
 var EXPORTED_SYMBOLS = [
-    'Logger'
+    'log'
 ];
 
 
@@ -41,87 +41,80 @@ var srvConsole = Cc['@mozilla.org/consoleservice;1']
 Cu.import('resource://xmpp4moz/utils.jsm');
 
 
-// GLOBAL STATE
+// STATE
 // ----------------------------------------------------------------------
 
-var loggers = {};
+var sinks = [], sources = [];
 
 
 // API
 // ----------------------------------------------------------------------
 
-function Logger(name) {
+var log = {};
+
+log.Source = function(name) {
     this._name = name;
-    this._postProc = function(s) s;
-    this._backlog = [];
-    this._maxBacklog = 200;
-    this._target = 'sysconsole';
-    loggers[this._name] = this;
-}
-
-Logger.get = function(criteria) {
-    if(typeof(criteria) == 'string')
-        return loggers[criteria];
-    else if(typeof(criteria.match) == 'function') {
-        let selection = [];
-        for(let name in loggers)
-            if(name.match(criteria))
-                selection.push(loggers[name]);
-        return selection;
-    }
+    if(sources.indexOf(name) == -1)
+        sources.push(name);
 };
 
-Logger.__defineGetter__('list', function() {
-    return loggers;
-});
-
-Logger.prototype.close = function() {
-    delete loggers[this._name];
+log.Source.prototype.debug = function() {
+    log1.apply(null, ['DBG', this._name].concat(Array.slice(arguments)));
 };
 
-Logger.prototype.debug = function() {
-    this._log.apply(this, ['DBG'].concat(Array.slice(arguments)));
+log.Source.prototype.error = function() {
+    log1.apply(null, ['ERR', this._name].concat(Array.slice(arguments)));
 };
 
-Logger.prototype.error = function() {
-    this._log.apply(this, ['ERR'].concat(Array.slice(arguments)));
+log.sinkTo = function(pattern, sinkFunction) {
+    var i = findSink(pattern, sinkFunction);
+    if(i == -1)
+        sinks.push([pattern, sinkFunction]);
 };
 
-Logger.prototype.__defineGetter__('backlog', function() this._backlog);
+log.unsink = function(pattern, sinkFunction) {
+    var i = findSink(pattern, sinkFunction);
+    if(i != -1)
+        sinks.splice(i, 1);
+};
 
-Logger.prototype.__defineSetter__('postproc', function(fn) {
-    this._postProc = fn;
-});
+log.JSCONSOLE = function(data) {
+    srvConsole.logStringMessage(data);
+};
 
-Logger.prototype.__defineSetter__('target', function(val) this._target = val);
+log.SYSCONSOLE = function(data) {
+    dump(data); dump('\n\n');
+};
 
 
 // INTERNALS
 // ----------------------------------------------------------------------
 
-Logger.prototype._log = function(type) {
-    var logLine = type + ' ' + this._name + ' ' + this._postProc(listToString(Array.slice(arguments, 1)));
-
-    if(this._backlog.length > this._maxBacklog)
-        this._backlog.shift();
-    this._backlog.push(logLine);
-
-    switch(this._target) {
-    case 'sysconsole':
-        dump(logLine); dump('\n\n');
-        break;
-    case 'jsconsole':
-        srvConsole.logStringMessage(logLine);
-        break;
-    case 'file':
-        // NOT IMPLEMENTED
-        break;
+function findSink(pattern, sinkFunction) {
+    for(let i=0,l=sinks.length; i<l; i++) {
+        let [p, s] = sinks[i];
+        if(p == pattern && s == sinkFunction)
+            return i;
     }
-};
 
+    return -1;
+}
 
-// UTILITIES
-// ----------------------------------------------------------------------
+function log1(type, name) {
+    if(sinks.length == 0)
+        return;
+
+    var logLine = type + ' ' + name + ' ' + listToString(Array.slice(arguments, 2));
+    for each([pattern, sinkFunction] in sinks) {
+        if((typeof(pattern) == 'string' && (pattern == '' || pattern == name)) ||
+           (typeof(pattern.test) == 'function' && pattern.test(name)))
+            try {
+                sinkFunction(logLine);
+            } catch(e) {
+                Cu.reportError('Error while trying to log: "' + e + '"');
+            }
+    }
+}
 
 function listToString(list) {
     var parts = [];
