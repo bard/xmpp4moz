@@ -102,9 +102,10 @@ function init(jid, password, host, port, security) {
     this._port            = port;
     this._security        = security;
 
-    this._logger          = new log.Source('xmpp/tcp/' + this._jid.slice(0, 4) + '…');
-    var me = this;
-    this.__defineGetter__('_backlog', function() me._log.backlog);
+    this._log             = new Log.Source('connector', {account: this._jid});
+    this.__defineGetter__('_backlog', function() {
+        throw new Error('Backlog no longer available');
+    });
 
     this._parser = null;
     this._state = 'disconnected';
@@ -117,7 +118,7 @@ function init(jid, password, host, port, security) {
 // ----------------------------------------------------------------------
 
 function onEvent_streamElement(element) {
-    this._log('RECV   ', element);
+    this._log.send({state: 'RECV', element: element});
     this.assertState('stream-open', 'requested-tls', 'auth-waiting-result',
                      'binding-resource', 'requesting-session', 'active', 'idle');
 
@@ -134,7 +135,7 @@ function onEvent_streamElement(element) {
     case 'auth-waiting-challenge':
         if(element.localName == 'challenge' &&
            element.namespaceURI == 'urn:ietf:params:xml:ns:xmpp-sasl') {
-            this._log(atob(element.textContent))
+            this._log.send({data: atob(element.textContent)})
         }
         break;
     case 'auth-waiting-result':
@@ -255,7 +256,7 @@ function connect() {
     this.setState('connecting');
     var connector = this;
 
-    var socketLogger = new log.Source('xmpp/tcp/' + this._jid.slice(0, 4) + '…/sock.' + (new Date()).getTime());
+    var socketLogger = new Log.Source('socket', {account: this._jid, id: Date.now()});
     socketLogger.postproc = function(s) s.replace(/(<auth mechanism.+?>)([^<]+)/, '$1[password hidden in log]');
     var socket = new Socket(this._host, this._port, this._security, socketLogger);
 
@@ -309,7 +310,7 @@ function onDataAvailable(request, context, inputStream, offset, count) {
 }
 
 function send(element) {
-    this._log('DATA   >>> ', serialize(element));
+    this._log.send({state: 'SEND', element: element});
     this._write(serialize(element));
 }
 
@@ -396,7 +397,7 @@ function requestTLS() {
 }
 
 function setState(name, stateData) {
-    this._log('STATE  ', name, ' [', stateData, ']');
+    this._log.send({state: name, data: stateData});
     this._state = name;
     this.notifyObservers(stateData, name, null);
 }
@@ -432,13 +433,9 @@ function assertState() {
     for(var i=0;i<arguments.length;i++)
         if(this._state == arguments[i])
             return;
-    this._log('ERROR: event ' + arguments.callee.caller.name + ' while in state ' + this._state);
+    this._log.send({error: 'bad-event', event: arguments.callee.caller.name, state: this._state});
 }
 
-
-function _log() {
-    this._logger.debug.apply(this._logger, arguments);
-}
 
 function getCurrentThreadTarget() {
     if('@mozilla.org/thread-manager;1' in Cc)
@@ -501,12 +498,12 @@ function createParser() {
 
     parser.contentHandler = {
         startDocument: function() {
-            connector._log('PARSER remote opened stream');
+            connector._log.send({debug: 'remote opened XML stream'});
             connector.onEvent_openedIncomingStream();
         },
 
         endDocument: function() {
-            connector._log('PARSER remote closed stream');
+            connector._log.send({debug: 'remote closed XML stream'});
             connector.onEvent_closedIncomingStream();
         },
 
@@ -546,7 +543,7 @@ function createParser() {
                 this._element.normalize();
 
                 if(!STREAM_LEVEL_ELEMENT[uri + '::' + localName])
-                    connector._log('PARSER got non-stream-level element: ' + uri + '::' + localName);
+                    connector._log.send({debug: 'parser got non-stream-level element ' + uri + '::' + localName});
 
                 connector.onEvent_streamElement(this._element);
                 this._element = null;
@@ -699,7 +696,7 @@ function atob(input) {
 // SOCKET
 // ----------------------------------------------------------------------
 
-function Socket(host, port, security, logger) {
+function Socket(host, port, security, logSource) {
     this._host = host;
     this._port = port;
     this._security = security || SECURITY_NONE;
@@ -709,7 +706,7 @@ function Socket(host, port, security, logger) {
     this._listener = null;
     this._transport = null;
     this._reply_timeout = null;
-    this._logger = logger;
+    this._log = logSource;
     this._state = 'disconnected';
 }
 
@@ -741,7 +738,7 @@ Socket.prototype = {
     // Needed for LP#242098.
 
     setReplyTimeout: function(msecs) {
-        this._log('DEBUG ::: setting reply timeout to ' + msecs);
+        this._log.send({debug: 'setting reply timeout to ' + msecs});
         var socket = this;
         this._reply_timeout = Cc['@mozilla.org/timer;1'].createInstance(Ci.nsITimer);
         this._reply_timeout.initWithCallback({
@@ -840,11 +837,11 @@ Socket.prototype = {
     },
 
     onStartRequest: function() {
-        this._log('DEBUG ::: request started');
+        this._log.send({debug: 'request started'});
     },
 
     onStopRequest: function() {
-        this._log('DEBUG ::: request stopped');
+        this._log.send({debug: 'request stopped'});
         this._clearReplyTimeout();
         this._setState('disconnected');
     },
@@ -856,7 +853,7 @@ Socket.prototype = {
                 .createInstance(Ci.nsIScriptableInputStream);
             stream.init(inputStream);
             var response = stream.read(count);
-            this._log('RECV  ::: ' + response);
+            this._log.send({received: response});
 
             this._handleProxyResponse(response);
             break;
@@ -876,7 +873,7 @@ Socket.prototype = {
              this._state == 'active'))
             throw new Error('Trying to send data outside of a reasonable state.');
 
-        this._log('SEND  ::: ' + asString(data));
+        this._log.send({state: 'SEND', data: asString(data)});
 
         try {
             return this._outstream.writeString(asString(data));
@@ -889,14 +886,14 @@ Socket.prototype = {
         if(!this._reply_timeout)
             return;
 
-        this._log('DEBUG ::: cancelling timeout');
+        this._log.send({debug: 'cancelling timeout'});
         this._reply_timeout.cancel();
         this._reply_timeout = null;
     },
 
     _setState: function(state, stateInfo) {
         var previousState = this._state;
-        this._log('STATE ::: ' + previousState + ' -> ' + state + ' [' + (stateInfo || '') + ']');
+        this._log.send({previous: previousState, current: state, info: stateInfo || ''});
         this._state = state;
         switch(state) {
         case 'ready':
@@ -943,7 +940,7 @@ Socket.prototype = {
         if(!match) {
             this._setState('error', ['bad proxy response', response]);
             this.close();
-            this._log('DEBUG ::: proxy nego fail');
+            this._log.send({debug: 'proxy nego fail'});
             return; // break?
         } else {
             switch(code) {
@@ -952,22 +949,17 @@ Socket.prototype = {
                     this._transport.securityInfo.QueryInterface(Ci.nsISSLSocketControl);
                     this._transport.securityInfo.proxyStartSSL();
                 }
-                this._log('DEBUG ::: proxy nego ok');
+                this._log.send({debug: 'proxy nego ok'});
 
                 this._setState('ready');
                 break;
             default:
                 this._setState('error', ['proxy refused connection', code]);
                 this._setState('disconnected');
-                this._log('DEBUG ::: proxy nego fail');
+                this._log.send({debug: 'proxy nego fail'});
                 break;
             }
         }
-    },
-
-    _log: function(msg) {
-        if(this._logger)
-            this._logger.debug(this._id, msg);
     }
 };
 

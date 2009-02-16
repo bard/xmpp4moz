@@ -24,11 +24,6 @@
 // GLOBAL DEFINITIONS
 // ----------------------------------------------------------------------
 
-const pref = Cc['@mozilla.org/preferences-service;1']
-    .getService(Ci.nsIPrefService)
-    .getBranch('xmpp.')
-    .QueryInterface(Ci.nsIPrefBranch2);
-
 Cu.import('resource://xmpp4moz/utils.jsm');
 Cu.import('resource://xmpp4moz/namespaces.jsm');
 Cu.import('resource://xmpp4moz/query.jsm');
@@ -81,22 +76,7 @@ function init() {
     cache = Cc['@hyperstruct.net/xmpp4moz/xmppcache;1']
         .getService(Ci.nsIXMPPCacheService);
 
-    this._logger = new log.Source('service');
-
-    var service = this;
-    pref.addObserver('', {
-        observe: function(subject, topic, data) {
-            if(topic != 'nsPref:changed')
-                return;
-
-            switch(data) {
-            case 'logTarget':
-                service._logger.target = pref.getCharPref('logTarget');
-                break;
-            default:
-            }
-         }
-    }, false);
+    this._log = new Log.Source('service');
 
     Cc['@mozilla.org/observer-service;1']
         .getService(Ci.nsIObserverService)
@@ -130,7 +110,7 @@ function open(jid, connector, connectionProgressObserver) {
 
     var service = this;
     var connectorObserver = { observe: function(subject, topic, data) {
-        service._log('{', session.name, ',connector}    ', topic);
+        service._log.send({account: session.name, event: 'connector', data: topic });
 
         switch(topic) {
         case 'active':
@@ -176,7 +156,7 @@ function open(jid, connector, connectionProgressObserver) {
             // Log
 
             if(topic == 'stanza-out' || topic == 'stanza-in')
-                service._log('{', session.name, ',', topic, '}    ', subject);
+                service._log.send({account: session.name, event: topic, data: subject});
 
             // Submit data to cache (which will decide what to keep
             // and what to throw away)
@@ -433,10 +413,6 @@ function asString(thing) {
         else
             return '';
     }
-}
-
-function _log() {
-    this._logger.debug.apply(this._logger, arguments);
 }
 
 function isMUCPresence(domStanza) {

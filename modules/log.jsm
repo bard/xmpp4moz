@@ -25,7 +25,7 @@
 // ----------------------------------------------------------------------
 
 var EXPORTED_SYMBOLS = [
-    'log'
+    'Log'
 ];
 
 
@@ -38,8 +38,6 @@ var Cu = Components.utils;
 var srvConsole = Cc['@mozilla.org/consoleservice;1']
     .getService(Ci.nsIConsoleService);
 
-Cu.import('resource://xmpp4moz/utils.jsm');
-
 
 // STATE
 // ----------------------------------------------------------------------
@@ -50,39 +48,58 @@ var sinks = [], sources = [];
 // API
 // ----------------------------------------------------------------------
 
-var log = {};
+var Log = {};
 
-log.Source = function(name) {
-    this._name = name;
+Log.Source = function(name, extraInfo) {
+    this._info = { name: name };
+    for(var n in extraInfo)
+        this._info[n] = extraInfo[n];
+
     if(sources.indexOf(name) == -1)
         sources.push(name);
 };
 
-log.Source.prototype.debug = function() {
-    log1.apply(null, ['DBG', this._name].concat(Array.slice(arguments)));
+Log.Source.prototype.send = function(data) {
+    if(sinks.length == 0)
+        return;
+
+    var d = {
+        time: new Date(),
+        origin: Components.stack.caller
+    };
+    for(var n in this._info)
+        d[n] = this._info[n];
+    for(var n in data)
+        d[n] = data[n];
+
+    for each([pattern, sinkFunction] in sinks) {
+        if((typeof(pattern) == 'string' && (pattern == '*' || pattern == info.name)) ||
+           (typeof(pattern.test) == 'function' && pattern.test(info.name)))
+            try {
+                sinkFunction(d);
+            } catch(e) {
+                Cu.reportError('Error while trying to log: "' + e + '"');
+            }
+    }
 };
 
-log.Source.prototype.error = function() {
-    log1.apply(null, ['ERR', this._name].concat(Array.slice(arguments)));
-};
-
-log.sinkTo = function(pattern, sinkFunction) {
+Log.sinkTo = function(pattern, sinkFunction) {
     var i = findSink(pattern, sinkFunction);
     if(i == -1)
         sinks.push([pattern, sinkFunction]);
 };
 
-log.unsink = function(pattern, sinkFunction) {
+Log.unsink = function(pattern, sinkFunction) {
     var i = findSink(pattern, sinkFunction);
     if(i != -1)
         sinks.splice(i, 1);
 };
 
-log.JSCONSOLE = function(data) {
+Log.JSCONSOLE = function(data) {
     srvConsole.logStringMessage(data);
 };
 
-log.SYSCONSOLE = function(data) {
+Log.SYSCONSOLE = function(data) {
     dump(data); dump('\n\n');
 };
 
@@ -98,30 +115,4 @@ function findSink(pattern, sinkFunction) {
     }
 
     return -1;
-}
-
-function log1(type, name) {
-    if(sinks.length == 0)
-        return;
-
-    var logLine = type + ' ' + name + ' ' + listToString(Array.slice(arguments, 2));
-    for each([pattern, sinkFunction] in sinks) {
-        if((typeof(pattern) == 'string' && (pattern == '' || pattern == name)) ||
-           (typeof(pattern.test) == 'function' && pattern.test(name)))
-            try {
-                sinkFunction(logLine);
-            } catch(e) {
-                Cu.reportError('Error while trying to log: "' + e + '"');
-            }
-    }
-}
-
-function listToString(list) {
-    var parts = [];
-    for(var i=0,l=list.length; i<l; i++) {
-        try {
-            parts.push(asString(list[i]))
-        } catch(e) {}
-    }
-    return parts.join('');
 }

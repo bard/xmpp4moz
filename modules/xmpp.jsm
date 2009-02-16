@@ -80,6 +80,7 @@ Cu.import('resource://xmpp4moz/utils.jsm');
 Cu.import('resource://xmpp4moz/accounts.jsm');
 Cu.import('resource://xmpp4moz/json.jsm');
 Cu.import('resource://xmpp4moz/namespaces.jsm');
+Cu.import('resource://xmpp4moz/log.jsm');
 
 
 // DEVELOPER INTERFACE
