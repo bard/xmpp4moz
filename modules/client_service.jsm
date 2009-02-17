@@ -38,7 +38,9 @@ var pref = Cc['@mozilla.org/preferences-service;1']
     .getService(Ci.nsIPrefService)
     .getBranch('xmpp.')
     .QueryInterface(Ci.nsIPrefBranch2);
+
 Cu.import('resource://xmpp4moz/cache_service.jsm');
+Cu.import('resource://xmpp4moz/client_session.jsm');
 Cu.import('resource://xmpp4moz/namespaces.jsm');
 Cu.import('resource://xmpp4moz/utils.jsm');
 Cu.import('resource://xmpp4moz/query.jsm');
@@ -98,7 +100,7 @@ service.init = function() {
         .addObserver({
             observe: function(subject, topic, data) {
                 sessions.forEach(function(session) {
-                    session.wrappedJSObject.connector.disconnect();
+                    session.connector.disconnect();
                 });
             }
         }, 'quit-application', false);
@@ -106,7 +108,7 @@ service.init = function() {
 
 service.isUp = function(jid) {
     var session = sessions.get(jid);
-    return (session && session.wrappedJSObject.connector.isConnected());
+    return (session && session.connector.isConnected());
 }
 
 service.open = function(jid, connector, connectionProgressObserver) {
@@ -114,9 +116,7 @@ service.open = function(jid, connector, connectionProgressObserver) {
     if(session)
         return session;
 
-    session = Cc['@hyperstruct.net/xmpp4moz/xmppsession;1']
-        .createInstance(Ci.nsIXMPPClientSession);
-    session.init(jid);
+    session = new Session(jid);
     sessions.created(session);
 
     var service = this;
@@ -247,10 +247,10 @@ service.open = function(jid, connector, connectionProgressObserver) {
               <meta xmlns={ns_x4m_in} account={jid} direction="in"/>
               </iq>));
 
-    session.addObserver(sessionObserver, null, false);
+    session.setObserver(sessionObserver, null, false);
 
     connector.addObserver(connectorObserver, null, false);
-    session.wrappedJSObject.connector = connector;
+    session.connector = connector;
 
     connector.connect();
 
@@ -258,7 +258,7 @@ service.open = function(jid, connector, connectionProgressObserver) {
 }
 
 service.close = function(jid) {
-    sessions.get(jid).wrappedJSObject.connector.disconnect();
+    sessions.get(jid).connector.disconnect();
 }
 
 service.getCapsHash = function() {
