@@ -38,9 +38,7 @@ var pref = Cc['@mozilla.org/preferences-service;1']
     .getService(Ci.nsIPrefService)
     .getBranch('xmpp.')
     .QueryInterface(Ci.nsIPrefBranch2);
-var cache = Cc['@hyperstruct.net/xmpp4moz/xmppcache;1']
-    .getService(Ci.nsIXMPPCacheService);
-
+Cu.import('resource://xmpp4moz/cache_service.jsm');
 Cu.import('resource://xmpp4moz/namespaces.jsm');
 Cu.import('resource://xmpp4moz/utils.jsm');
 Cu.import('resource://xmpp4moz/query.jsm');
@@ -226,7 +224,7 @@ service.open = function(jid, connector, connectionProgressObserver) {
                subject.getElementsByTagNameNS(ns_disco_info, 'query')[0]) {
                 var response =
                     <iq type="result" to={subject.getAttribute('from')} id={subject.getAttribute('id')}>
-                    <query xmlns={ns_disco_info} node={'http://hyperstruct.net/xmpp4moz#' + getCapsHash()}>
+                    <query xmlns={ns_disco_info} node={'http://hyperstruct.net/xmpp4moz#' + service.getCapsHash()}>
                     <identity category="client" type="pc" name="xmpp4moz"/>
                     </query>
                     </iq>;
