@@ -80,6 +80,7 @@ Cu.import('resource://xmpp4moz/accounts.jsm');
 Cu.import('resource://xmpp4moz/json.jsm');
 Cu.import('resource://xmpp4moz/namespaces.jsm');
 Cu.import('resource://xmpp4moz/log.jsm');
+Cu.import('resource://xmpp4moz/connector-xmpp_tcp.jsm');
 
 
 // DEVELOPER INTERFACE
@@ -393,11 +394,8 @@ function open(jid, opts, continuation) {
         }
     }
 
-    var connector =
-        Cc['@hyperstruct.net/xmpp4moz/connector;1?type=' + connectorTypeFor(jid)]
-        .createInstance(Ci.nsIXMPPConnector);
-
-    connector.init(jid, password, host, port, security);
+    // XXX re-integrate support for external connectors
+    var connector = new XMPPTCPConnector(jid, password, host, port, security);
     service.open(jid, connector, connectionObserver);
 }
 
