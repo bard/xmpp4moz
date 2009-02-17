@@ -66,14 +66,13 @@ const Cc = Components.classes;
 const Ci = Components.interfaces;
 const Cu = Components.utils;
 
-const service = Cc['@hyperstruct.net/xmpp4moz/xmppservice;1']
-    .getService(Ci.nsIXMPPClientService);
 const srvPrompt = Cc["@mozilla.org/embedcomp/prompt-service;1"]
     .getService(Ci.nsIPromptService);
 const errorMessages = Components.classes["@mozilla.org/intl/stringbundle;1"]
      .getService(Components.interfaces.nsIStringBundleService)
      .createBundle("chrome://xmpp4moz/locale/streamErrors.properties");
 
+Cu.import('resource://xmpp4moz/client_service.jsm');
 Cu.import('resource://xmpp4moz/channel.jsm');
 Cu.import('resource://xmpp4moz/query.jsm');
 Cu.import('resource://xmpp4moz/utils.jsm');
@@ -92,14 +91,14 @@ var cache = {
     },
 
     first: function(query) {
-        var result = service.wrappedJSObject.cache.first(
+        var result = service.cache.first(
             (typeof(query.compile) == 'function') ? query.compile() : query)
         if(result)
             return this._wrapResult(result);
     },
 
     all: function(query) {
-        var stanzas = service.wrappedJSObject.cache.all(
+        var stanzas = service.cache.all(
             (typeof(query.compile) == 'function') ? query.compile() : query);
         var results = [];
         for(var i=0; i<stanzas.snapshotLength; i++)
@@ -116,7 +115,7 @@ var cache = {
                 remotePattern[member] = pattern[member];
             }
 
-        var stanzas = service.wrappedJSObject.cache.all(
+        var stanzas = service.cache.all(
             this._patternToQuery(remotePattern).compile());
 
         var wrappedPartialResults = [];
