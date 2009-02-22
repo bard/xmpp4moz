@@ -112,19 +112,19 @@ Cu.import('resource://xmpp4moz/utils.jsm');
 // INITIALIZATION
 // ----------------------------------------------------------------------
 
-function XMPPTCPConnector(jid, password, host, port, security) {
-    this._jid             = jid;
-    this._password        = password;
-    this._host            = host;
-    this._port            = port;
-    this._security        = security;
+function XMPPTCPConnector(opts) {
+    this._jid            = opts.jid;
+    this._password       = opts.password;
+    this._host           = opts.host;
+    this._port           = opts.port;
+    this._security       = opts.security;
 
-    this._log             = new Log.Source('connector', {account: this._jid});
+    this._log            = new Log.Source('connector', {account: this._jid});
 
-    this._parser = null;
-    this._state = 'disconnected';
-    this._observers = [];
-    this._keepAliveTimer  = Cc['@mozilla.org/timer;1'].createInstance(Ci.nsITimer);
+    this._parser         = null;
+    this._observers      = [];
+    this._state          = 'disconnected';
+    this._keepAliveTimer = Cc['@mozilla.org/timer;1'].createInstance(Ci.nsITimer);
 }
 
 
@@ -437,7 +437,7 @@ XMPPTCPConnector.prototype.notifyObservers = function(subject, topic, data) {
         } catch(e) {
             Cu.reportError(e);
         }
-};
+}
 
 
 // UTILITIES

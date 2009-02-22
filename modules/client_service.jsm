@@ -111,7 +111,7 @@ service.isUp = function(jid) {
     return (session && session.connector.isConnected());
 }
 
-service.open = function(jid, connector, connectionProgressObserver) {
+service.open = function(jid, connector) {
     var session = sessions.get(jid);
     if(session)
         return session;
@@ -151,10 +151,6 @@ service.open = function(jid, connector, connectionProgressObserver) {
                 sessions.closed(session);
                 break;
             }
-
-            if(connectionProgressObserver)
-                // XXX might just add connectionObserver to observers
-                connectionProgressObserver.observe(subject, 'connector-' + topic, data);
 
             service.notifyObservers(subject, 'connector-' + topic, session.name);
         }

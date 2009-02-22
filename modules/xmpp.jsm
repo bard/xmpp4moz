@@ -352,35 +352,42 @@ function createChannel(features) {
 
 function open(jid, opts, continuation) {
     opts = opts || {};
-    var password = opts.password;
-    var host     = opts.connectionHost || JID(jid).hostname;
-    // ultimately will need to default to 5222+StartTLS. keeping to
-    // 5223 for now until 5222+StartTLS is well tested.
-    var port     = opts.connectionPort || 5223;
-    var security = opts.connectionSecurity == undefined ? 1 : opts.connectionSecurity;
 
-    var connectionObserver = {
+    var conf = {
+        jid      : jid,
+        password : opts.password,
+        host     : opts.connectionHost || JID(jid).hostname,
+        // ultimately will need to default to 5222+StartTLS. keeping to
+        // 5223 for now until 5222+StartTLS is well tested.
+        port     : opts.connectionPort || 5223,
+        security : opts.connectionSecurity == undefined ? 1 : opts.connectionSecurity
+    };
+
+    // XXX restore multiple-connector support
+    var connector = new XMPPTCPConnector(conf);
+
+    connector.addObserver({
         observe: function(subject, topic, data) {
             switch(topic) {
-            case 'connector-active':
+            case 'active':
                 if(continuation)
                     continuation();
                 break;
-            case 'connector-error':
+            case 'error':
                 if(!subject || subject instanceof Ci.nsIDOMElement) {
                     break;
                 }
                 else if(asString(subject) == 'badcert') {
                     var addException = srvPrompt.confirm(
                         null, 'Bad certificate for Jabber server',
-                        'Jabber server "' + host + '" is presenting an invalid SSL certificate.\n' +
+                        'Jabber server "' + conf.host + '" is presenting an invalid SSL certificate.\n' +
                             'To connect to it, you need to add an exception.  Do you want to proceed?');
                     if(!addException)
                         break;
 
                     var params = {
                         exceptionAdded : false,
-                        location       : 'https://' + host + ':' + port,
+                        location       : 'https://' + conf.host + ':' + conf.port,
                         prefetchCert   : true
                     };
 
@@ -402,11 +409,9 @@ function open(jid, opts, continuation) {
                 break;
             }
         }
-    }
+    });
 
-    // XXX re-integrate support for external connectors
-    var connector = new XMPPTCPConnector(jid, password, host, port, security);
-    service.open(jid, connector, connectionObserver);
+    service.open(jid, connector);
 }
 
 function close(jid) {
