@@ -51,9 +51,12 @@ Cu.import('resource://xmpp4moz/log.jsm');
 // ----------------------------------------------------------------------
 
 var observers = [];
+
 var features = {
     'http://jabber.org/protocol/disco#info': 1
 };
+
+var log = new Log.Source('service');
 
 var sessions = {
     _list: {},
@@ -95,8 +98,6 @@ var service = {};
 service.cache = cache;
 
 service.init = function() {
-    this._log = new Log.Source('service');
-
     Cc['@mozilla.org/observer-service;1']
         .getService(Ci.nsIObserverService)
         .addObserver({
@@ -121,7 +122,7 @@ service.open = function(jid, connector) {
 
     var connectorObserver = {
         observe: function(subject, topic, data) {
-            service._log.send({account: session.name, event: 'connector', data: topic });
+            log.send({account: session.name, event: 'connector', data: topic });
 
             switch(topic) {
             case 'active':
@@ -163,7 +164,7 @@ service.open = function(jid, connector) {
             // Log
 
             if(topic == 'stanza-out' || topic == 'stanza-in')
-                service._log.send({account: session.name, event: topic, data: subject});
+                log.send({account: session.name, event: topic, data: subject});
 
             // Submit data to cache (which will decide what to keep
             // and what to throw away)
