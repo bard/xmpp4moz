@@ -354,6 +354,8 @@ function open(jid, opts, continuation) {
     opts = opts || {};
     var password = opts.password;
     var host     = opts.connectionHost || JID(jid).hostname;
+    // ultimately will need to default to 5222+StartTLS. keeping to
+    // 5223 for now until 5222+StartTLS is well tested.
     var port     = opts.connectionPort || 5223;
     var security = opts.connectionSecurity == undefined ? 1 : opts.connectionSecurity;
 
