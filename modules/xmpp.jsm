@@ -28,6 +28,7 @@ var EXPORTED_SYMBOLS = [
     'getError',
     'getStreamErrorMessage',
     'getStreamErrorCondition',
+    'getStanzaErrorMessage',
     'nickFor',
     'up',
     'down',
@@ -68,9 +69,12 @@ const Cu = Components.utils;
 
 const srvPrompt = Cc["@mozilla.org/embedcomp/prompt-service;1"]
     .getService(Ci.nsIPromptService);
-const errorMessages = Components.classes["@mozilla.org/intl/stringbundle;1"]
-     .getService(Components.interfaces.nsIStringBundleService)
-     .createBundle("chrome://xmpp4moz/locale/streamErrors.properties");
+const streamErrorMessages = Components.classes["@mozilla.org/intl/stringbundle;1"]
+    .getService(Components.interfaces.nsIStringBundleService)
+    .createBundle("chrome://xmpp4moz/locale/streamErrors.properties");
+const stanzaErrorMessages = Components.classes["@mozilla.org/intl/stringbundle;1"]
+    .getService(Components.interfaces.nsIStringBundleService)
+    .createBundle("chrome://xmpp4moz/locale/stanzaErrors.properties");
 
 Cu.import('resource://xmpp4moz/client_service.jsm');
 Cu.import('resource://xmpp4moz/channel.jsm');
@@ -220,8 +224,12 @@ function getError(stanza) {
         return [xmppErrorCondition[0].localName(), stanza.error.@type.toString()];
 }
 
+function getStanzaErrorMessage(condition) {
+    return stanzaErrorMessages.GetStringFromName(condition);
+}
+
 function getStreamErrorMessage(condition) {
-    return errorsMessages.GetStringFromName(condition);
+    return streamErrorMessages.GetStringFromName(condition);
 }
 
 function getStreamErrorCondition(error) {
