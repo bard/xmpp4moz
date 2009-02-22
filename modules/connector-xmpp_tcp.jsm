@@ -37,13 +37,19 @@ var Ci = Components.interfaces;
 var Cu = Components.utils;
 var Cr = Components.results;
 
+var USER_LOCALE = Cc['@mozilla.org/preferences-service;1']
+    .getService(Ci.nsIPrefService).getBranch('general.useragent.')
+    .getCharPref('locale');
+
 var SECURITY_NONE     = 0;
 var SECURITY_SSL      = 1;
 var SECURITY_STARTTLS = 2;
 
 var STREAM_PROLOGUE =
     '<?xml version="1.0"?>' +
-    '<stream:stream xmlns="jabber:client" ' +
+    '<stream:stream ' +
+    'xmlns="jabber:client" ' +
+    'xml:lang="' + USER_LOCALE + '" ' +
     'xmlns:stream="http://etherx.jabber.org/streams" ' +
     'version="1.0" ' +
     'to="<SERVER>">';
