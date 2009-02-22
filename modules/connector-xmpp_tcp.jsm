@@ -65,7 +65,10 @@ var STREAM_LEVEL_ELEMENT = {
     'jabber:client::iq'             : true,
     'http://etherx.jabber.org/streams::features': true,
     'urn:ietf:params:xml:ns:xmpp-tls::proceed': true,
+    'urn:ietf:params:xml:ns:xmpp-tls::failure' : true,
     'urn:ietf:params:xml:ns:xmpp-sasl::success': true,
+    'urn:ietf:params:xml:ns:xmpp-sasl::failure': true,
+    'urn:ietf:params:xml:ns:xmpp-sasl::challenge': true,
     'urn:ietf:params:xml:ns:xmpp-streams::error': true
 };
 
