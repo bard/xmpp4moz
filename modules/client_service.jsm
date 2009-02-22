@@ -58,28 +58,30 @@ var features = {
 var sessions = {
     _list: {},
 
-    pending: function(session) {
-        this._pending[session.name] = session;
+    created: function(name, session, connector) {
+        if(this._list[name])
+            throw new Error('Session already in session list. (' + name + ')');
+        this._list[name] = [session, connector];
     },
 
-    created: function(session) {
-        if(this._list[session.name])
-            throw new Error('Session already in session list. (' + session.name + ')');
-        this._list[session.name] = session;
+    closed: function(name) {
+        if(!this.get(name))
+            throw new Error('No such session. (' + name + ')');
+
+        delete this._list[name];
     },
 
-    closed: function(thing) {
-        var session = (typeof(thing) == 'string' ? this.get(thing) : thing);
-        delete this._list[session.name];
+    exists: function(name) {
+        return this._list[name] != null;
     },
 
-    get: function(jid) {
-        return this._list[jid];
+    get: function(name) {
+        return this._list[name] || [];
     },
 
     forEach: function(action) {
-        for each(var session in this._list) {
-            action(session);
+        for each(var item in this._list) {
+            action(item);
         }
     }
 };
@@ -99,22 +101,21 @@ service.init = function() {
         .getService(Ci.nsIObserverService)
         .addObserver({
             observe: function(subject, topic, data) {
-                sessions.forEach(function(session) {
-                    session.connector.disconnect();
+                sessions.forEach(function([session, connector]) {
+                    connector.disconnect();
                 });
             }
         }, 'quit-application', false);
 }
 
 service.isUp = function(jid) {
-    var session = sessions.get(jid);
-    return (session && session.connector.isConnected());
+    var [session, connector] = sessions.get(jid);
+    return (connector && connector.isConnected());
 }
 
 service.open = function(jid, connector) {
-    var session = sessions.get(jid);
-    if(session)
-        return session;
+    if(sessions.exists(jid))
+        throw new Error('Session already exists. (' + jid + ')');
 
     var service = this;
 
@@ -129,7 +130,7 @@ service.open = function(jid, connector) {
                 session.receive(subject);
                 break;
             case 'error':
-                sessions.closed(session);
+                sessions.closed(jid);
                 break;
             case 'disconnected':
                 // Synthesize events
@@ -148,7 +149,7 @@ service.open = function(jid, connector) {
                         cache.receive(inverse);
                 }
 
-                sessions.closed(session);
+                sessions.closed(jid);
                 break;
             }
 
@@ -244,20 +245,18 @@ service.open = function(jid, connector) {
 
 
     session = new Session(jid);
+    sessions.created(jid, session, connector);
+
     session.setObserver(sessionObserver, null, false);
-
     connector.addObserver(connectorObserver, null, false);
-
-    sessions.created(session);
-    session.connector = connector;
-
     connector.connect();
 
     return session;
 }
 
 service.close = function(jid) {
-    sessions.get(jid).connector.disconnect();
+    var [session, connector] = sessions.get(jid);
+    connector.disconnect();
 }
 
 service.getCapsHash = function() {
@@ -313,7 +312,7 @@ service.send = function(sessionName, element, observer) {
                                       .compile());
     }
 
-    var session = sessions.get(sessionName);
+    var [session, connector] = sessions.get(sessionName);
     if(cachedReply) {
         if(observer)
             observer.observe(cachedReply, 'reply-in', sessionName);
