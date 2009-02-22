@@ -24,12 +24,12 @@
 <?xml-stylesheet href="chrome://global/skin/" type="text/css"?>
 <?xul-overlay href="chrome://xmpp4moz/content/ui/accounts.xul"?>
 
-<dialog id="main" title="Bringing Up Jabber Connection..."
+<dialog id="main" title="&title;"
         xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul"
         ondialogaccept="return doOk();"
         ondialogcancel="return doCancel();"
-        buttonlabelextra1="Configure..."
-        buttonaccesskeyextra1="C"
+        buttonlabelextra1="&configure.button.label;"
+        buttonaccesskeyextra1="&configure.button.accesskey;"
         buttons="accept,cancel,extra1"
         onload="init();"
         onunload="finish();">
@@ -45,7 +45,7 @@
 
     <rows>
       <row align="center">
-        <label value="Account:" accesskey="A" control="accounts"/>
+        <label value="&account.label;" accesskey="&account.label.accesskey;" control="accounts"/>
         <hbox flex="1">
           <label id="account-name" value="" hidden="true"/>
           <menulist id="accounts" flex="1" label="" sizetopopup="none"
@@ -56,13 +56,13 @@
       </row>
 
       <row align="center" id="password-area">
-        <label value="Password:" accesskey="P" control="password"/>
+        <label value="&password.label;" accesskey="&password.label.accesskey;" control="password"/>
         <textbox flex="1" type="password" id="password"/>
       </row>
 
       <row align="center" id="already-connected">
         <spacer/>
-        <label value="Online" style="text-align: center;"/>
+        <label value="&online.label;" style="text-align: center;"/>
       </row>
     </rows>
   </grid>

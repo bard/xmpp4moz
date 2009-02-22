@@ -1,0 +1,8 @@
+<!ENTITY account.label "Account:">
+<!ENTITY account.label.accesskey "A">
+<!ENTITY password.label "Password:">
+<!ENTITY password.label.accesskey "P">
+<!ENTITY online.label "Online">
+<!ENTITY title "Bringing Up XMPP Connection...">
+<!ENTITY configure.button.label "Configure...">
+<!ENTITY configure.button.accesskey "C">
