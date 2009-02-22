@@ -159,7 +159,7 @@ XMPPTCPConnector.prototype.onEvent_streamElement = function(element) {
                 this.openStream();
             }
             else if(element.localName == 'failure')
-                this.setState('error', xpcomize('auth'));
+                this.setState('error', element);
             else
                 throw new Error('Invalid state');
         } else
@@ -172,7 +172,7 @@ XMPPTCPConnector.prototype.onEvent_streamElement = function(element) {
             this.requestSession();
             this.setState('requesting-session');
         } else {
-            this.setState('error', xpcomize('binding'));
+            this.setState('error', element);
         }
         break;
     case 'requesting-session':
@@ -183,7 +183,7 @@ XMPPTCPConnector.prototype.onEvent_streamElement = function(element) {
             this.setState('active');
             this.setState('idle');
         } else {
-            this.setState('error', xpcomize('session'));
+            this.setState('error', element);
         }
         break;
     case 'stream-open':
@@ -209,13 +209,16 @@ XMPPTCPConnector.prototype.onEvent_streamElement = function(element) {
                 this.setState('idle');
             }
         } else
-            // error?
+            throw new Error('Unexpected element while waiting for stream features. ' + serialize(element));
         break;
     case 'requested-tls':
         if(element.localName == 'proceed' &&
            element.namespaceURI == 'urn:ietf:params:xml:ns:xmpp-tls') {
             this.setState('negotiating-tls');
             this.startTLS();
+        } else if(element.localName == 'failure' &&
+                  element.namespaceURI == 'urn:ietf:params:xml:ns:xmpp-tls') {
+            this.setState('error', element);
         }
         break;
     case 'active':
@@ -295,7 +298,7 @@ XMPPTCPConnector.prototype.connect = function() {
         },
 
         onBadCertificate: function() {
-            connector.setState('error', xpcomize('badcert'));
+            connector.setState('error', 'bad-certificate');
         },
 
         onClose: function() {
@@ -410,10 +413,10 @@ XMPPTCPConnector.prototype.requestTLS = function() {
     this._write(<starttls xmlns='urn:ietf:params:xml:ns:xmpp-tls'/>);
 };
 
-XMPPTCPConnector.prototype.setState = function(name, stateData) {
-    this._log.send({state: name, data: stateData});
-    this._state = name;
-    this.notifyObservers(stateData, name, null);
+XMPPTCPConnector.prototype.setState = function(stateName, stateData) {
+    this._log.send({state: stateName, data: stateData});
+    this._state = stateName;
+    this.notifyObservers(stateData, stateName, null);
 };
 
 XMPPTCPConnector.prototype.openStream = function() {
@@ -562,17 +565,3 @@ XMPPTCPConnector.prototype.createParser = function() {
 function hasChild(element, childNS, childName) {
     return element.getElementsByTagNameNS(childNS, childName).length > 0;
 }
-
-function xpcomize(thing) {
-    if(typeof(thing) == 'string') {
-        var xpcomString = Cc["@mozilla.org/supports-string;1"]
-            .createInstance(Ci.nsISupportsString);
-        xpcomString.data = thing;
-        return xpcomString;
-    } else if(thing instanceof Ci.nsISupports) {
-        return thing;
-    } else {
-        throw new Error('Neither an XPCOM object nor a string. (' + thing + ')');
-    }
-}
-

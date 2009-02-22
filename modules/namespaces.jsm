@@ -61,7 +61,8 @@ var ns_vcard        = 'vcard-temp';
 var ns_vcard_update = 'vcard-temp:x:update';
 var ns_disco_info   = 'http://jabber.org/protocol/disco#info';
 var ns_stream       = 'urn:ietf:params:xml:ns:xmpp-streams';
-
+var ns_sasl         = 'urn:ietf:params:xml:ns:xmpp-sasl';
+var ns_tls          = 'urn:ietf:params:xml:ns:xmpp-tls';
 
 for(var name in this)
     if(name.match(/^ns_/))

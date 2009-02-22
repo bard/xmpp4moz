@@ -375,9 +375,21 @@ function open(jid, opts, continuation) {
                 break;
             case 'error':
                 if(!subject || subject instanceof Ci.nsIDOMElement) {
-                    break;
+                    switch(subject.namespaceURI) {
+                    case 'urn:ietf:params:xml:ns:xmpp-sasl':
+                        srvPrompt.alert(null, 'SASL Error', subject.firstChild.localName);
+                        break;
+                    case 'urn:ietf:params:xml:ns:xmpp-streams':
+                        srvPrompt.alert(null, 'Stream Error', subject.firstChild.localName);
+                        break;
+                    case 'urn:ietf:params:xml:ns:xmpp-tls':
+                        srvPrompt.alert(null, 'TLS Error', subject.firstChild.localName);
+                        break;
+                    default:
+                        srvPrompt.alert(null, 'Unrecognized XMPP Error', serialize(subject));
+                    }
                 }
-                else if(asString(subject) == 'badcert') {
+                else if(subject == 'bad-certificate') {
                     var addException = srvPrompt.confirm(
                         null, 'Bad certificate for Jabber server',
                         'Jabber server "' + conf.host + '" is presenting an invalid SSL certificate.\n' +
@@ -401,9 +413,6 @@ function open(jid, opts, continuation) {
                         if(params.exceptionAdded)
                             open(jid, opts, continuation);
                     });
-                }
-                else if(asString(subject) == 'auth') {
-                    srvPrompt.alert(null, 'Error', 'XMPP: Error during authentication.');
                 }
 
                 break;
