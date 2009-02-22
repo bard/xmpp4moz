@@ -165,24 +165,22 @@ XMPPTCPConnector.prototype.onEvent_streamElement = function(element) {
     case 'binding-resource':
         if(element.localName == 'iq' &&
            element.getAttribute('type') == 'result' &&
-           // cheating, should check child instead
            element.getAttribute('id') == 'bind_2') {
             this.requestSession();
             this.setState('requesting-session');
         } else {
-            throw new Error('Error while binding resource.');
+            this.setState('error', xpcomize('binding'));
         }
         break;
     case 'requesting-session':
         if(element.localName == 'iq' &&
            element.getAttribute('type') == 'result' &&
-           // cheating, should check child instead
            element.getAttribute('id') == 'sess_1') {
             this.onEvent_sessionActive();
             this.setState('active');
             this.setState('idle');
         } else {
-            throw new Error('Error getting session.');
+            this.setState('error', xpcomize('session'));
         }
         break;
     case 'stream-open':
