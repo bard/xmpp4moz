@@ -116,51 +116,50 @@ service.open = function(jid, connector, connectionProgressObserver) {
     if(session)
         return session;
 
-    session = new Session(jid);
-    sessions.created(session);
-
     var service = this;
-    var connectorObserver = { observe: function(subject, topic, data) {
-        service._log.send({account: session.name, event: 'connector', data: topic });
 
-        switch(topic) {
-        case 'active':
-            break;
-        case 'accept-stanza':
-            session.receive(subject);
-            break;
-        case 'error':
-            sessions.closed(session);
-            break;
-        case 'disconnected':
-            // Synthesize events
+    var connectorObserver = {
+        observe: function(subject, topic, data) {
+            service._log.send({account: session.name, event: 'connector', data: topic });
 
-            var stanzas = cache.all(q()
-                                    .event('presence')
-                                    .account(session.name)
-                                    .compile());
-            for(var i=0; i<stanzas.snapshotLength; i++) {
-                var inverse = syntheticClone(stanzas.snapshotItem(i));
-                inverse.setAttribute('type', 'unavailable');
+            switch(topic) {
+            case 'active':
+                break;
+            case 'accept-stanza':
+                session.receive(subject);
+                break;
+            case 'error':
+                sessions.closed(session);
+                break;
+            case 'disconnected':
+                // Synthesize events
 
-                if(inverse.getElementsByTagNameNS(ns_x4m_in, 'meta')[0].getAttribute('direction') == 'in')
-                    session.receive(inverse);
-                else
-                    cache.receive(inverse);
+                var stanzas = cache.all(q()
+                                        .event('presence')
+                                        .account(session.name)
+                                        .compile());
+                for(var i=0; i<stanzas.snapshotLength; i++) {
+                    var inverse = syntheticClone(stanzas.snapshotItem(i));
+                    inverse.setAttribute('type', 'unavailable');
+
+                    if(inverse.getElementsByTagNameNS(ns_x4m_in, 'meta')[0].getAttribute('direction') == 'in')
+                        session.receive(inverse);
+                    else
+                        cache.receive(inverse);
+                }
+
+                sessions.closed(session);
+                break;
             }
 
-            sessions.closed(session);
-            break;
+            if(connectionProgressObserver)
+                // XXX might just add connectionObserver to observers
+                connectionProgressObserver.observe(subject, 'connector-' + topic, data);
+
+            service.notifyObservers(subject, 'connector-' + topic, session.name);
         }
+    };
 
-        if(connectionProgressObserver)
-            // XXX might just add connectionObserver to observers
-            connectionProgressObserver.observe(subject, 'connector-' + topic, data);
-
-        service.notifyObservers(subject, 'connector-' + topic, session.name);
-    } };
-
-    var service = this;
     var sessionObserver = {
         observe: function(subject, topic, data) {
 
@@ -247,9 +246,13 @@ service.open = function(jid, connector, connectionProgressObserver) {
               <meta xmlns={ns_x4m_in} account={jid} direction="in"/>
               </iq>));
 
+
+    session = new Session(jid);
     session.setObserver(sessionObserver, null, false);
 
     connector.addObserver(connectorObserver, null, false);
+
+    sessions.created(session);
     session.connector = connector;
 
     connector.connect();
