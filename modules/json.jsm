@@ -25,8 +25,7 @@ if(typeof(JSON) == 'undefined') {
     var EXPORTED_SYMBOLS = [
         'JSON'
     ];
-
-    Cu.import('resource://gre/modules/JSON.jsm');
+    Components.utils.import('resource://gre/modules/JSON.jsm');
     JSON.parse = JSON.fromString;
     JSON.stringify = JSON.toString;
 } else {
