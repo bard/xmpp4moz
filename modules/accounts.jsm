@@ -139,7 +139,12 @@ var accounts = {
     },
 
     get: function(criteria) {
-        var [index, account] = this._find(criteria);
+        var account;
+        if(typeof(criteria) == 'number')
+            account = this._store[criteria]
+        else
+            [, account] = this._find(criteria);
+        
         return account;
     },
 
