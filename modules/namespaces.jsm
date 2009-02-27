@@ -63,6 +63,7 @@ var ns_disco_info   = 'http://jabber.org/protocol/disco#info';
 var ns_stream       = 'urn:ietf:params:xml:ns:xmpp-streams';
 var ns_sasl         = 'urn:ietf:params:xml:ns:xmpp-sasl';
 var ns_tls          = 'urn:ietf:params:xml:ns:xmpp-tls';
+var ns_caps         = 'http://jabber.org/protocol/caps';
 
 for(var name in this)
     if(name.match(/^ns_/))
