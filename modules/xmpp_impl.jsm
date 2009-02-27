@@ -44,9 +44,11 @@ var EXPORTED_SYMBOLS = [
     'account',
     'connectorTypeFor',
 
-    // re-exproted
+    // re-exported
     'accounts',
+    'entity',
     'JID',
+    'URI',
     'getPassword',
     'delPassword',
     'setPassword',
