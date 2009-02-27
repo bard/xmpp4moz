@@ -56,7 +56,7 @@ var features = {
     'http://jabber.org/protocol/disco#info': 1
 };
 
-var log = new Log.Source('service');
+var log = Log.getSource('service');
 
 var sessions = {
     _list: {},

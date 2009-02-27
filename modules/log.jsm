@@ -48,9 +48,38 @@ var sinks = [], sources = [];
 // API
 // ----------------------------------------------------------------------
 
-var Log = {};
+var Log = {
+    getSource: function(name, extraInfo) {
+        var source = new Source(name, extraInfo);
 
-Log.Source = function(name, extraInfo) {
+        if(sources.indexOf(name) == -1)
+            sources.push(name);
+
+        return source;
+    },
+
+    sinkTo: function(pattern, sinkFunction) {
+        var i = findSink(pattern, sinkFunction);
+        if(i == -1)
+            sinks.push([pattern, sinkFunction]);
+    },
+
+    unsink: function(pattern, sinkFunction) {
+        var i = findSink(pattern, sinkFunction);
+        if(i != -1)
+            sinks.splice(i, 1);
+    },
+
+    JSCONSOLE: function(data) {
+        srvConsole.logStringMessage(data);
+    },
+
+    SYSCONSOLE: function(data) {
+        dump(data); dump('\n\n');
+    }
+};
+
+var Source = function(name, extraInfo) {
     this._info = { name: name };
     for(var n in extraInfo)
         this._info[n] = extraInfo[n];
@@ -59,7 +88,7 @@ Log.Source = function(name, extraInfo) {
         sources.push(name);
 };
 
-Log.Source.prototype.send = function(data) {
+Source.prototype.send = function(data) {
     if(sinks.length == 0)
         return;
 
@@ -81,26 +110,6 @@ Log.Source.prototype.send = function(data) {
                 Cu.reportError('Error while trying to log: "' + e + '"');
             }
     }
-};
-
-Log.sinkTo = function(pattern, sinkFunction) {
-    var i = findSink(pattern, sinkFunction);
-    if(i == -1)
-        sinks.push([pattern, sinkFunction]);
-};
-
-Log.unsink = function(pattern, sinkFunction) {
-    var i = findSink(pattern, sinkFunction);
-    if(i != -1)
-        sinks.splice(i, 1);
-};
-
-Log.JSCONSOLE = function(data) {
-    srvConsole.logStringMessage(data);
-};
-
-Log.SYSCONSOLE = function(data) {
-    dump(data); dump('\n\n');
 };
 
 

@@ -65,7 +65,7 @@ function Socket(host, port, security, jid) {
     this._listener = null;
     this._transport = null;
     this._reply_timeout = null;
-    this._log = new Log.Source('socket', {account: jid, id: Date.now()});
+    this._log = Log.getSource('socket', {account: jid, id: Date.now()});
 
     this._state = 'disconnected';
 }

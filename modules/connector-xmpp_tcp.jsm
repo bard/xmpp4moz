@@ -119,7 +119,7 @@ function XMPPTCPConnector(opts) {
     this._port           = opts.port;
     this._security       = opts.security;
 
-    this._log            = new Log.Source('connector', {account: this._jid});
+    this._log            = Log.getSource('connector', {account: this._jid});
 
     this._parser         = null;
     this._observers      = [];
