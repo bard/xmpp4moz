@@ -118,17 +118,25 @@ service.open = function(jid, connector) {
     if(sessions.exists(jid))
         throw new Error('Session already exists. (' + jid + ')');
 
+    session = new Session(jid);
+
     var service = this;
 
     var connectorObserver = {
+        // XXX Saving session here.  For some reason, it seems to
+        // change in the lexical scope, and a connector ends up
+        // raising events for others sessions.
+
+        session: session,
+
         observe: function(subject, topic, data) {
-            log.send({account: session.name, event: 'connector', data: topic });
+            log.send({account: this.session.name, event: 'connector', data: topic });
 
             switch(topic) {
             case 'active':
                 break;
             case 'accept-stanza':
-                session.receive(subject);
+                this.session.receive(subject);
                 break;
             case 'error':
                 sessions.closed(jid);
@@ -138,14 +146,14 @@ service.open = function(jid, connector) {
 
                 var stanzas = cache.all(q()
                                         .event('presence')
-                                        .account(session.name)
+                                        .account(this.session.name)
                                         .compile());
                 for(var i=0; i<stanzas.snapshotLength; i++) {
                     var inverse = syntheticClone(stanzas.snapshotItem(i));
                     inverse.setAttribute('type', 'unavailable');
 
                     if(inverse.getElementsByTagNameNS(ns_x4m_in, 'meta')[0].getAttribute('direction') == 'in')
-                        session.receive(inverse);
+                        this.session.receive(inverse);
                     else
                         cache.receive(inverse);
                 }
@@ -154,7 +162,7 @@ service.open = function(jid, connector) {
                 break;
             }
 
-            service.notifyObservers(subject, 'connector-' + topic, session.name);
+            service.notifyObservers(subject, 'connector-' + topic, this.session.name);
         }
     };
 
@@ -245,7 +253,6 @@ service.open = function(jid, connector) {
               </iq>));
 
 
-    session = new Session(jid);
     sessions.created(jid, session, connector);
 
     session.setObserver(sessionObserver, null, false);
