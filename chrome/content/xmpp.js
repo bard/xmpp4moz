@@ -20,8 +20,7 @@
  *  
  */
 
-var XMPP = {};
-Components.utils.import('resource://xmpp4moz/xmpp.jsm', XMPP);
+Components.utils.import('resource://xmpp4moz/xmpp.jsm');
 
 // Apparently, in some Mozilla applications it is necessary to
 // kickstart e4x before it works from a script loaded with subscript
