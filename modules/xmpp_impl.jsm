@@ -355,8 +355,11 @@ function createChannel(features) {
 function open(jid, opts, continuation) {
     opts = opts || {};
 
+    var j = JID(jid);
     var conf = {
-        jid      : jid,
+        node     : j.username,
+        domain   : j.hostname,
+        resource : j.resource,
         password : opts.password,
         host     : opts.connectionHost || JID(jid).hostname,
         // ultimately will need to default to 5222+StartTLS. keeping to

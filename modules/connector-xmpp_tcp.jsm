@@ -113,13 +113,15 @@ Cu.import('resource://xmpp4moz/utils.jsm');
 // ----------------------------------------------------------------------
 
 function XMPPTCPConnector(opts) {
-    this._jid            = opts.jid;
+    this._node           = opts.node;
+    this._domain         = opts.domain;
+    this._resource       = opts.resource;
     this._password       = opts.password;
     this._host           = opts.host;
     this._port           = opts.port;
     this._security       = opts.security;
 
-    this._log            = Log.getSource('connector', {account: this._jid});
+    this._log            = Log.getSource('connector', {account: this._node + '@' + this._domain + '/' + this._resource});
 
     this._parser         = null;
     this._observers      = [];
@@ -193,7 +195,7 @@ XMPPTCPConnector.prototype.onEvent_streamElement = function(element) {
                hasChild(element, 'urn:ietf:params:xml:ns:xmpp-tls', 'starttls')) {
                 this.setState('requested-tls');
                 this.requestTLS();
-            } else if(this._jid && this._password &&
+            } else if(this._password &&
                       hasChild(element, 'urn:ietf:params:xml:ns:xmpp-sasl', 'mechanisms')) {
                 this.setState('auth-waiting-result');
                 this.requestSASLAuth('PLAIN');
@@ -275,12 +277,12 @@ XMPPTCPConnector.prototype.connect = function() {
     this.setState('connecting');
     var connector = this;
 
-    var socket = new Socket(this._host, this._port, this._security, this._jid);
+    var socket = new Socket(this._host, this._port, this._security, this._node + '@' + this._domain + '/' + this._resource);
 
     socket.setListener({
         onReady: function() {
             socket.setReplyTimeout(3000);
-            socket.send(STREAM_PROLOGUE.replace('<SERVER>', JID(connector._jid).hostname));
+            socket.send(STREAM_PROLOGUE.replace('<SERVER>', connector._domain));
             connector.onEvent_openedOutgoingStream();
         },
 
@@ -375,7 +377,7 @@ XMPPTCPConnector.prototype._write = function(data) {
 XMPPTCPConnector.prototype.bindResource = function() {
     this._write(<iq id='bind_2' type='set'>
                <bind xmlns='urn:ietf:params:xml:ns:xmpp-bind'>
-               <resource>{JID(this._jid).resource}</resource>
+               <resource>{this._resource}</resource>
                </bind>
                </iq>);
 };
@@ -389,8 +391,8 @@ XMPPTCPConnector.prototype.requestSession = function() {
 XMPPTCPConnector.prototype.requestSASLAuth = function(mechanism) {
     switch(mechanism) {
     case 'PLAIN':
-        var auth = btoa(JID(this._jid).address + '\0' +
-                        JID(this._jid).username + '\0' +
+        var auth = btoa(this._node + '@' + this._domain + '\0' +
+                        this._node + '\0' +
                         this._password);
         this._write(<auth xmlns='urn:ietf:params:xml:ns:xmpp-sasl' mechanism='PLAIN'>{auth}</auth>);
         break;
@@ -401,12 +403,12 @@ XMPPTCPConnector.prototype.requestSASLAuth = function(mechanism) {
 
 XMPPTCPConnector.prototype.requestLegacyAuth = function() {
     this._write(<iq type="set" id="auth01">
-               <query xmlns="jabber:iq:auth">
-               <username>{JID(this._jid).username}</username>
-               <resource>{JID(this._jid).resource}</resource>
-               <password>{this._password}</password>
-               </query>
-               </iq>);
+                <query xmlns="jabber:iq:auth">
+                <username>{this._node}</username>
+                <resource>{this._resource}</resource>
+                <password>{this._password}</password>
+                </query>
+                </iq>);
 };
 
 XMPPTCPConnector.prototype.requestTLS = function() {
@@ -420,7 +422,7 @@ XMPPTCPConnector.prototype.setState = function(stateName, stateData) {
 };
 
 XMPPTCPConnector.prototype.openStream = function() {
-    this._write(STREAM_PROLOGUE.replace('<SERVER>', JID(this._jid).hostname));
+    this._write(STREAM_PROLOGUE.replace('<SERVER>', this._domain));
 };
 
 XMPPTCPConnector.prototype.addObserver = function(observer) {
