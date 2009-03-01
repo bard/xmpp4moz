@@ -167,12 +167,14 @@ service.open = function(jid, connector) {
     };
 
     var sessionObserver = {
+        session: session,
+
         observe: function(subject, topic, data) {
 
             // Log
 
             if(topic == 'stanza-out' || topic == 'stanza-in')
-                log.send({account: session.name, event: topic, data: subject});
+                log.send({account: this.session.name, event: topic, data: subject});
 
             // Submit data to cache (which will decide what to keep
             // and what to throw away)
@@ -218,7 +220,7 @@ service.open = function(jid, connector) {
                     for(var i=0; i<stanzas.snapshotLength; i++) {
                         var inverse = syntheticClone(stanzas.snapshotItem(i));
                         inverse.setAttribute('type', 'unavailable');
-                        session.receive(inverse);
+                        this.session.receive(inverse);
                     }
                 }
             }
@@ -237,7 +239,7 @@ service.open = function(jid, connector) {
                     if(features[featureURI] > 0)
                         response.ns_disco_info::query.appendChild(<feature var={featureURI}/>)
 
-                session.send(asDOM(response), null);
+                this.session.send(asDOM(response), null);
             }
         }
     }
