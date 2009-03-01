@@ -40,16 +40,16 @@ var Cu = Components.utils;
 // API
 // ----------------------------------------------------------------------
 
-function Session(name) {
+function Session(account) {
     this._idPrefix = '_' + Date.now().toString();
     this._idCounter = 1000;
     this._pending = {};
     this._observer = null;
-    this._name = name;
+    this._account = account;
 }
 
 Session.prototype.__defineGetter__('name', function() {
-    return this._name;
+    return this._account; // XXX transitional
 });
 
 Session.prototype.send = function(element, replyObserver) {
@@ -60,7 +60,7 @@ Session.prototype.send = function(element, replyObserver) {
         this._pending[element.getAttribute('id')] = replyObserver;
 
     try {
-        this._observer.observe(setMeta(element, this.name, 'out'),
+        this._observer.observe(setMeta(element, this._account, 'out'),
                                'stanza-out',
                                this.name);
     } catch(e) {
@@ -70,7 +70,7 @@ Session.prototype.send = function(element, replyObserver) {
 
 Session.prototype.receive = function(element) {
     try {
-        this._observer.observe(setMeta(element, this.name, 'in'),
+        this._observer.observe(setMeta(element, this._account, 'in'),
                                'stanza-in',
                                this.name);
     } catch(e) {

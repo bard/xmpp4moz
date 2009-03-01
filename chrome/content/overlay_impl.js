@@ -66,7 +66,7 @@ function init() {
         state: 'connecting'
     }, function(stream) {
         document
-            .getElementById('xmpp-connecting-account').value = stream.session.name;
+            .getElementById('xmpp-connecting-account').value = stream.account;
         document
             .getElementById('xmpp-status').hidden = false;
     });

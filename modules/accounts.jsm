@@ -51,7 +51,7 @@ function AccountWrapper(key) {
 }
 
 AccountWrapper.prototype.__defineGetter__('jid', function() {
-    return this.address + '/' + this.resource;
+    return this.address; // XXX transitional - changing meaning of "jid" from "full jid" to "bare jid"
 });
 
 AccountWrapper.prototype.__defineGetter__('password', function() {

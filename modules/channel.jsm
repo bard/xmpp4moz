@@ -76,19 +76,8 @@ Channel.prototype.receive = function(event) {
 
 Channel.prototype.observe = function(subject, topic, data) {
     var [_, name, info] = topic.match(/^(data|stanza|connector)-?(in|out|.*)?$/);
-    var account = data.toString();
 
-    var event = {
-        get account() {
-            return (this.stanza ?
-                    this.stanza.ns_x4m_in::meta.@account.toXMLString() :
-                    account);
-        },
-
-        get session() {
-            return { name: account };
-        }
-    };
+    var event = {};
 
     switch(name) {
     case 'connector':
@@ -103,6 +92,13 @@ Channel.prototype.observe = function(subject, topic, data) {
         event.direction = info;
         break;
     }
+
+    if(event.stanza)
+        event.__defineGetter__('account', function() {
+            return this.stanza.ns_x4m_in::meta.@account.toString();
+        });
+    else
+        event.account = data.toString();
 
     this.receive(event);
 };

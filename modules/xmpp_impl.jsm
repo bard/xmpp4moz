@@ -352,20 +352,17 @@ function createChannel(features) {
     return channel;
 }
 
-function open(jid, opts, continuation) {
-    opts = opts || {};
-
-    var j = JID(jid);
+function open(opts, continuation) {
     var conf = {
-        node     : j.username,
-        domain   : j.hostname,
-        resource : j.resource,
+        node     : opts.node,
+        domain   : opts.domain,
+        resource : opts.resource,
         password : opts.password,
-        host     : opts.connectionHost || JID(jid).hostname,
+        host     : opts.host || domain,
         // ultimately will need to default to 5222+StartTLS. keeping to
         // 5223 for now until 5222+StartTLS is well tested.
-        port     : opts.connectionPort || 5223,
-        security : opts.connectionSecurity == undefined ? 1 : opts.connectionSecurity
+        port     : opts.port || 5223,
+        security : opts.security == undefined ? 1 : opts.security
     };
 
     // XXX restore multiple-connector support
@@ -419,7 +416,7 @@ function open(jid, opts, continuation) {
                                    params);
 
                         if(params.exceptionAdded)
-                            open(jid, opts, continuation);
+                            open(opts, continuation);
                     });
                 } else {
                     Cu.reportError('Error during XMPP connection. (' + subject + ')');
@@ -430,7 +427,7 @@ function open(jid, opts, continuation) {
         }
     });
 
-    service.open(jid, connector);
+    service.open(opts.node + '@' + opts.domain, connector);
 }
 
 function close(jid) {
@@ -862,11 +859,15 @@ function _up(account, onSessionActive) {
 
     var defaultInitialPresenceStanza = <presence/>;
 
-    open(account.jid, {
+    var j = JID(account.address);
+    open({
+        node: j.username,
+        domain: j.hostname,
+        resource: account.resource,
         password: password,
-        connectionHost: account.connectionHost,
-        connectionPort: account.connectionPort,
-        connectionSecurity: account.connectionSecurity,
+        host: account.connectionHost,
+        port: account.connectionPort,
+        security: account.connectionSecurity,
     }, function() {
         var presenceHistory = JSON.parse(account.presenceHistory || '[]');
         var newPresenceStanza;
