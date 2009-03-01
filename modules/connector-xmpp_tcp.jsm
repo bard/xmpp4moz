@@ -172,7 +172,7 @@ XMPPTCPConnector.prototype.onEvent_streamElement = function(element) {
             this.requestSession();
             this.setState('requesting-session');
         } else {
-            this.setState('error', element);
+            this.setState('error', element.getElementsByTagName('error')[0].firstChild);
         }
         break;
     case 'requesting-session':
@@ -183,7 +183,7 @@ XMPPTCPConnector.prototype.onEvent_streamElement = function(element) {
             this.setState('active');
             this.setState('idle');
         } else {
-            this.setState('error', element);
+            this.setState('error', element.getElementsByTagName('error')[0].firstChild);
         }
         break;
     case 'stream-open':

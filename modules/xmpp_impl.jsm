@@ -376,16 +376,19 @@ function open(jid, opts, continuation) {
                     continuation();
                 break;
             case 'error':
-                if(!subject || subject instanceof Ci.nsIDOMElement) {
+                if(subject instanceof Ci.nsIDOMElement) {
                     switch(subject.namespaceURI) {
-                    case 'urn:ietf:params:xml:ns:xmpp-sasl':
+                    case ns_sasl:
                         srvPrompt.alert(null, 'SASL Error', subject.firstChild.localName);
                         break;
-                    case 'urn:ietf:params:xml:ns:xmpp-streams':
+                    case ns_stream:
                         srvPrompt.alert(null, 'Stream Error', subject.firstChild.localName);
                         break;
-                    case 'urn:ietf:params:xml:ns:xmpp-tls':
+                    case ns_tls:
                         srvPrompt.alert(null, 'TLS Error', subject.firstChild.localName);
+                        break;
+                    case ns_stanzas:
+                        srvPrompt.alert(null, 'Stanza Error', subject.firstChild.localName);
                         break;
                     default:
                         srvPrompt.alert(null, 'Unrecognized XMPP Error', serialize(subject));
@@ -415,6 +418,8 @@ function open(jid, opts, continuation) {
                         if(params.exceptionAdded)
                             open(jid, opts, continuation);
                     });
+                } else {
+                    Cu.reportError('Error during XMPP connection. (' + subject + ')');
                 }
 
                 break;
@@ -448,7 +453,9 @@ function presenceWeight(presenceStanza) {
         case 'dnd':
             return 3;
         default:
-            dump('Warning: unknown <show/> value: ' + presenceStanza.show.toString())
+            dump('Warning: unknown <show/> value: ' +
+                 presenceStanza.show.toString() + ' ' +
+                 (new Error().stack) + '\n');
             return 4;
         }
 }
@@ -863,18 +870,22 @@ function _up(account, onSessionActive) {
 
         if(presenceHistory.length < 1)
             newPresenceStanza = defaultInitialPresenceStanza;
-        else if(presenceHistory.length >= 1) {
-            var candidatePresenceStanza = new XML(presenceHistory[presenceHistory.length - 1]);
-            if(candidatePresenceStanza &&
-               candidatePresenceStanza.@type != 'unavailable' &&
-               connectorTypeFor(account.jid) == 'tcp')
-                // Play it safe: just plain presence for non-XMPP+TCP
-                // accounts now, to avoid getting in the way of the
-                // Twitter connector.
-                newPresenceStanza = candidatePresenceStanza;
-            else
-                newPresenceStanza = defaultInitialPresenceStanza;
-        }
+
+        else if(connectorTypeFor(account.jid) != 'tcp')
+            // Play it safe: just plain presence for non-XMPP+TCP
+            // accounts now, to avoid getting in the way of the
+            // Twitter connector.
+            newPresenceStanza = defaultInitialPresenceStanza;
+
+        else if(presenceHistory.length >= 1)
+            // Skip sequences of recent unavailable presences (there
+            // should be only one, but you never know...)
+            newPresenceStanza = presenceHistory.reduceRight(function(p1, p2) {
+                var xmlP1 = new XML(p1);
+                var xmlP2 = new XML(p2);
+
+                return xmlP1.@type == undefined ? xmlP1 : xmlP2;
+            }) || defaultInitialPresenceStanza;
 
         var caps = <c xmlns={ns_caps} hash='sha-1' node='http://hyperstruct.net/xmpp4moz' ver={service.getCapsHash()}/>;
         delete newPresenceStanza.ns_caps::*;
