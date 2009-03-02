@@ -881,15 +881,19 @@ function _up(account, onSessionActive) {
             // Twitter connector.
             newPresenceStanza = defaultInitialPresenceStanza;
 
-        else if(presenceHistory.length >= 1)
+        else if(presenceHistory.length >= 1) {
             // Skip sequences of recent unavailable presences (there
             // should be only one, but you never know...)
-            newPresenceStanza = presenceHistory.reduceRight(function(p1, p2) {
+            let candidatePresenceStanza = presenceHistory.reduceRight(function(p1, p2) {
                 var xmlP1 = new XML(p1);
                 var xmlP2 = new XML(p2);
 
                 return xmlP1.@type == undefined ? xmlP1 : xmlP2;
-            }) || defaultInitialPresenceStanza;
+            });
+            newPresenceStanza = (candidatePresenceStanza.@type == undefined ?
+                                 candidatePresenceStanza :
+                                 defaultInitialPresenceStanza);
+        }
 
         var caps = <c xmlns={ns_caps} hash='sha-1' node='http://hyperstruct.net/xmpp4moz' ver={service.getCapsHash()}/>;
         delete newPresenceStanza.ns_caps::*;
