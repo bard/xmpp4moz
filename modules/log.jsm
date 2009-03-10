@@ -107,7 +107,7 @@ Source.prototype.send = function(data) {
             try {
                 sinkFunction(d);
             } catch(e) {
-                Cu.reportError('Error while trying to log: "' + e + '"');
+                Cu.reportError('Error while trying to log: "' + e + '"\n' + e.stack);
             }
     }
 };
