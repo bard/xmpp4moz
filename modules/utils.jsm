@@ -54,20 +54,12 @@ var serializer = Cc['@mozilla.org/xmlextras/xmlserializer;1']
 // ----------------------------------------------------------------------
 
 function entity(identifier) {
-    var memo = arguments.callee.memo || (arguments.callee.memo = { __proto__: null });
-    if(identifier in memo)
-        return memo[identifier];
-
-    var entity = identifier.match(/^xmpp:/) ?
-        URI(identifier) :
-        JID(identifier);
-
-    memo[identifier] = entity;
-    return entity;
+    return ((identifier instanceof Ci.nsIURI || identifier.match(/^xmpp:/)) ?
+            URI(identifier) : JID(identifier))
 }
 
 function JID(string) {
-    var memo = arguments.callee.memo || (arguments.callee.memo = {});
+    var memo = arguments.callee.memo || (arguments.callee.memo = { __proto__: null });
     if(string in memo)
         return memo[string];
     var m = string.match(/^(.+?@)?(.+?)(?:\/|$)(.*$)/);
@@ -92,37 +84,52 @@ function JID(string) {
     return jid;
 }
 
-function URI(spec) {
-    var uri = Cc['@mozilla.org/network/standard-url;1']
-        .createInstance(Ci.nsIStandardURL);
+function URI(uriRepresentation) {
+    var memoKey = (uriRepresentation instanceof Ci.nsIURI ?
+                   uriRepresentation.spec : uriRepresentation);
+    var memo = arguments.callee.memo || (arguments.callee.memo = { __proto__: null });
+    if(memoKey in memo)
+        return memo[memoKey];
 
-    var type;
-    if(spec.match(/^xmpp:\/{3}/) ||
-       spec.match(/^xmpp:[^\/]/))
-        type = Ci.nsIStandardURL.URLTYPE_NO_AUTHORITY;
-    else if(spec.match(/^xmpp:\/\/[^\/]/))
-        type = Ci.nsIStandardURL.URLTYPE_AUTHORITY;
-    else
-        throw new Error('Malformed URL'); // XXX should probably throw nsIException
+    var sourceUri;
+    if(uriRepresentation instanceof Ci.nsIURI)
+        sourceUri = uriRepresentation;
+    else if(typeof(uriRepresentation == 'string')) {
+        sourceUri = Cc['@mozilla.org/network/standard-url;1']
+            .createInstance(Ci.nsIStandardURL);
 
-    uri.init(type, 5222, spec, null, null);
-    uri.QueryInterface(Ci.nsIURI);
+        var type;
+        if(uriRepresentation.match(/^xmpp:\/{3}/) ||
+           uriRepresentation.match(/^xmpp:[^\/]/))
+            type = Ci.nsIStandardURL.URLTYPE_NO_AUTHORITY;
+        else if(uriRepresentation.match(/^xmpp:\/\/[^\/]/))
+            type = Ci.nsIStandardURL.URLTYPE_AUTHORITY;
+        else
+            throw new Error('Malformed URL'); // XXX should probably throw nsIException
 
-    var m = uri.path.match(/(.+?)\?(.+)$/);
+        sourceUri.init(type, 5222, uriRepresentation, null, null);
+        sourceUri.QueryInterface(Ci.nsIURI);
+    } else
+        throw new Error('Unrecognized URI representation. (' + uriRepresentation + ')');
+
+    var m = sourceUri.path.match(/(.+?)\?(.+)$/);
     var path, query;
     if(m) {
         path = m[1];
         query = m[2];
     } else {
-        path = uri.path;
+        path = sourceUri.path;
     }
 
-    return {
-        account: (uri.username && uri.host) ?
-            uri.username + '@' + uri.host : undefined,
+    var uri = {
+        account: (sourceUri.username && sourceUri.host) ?
+            sourceUri.username + '@' + sourceUri.host : undefined,
         address: path.replace(/^\//, ''),
         action: query
-    };
+    }
+
+    memo[memoKey] = uri;
+    return uri;
 }
 
 function getPassword(address) {
