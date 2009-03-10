@@ -38,6 +38,7 @@ const Cu = Components.utils;
 
 Cu.import('resource://xmpp4moz/utils.jsm');
 Cu.import('resource://xmpp4moz/namespaces.jsm');
+Cu.import('resource://xmpp4moz/log.jsm');
 
 
 // DOMAIN
@@ -69,7 +70,7 @@ Channel.prototype.receive = function(event) {
             if(match(event, watch.pattern))
                 watch.handler(event);
         } catch(e) {
-            Cu.reportError(e);
+            Cu.reportError(e + '\n' + e.stack);
         }
     }
 };
