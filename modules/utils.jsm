@@ -112,19 +112,24 @@ function URI(uriRepresentation) {
     } else
         throw new Error('Unrecognized URI representation. (' + uriRepresentation + ')');
 
-    var m = sourceUri.path.match(/(.+?)\?(.+)$/);
+    var queryMatch = sourceUri.path.match(/(.+?)\?(.+)$/);
     var path, query;
-    if(m) {
-        path = m[1];
-        query = m[2];
+    if(queryMatch) {
+        path = queryMatch[1];
+        query = queryMatch[2];
     } else {
         path = sourceUri.path;
     }
 
+    var jidMatch = path.replace(/^\//, '').match(/^(.+?@)?(.+?)(?:\/|$)(.*$)/);
+
     var uri = {
         account: (sourceUri.username && sourceUri.host) ?
             sourceUri.username + '@' + sourceUri.host : undefined,
-        address: path.replace(/^\//, ''),
+        username: jidMatch[1].slice(0, -1),
+        hostname: jidMatch[2],
+        resource: jidMatch[3],
+        address: jidMatch[1] + jidMatch[2],
         action: query
     }
 
