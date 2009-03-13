@@ -70,15 +70,23 @@ function JID(string) {
     var jid = {};
 
     if(m[1])
-        jid.username = m[1].slice(0, -1);
+        jid.node = m[1].slice(0, -1);
 
-    jid.hostname = m[2];
+    jid.domain   = m[2];
     jid.resource = m[3];
     jid.nick     = m[3];
     jid.full     = m[3] ? string : null;
-    jid.address  = jid.username ?
-        jid.username + '@' + jid.hostname :
-        jid.hostname;
+    jid.address  = (jid.node ?
+                    jid.node + '@' + jid.domain :
+                    jid.domain);
+    jid.__defineGetter__('username', function() {
+        // XXX deprecated
+        return this.node;
+    });
+    jid.__defineGetter__('hostname', function() {
+        // XXX deprecated
+        return this.domain;
+    });
 
     memo[string] = jid;
     return jid;
