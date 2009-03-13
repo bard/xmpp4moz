@@ -291,6 +291,8 @@ Socket.prototype._createTransport = function() {
     case SECURITY_STARTTLS:
         return srvSocketTransport.createTransport(['starttls'], 1, this._host, this._port, this._proxy_info);
         break;
+    default:
+        throw new Error('Invalid value for security parameter. (' + this._security + ')');
     }
 };
 
