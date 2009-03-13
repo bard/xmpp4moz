@@ -358,7 +358,7 @@ function open(opts, continuation) {
         domain   : opts.domain,
         resource : opts.resource,
         password : opts.password,
-        host     : opts.host || domain,
+        host     : opts.host || opts.domain,
         // ultimately will need to default to 5222+StartTLS. keeping to
         // 5223 for now until 5222+StartTLS is well tested.
         port     : opts.port || 5223,
