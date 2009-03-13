@@ -287,15 +287,8 @@ function up(account, onSessionActive) {
                 account = a;
         }
 
-    onSessionActive = onSessionActive || function() {};
-
-    if(account.jid)
-        _up(account, onSessionActive);
-    else
-        _up(null, function(jid) {
-            account.jid = jid; // TODO: why this?
-            onSessionActive(jid);
-        });
+    _up(account.jid ? account : null,
+        onSessionActive ? onSessionActive : function() {});
 }
 
 function down(account) {
