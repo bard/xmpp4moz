@@ -829,6 +829,8 @@ function _promptAccount(jid) {
 function _up(account, onSessionActive) {
     var password, userInput;
 
+    var sessionOnly = false;
+
     if(account) {
         if(account.password)
             password = account.password;
@@ -837,6 +839,10 @@ function _up(account, onSessionActive) {
             if(userInput.confirm)
                 password = userInput.password;
         }
+
+        if(account.sessionOnly !== undefined)
+            sessionOnly = account.sessionOnly;
+
     } else {
         userInput = _promptAccount();
         if(userInput.confirm) {
@@ -899,15 +905,18 @@ function _up(account, onSessionActive) {
         delete newPresenceStanza.ns_caps::*;
         newPresenceStanza.appendChild(caps);
 
-        send(account.jid,
-             <iq type='get'>
-             <query xmlns='jabber:iq:roster'/>
-             </iq>,
-             function() {
-                 send(account, newPresenceStanza);
-                 if(onSessionActive)
-                     onSessionActive(account.jid)
-             });
+        if(sessionOnly)
+            onSessionActive();
+        else
+            send(account.jid,
+                 <iq type='get'>
+                 <query xmlns='jabber:iq:roster'/>
+                 </iq>,
+                 function() {
+                     send(account, newPresenceStanza);
+                     if(onSessionActive)
+                         onSessionActive()
+                 });
     });
 }
 
