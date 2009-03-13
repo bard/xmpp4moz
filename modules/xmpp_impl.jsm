@@ -402,7 +402,10 @@ function open(opts, continuation) {
         }
     });
 
-    service.open(opts.node + '@' + opts.domain, connector);
+    service.open((opts.node ?
+                  opts.node + '@' + opts.domain :
+                  opts.domain),
+                 connector);
 }
 
 function close(jid) {
