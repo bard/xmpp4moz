@@ -37,6 +37,9 @@ var Ci = Components.interfaces;
 var Cu = Components.utils;
 var Cr = Components.results;
 
+const srvPrompt = Cc["@mozilla.org/embedcomp/prompt-service;1"]
+    .getService(Ci.nsIPromptService);
+
 var USER_LOCALE = Cc['@mozilla.org/preferences-service;1']
     .getService(Ci.nsIPrefService).getBranch('general.useragent.')
     .getCharPref('locale');
@@ -234,6 +237,10 @@ XMPPTCPConnector.prototype.onEvent_streamElement = function(element) {
     }
 };
 
+XMPPTCPConnector.prototype.onEvent_transportConnected = function() {
+    this.setState('connected');
+};
+
 XMPPTCPConnector.prototype.onEvent_transportDisconnected = function() {
     this.setState('disconnected');
 };
@@ -275,37 +282,55 @@ XMPPTCPConnector.prototype.isConnected = function() {
 
 XMPPTCPConnector.prototype.connect = function() {
     this.setState('connecting');
-    var connector = this;
 
     var socket = new Socket(this._host, this._port, this._security, this._node + '@' + this._domain + '/' + this._resource);
 
+    var self = this;
     socket.setListener({
         onReady: function() {
             socket.setReplyTimeout(3000);
-            socket.send(STREAM_PROLOGUE.replace('<SERVER>', connector._domain));
-            connector.onEvent_openedOutgoingStream();
+
+            // We don't use openStream() here because that presupposes
+            // that a socket has been decided upon for the connector.
+            // However, we don't know if the socket is valid until we
+            // receive something on it.
+            socket.send(STREAM_PROLOGUE.replace('<SERVER>', self._domain));
+
+            // We should set a 'wait-stream' state here by calling
+            // onEvent_openedOutgoingStream().  However, due to
+            // buggy/unreliable SSL handshaking, we can't really trust
+            // that connection has happened.  Thus, we cheat and wait
+            // until onDataAvailable to declare that we have opened a
+            // stream.
         },
 
         onDataAvailable: function(request, context, inputStream, offset, count) {
-            if(connector._state == 'connecting')
-                connector._state = 'connected';
+            if(self._state == 'connecting') {
+                self._socket = socket;
+                self.onEvent_transportConnected();
+                self.onEvent_openedOutgoingStream();
+            }
 
-            connector._socket = socket;
-            connector.onDataAvailable.apply(connector, arguments);
+            self.onDataAvailable.apply(self, arguments);
         },
 
         onTimeout: function() {
             // Socket disables itself.  Retry.
-            connector.connect();
+            self.connect();
         },
 
         onBadCertificate: function() {
-            connector.setState('error', 'bad-certificate');
+            // Ask user if he wants to add an exception and, if so, retry.
+            queryAddCertException(self._host, self._port, {
+                onDeny:   function() { self.setState('error', 'bad-certificate'); },
+                onCancel: function() { self.setState('error', 'bad-certificate'); },
+                onAccept: function() { self.connect(); }
+            });
         },
 
         onClose: function() {
             // Socket closed.  Only called if we didn't timeout.
-            connector.onEvent_transportDisconnected();
+            self.onEvent_transportDisconnected();
         }
     });
 
@@ -566,4 +591,65 @@ XMPPTCPConnector.prototype.createParser = function() {
 
 function hasChild(element, childNS, childName) {
     return element.getElementsByTagNameNS(childNS, childName).length > 0;
+}
+
+function queryAddCertException(host, port, userChoice) {
+    var addException = srvPrompt.confirm(
+        null,
+        'Bad certificate',
+        'Server "' + host + '" is presenting an invalid SSL certificate.\n' +
+            'To connect to it, you need to add an exception.  Do you want to proceed?');
+
+    if(!addException) {
+        userChoice.onDeny();
+        return;
+    }
+
+    var params = {
+        exceptionAdded : false,
+        location       : 'https://' + host + ':' + port,
+        prefetchCert   : true
+    };
+
+    // If dialog is opened synchronously, its UI seems to freeze.
+
+    async(function() {
+        openDialog(null,
+                   'chrome://pippki/content/exceptionDialog.xul',
+                   '',
+                   'chrome,modal,centerscreen',
+                   params);
+
+        if(params.exceptionAdded)
+            userChoice.onAccept();
+        else
+            userChoice.onCancel();
+    });
+}
+
+function delay(fn, msecs) {
+    Cc['@mozilla.org/timer;1']
+        .createInstance(Ci.nsITimer)
+        .initWithCallback({ notify: function(timer) fn() },
+                          msecs,
+                          Ci.nsITimer.TYPE_ONE_SHOT);
+}
+
+function async(fn) {
+    delay(fn, 0);
+}
+
+function openDialog(parentWindow, url, windowName, features) {
+    var array = Cc['@mozilla.org/array;1']
+        .createInstance(Ci.nsIMutableArray);
+    for(var i=4; i<arguments.length; i++) {
+        var variant = Cc['@mozilla.org/variant;1']
+            .createInstance(Ci.nsIWritableVariant);
+        variant.setFromVariant(arguments[i]);
+        array.appendElement(variant, false);
+    }
+
+    return Cc['@mozilla.org/embedcomp/window-watcher;1']
+        .getService(Ci.nsIWindowWatcher)
+        .openWindow(parentWindow, url, windowName, features, array);
 }

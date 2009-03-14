@@ -386,13 +386,8 @@ function open(opts, continuation) {
                     default:
                         srvPrompt.alert(null, 'Unrecognized XMPP Error', serialize(subject));
                     }
-                }
-                else if(subject == 'bad-certificate') {
-                    queryAddCertException(conf.host, conf.port, {
-                        onDeny:   function() { /* XXX */ },
-                        onCancel: function() { /* XXX */ },
-                        onAccept: function() { continuation() }
-                    });
+                } else if(subject == 'bad-certificate') {
+                    srvPrompt.alert(null, 'SSL Error', 'Bad server certificate');
                 } else {
                     Cu.reportError('Error during XMPP connection. (' + subject + ')');
                 }
@@ -410,36 +405,6 @@ function open(opts, continuation) {
 
 function close(jid) {
     service.close(jid);
-}
-
-function queryAddCertException(host, port, userChoice) {
-    var addException = srvPrompt.confirm(
-        null, 'Bad certificate for Jabber server',
-        'Jabber server "' + host + '" is presenting an invalid SSL certificate.\n' +
-            'To connect to it, you need to add an exception.  Do you want to proceed?');
-    if(!addException) {
-        userChoice.onDeny();
-        return;
-    }
-
-    var params = {
-        exceptionAdded : false,
-        location       : 'https://' + host + ':' + port,
-        prefetchCert   : true
-    };
-
-    setTimeout(function() {
-        openDialog(null,
-                   'chrome://pippki/content/exceptionDialog.xul',
-                   '',
-                   'chrome,centerscreen,modal',
-                   params);
-
-        if(params.exceptionAdded)
-            userChoice.onAccept();
-        else
-            userChoice.onCancel();
-    });
 }
 
 
