@@ -108,8 +108,28 @@ Socket.prototype.setReplyTimeout = function(msecs) {
 // Connects the socket.
 
 Socket.prototype.connect = function() {
+    var self = this;
+
     this._transport = this._createTransport();
     this._transport.setEventSink(this, getCurrentThreadTarget());
+    this._transport.securityCallbacks = {
+        notifyCertProblem: function(socketInfo, status, targetSite) {
+            self._setState('error', 'badcert');
+            return true;
+        },
+
+        getInterface: function(iid) {
+            return this.QueryInterface(iid);
+        },
+
+        QueryInterface: function(iid) {
+            if(iid.equals(Ci.nsISupports) ||
+               iid.equals(Ci.nsIInterfaceRequestor) ||
+               iid.equals(Ci.nsIBadCertListener2))
+                return this;
+            throw Cr.NS_ERROR_NO_INTERFACE;
+        }
+    };
 
     var outstream = this._transport.openOutputStream(0,0,0);
     this._outstream = Cc['@mozilla.org/intl/converter-output-stream;1']
@@ -152,28 +172,6 @@ Socket.prototype.onTransportStatus = function(transport, status, progress, progr
         break;
     case Ci.nsISocketTransport.STATUS_CONNECTING_TO:
         this._setState('connecting');
-        var socket = this;
-        if('nsIBadCertListener2' in Ci && this._transport.securityInfo) {
-            this._transport.securityInfo.QueryInterface(Ci.nsISSLSocketControl);
-            this._transport.securityInfo.notificationCallbacks = {
-                notifyCertProblem: function(socketInfo, status, targetSite) {
-                    socket._setState('error', 'badcert');
-                    return true;
-                },
-
-                getInterface: function(iid) {
-                    return this.QueryInterface(iid);
-                },
-
-                QueryInterface: function(iid) {
-                    if(iid.equals(Ci.nsISupports) ||
-                       iid.equals(Ci.nsIInterfaceRequestor) ||
-                       iid.equals(Ci.nsIBadCertListener2))
-                        return this;
-                    throw Cr.NS_ERROR_NO_INTERFACE;
-                }
-            };
-        }
         break;
     case Ci.nsISocketTransport.STATUS_CONNECTED_TO:
         this._setState('connected');
