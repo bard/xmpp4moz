@@ -199,9 +199,24 @@ XMPPTCPConnector.prototype.onEvent_streamElement = function(element) {
                 this.setState('requested-tls');
                 this.requestTLS();
             } else if(this._password &&
-                      hasChild(element, 'urn:ietf:params:xml:ns:xmpp-sasl', 'mechanisms')) {
-                this.setState('auth-waiting-result');
-                this.requestSASLAuth('PLAIN');
+                      (hasChild(element, 'urn:ietf:params:xml:ns:xmpp-sasl', 'mechanisms') ||
+                       hasChild(element, 'http://jabber.org/features/iq-auth', 'auth'))) {
+                let saslMechanisms = element.getElementsByTagNameNS('urn:ietf:params:xml:ns:xmpp-sasl', 'mechanism');
+                let chosenSASLMechanism;
+                for(let i=0, l=saslMechanisms.length; i<l; i++) {
+                    if(saslMechanisms[i].textContent == 'PLAIN') {
+                        chosenSASLMechanism = 'PLAIN';
+                        break;
+                    }
+                }
+
+                if(chosenSASLMechanism == 'PLAIN') {
+                    this.setState('auth-waiting-result');
+                    this.requestSASLAuth('PLAIN');
+                } else {
+                    throw new Error('No auth mechanism available.');
+                }
+
             } else if(hasChild(element, 'urn:ietf:params:xml:ns:xmpp-bind', 'bind')) {
                 this.setState('binding-resource');
                 this.bindResource();
