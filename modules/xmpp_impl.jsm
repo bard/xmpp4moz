@@ -549,6 +549,8 @@ function presencesOf(account, address) {
 };
 
 function presenceSummary(account, address) {
+    deprecation('XMPP.presenceSummary');
+
     if(account && address)
         return presencesOf(account, address)[0] || {
             account   : account,
