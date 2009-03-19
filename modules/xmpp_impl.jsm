@@ -239,6 +239,7 @@ function getStreamErrorCondition(error) {
 }
 
 function nickFor(account, address) {
+    deprecation('nickFor');
 //     const ns_vcard_update = 'vcard-temp:x:update';
 
 //     var presence = cache.first(
@@ -443,6 +444,7 @@ function comparePresences(p1, p2) {
 }
 
 function connectorTypeFor(jid) {
+    deprecation('connectorTypeFor');
     var m = JID(jid).hostname.match(/^(.+)\.x4m\.localhost$/);
     return m ? m[1] : 'tcp';
 }
@@ -605,7 +607,7 @@ function openDialog(parentWindow, url, windowName, features) {
 // ----------------------------------------------------------------------
 
 function enableContentDocument(panel, account, address, type, createSocket) {
-    deprecation('use connectPanel() instead of enableContentDocument()');
+    deprecation('enableContentDocument() - (use connectPanel() instead)');
     connectPanel(panel, account, address, createSocket);
 }
 
@@ -930,12 +932,12 @@ function changedPresence(presence) {
 }
 
 function getAccountByJid(jid) {
-    deprecation('XMPP.getAccountByJid');
+    deprecation('getAccountByJid()');
     return accounts.get({jid: jid});
 }
 
 function getAccountByKey(key) {
-    deprecation('XMPP.getAccountByKey');
+    deprecation('getAccountByKey()');
     return accounts.get({key: key});
 }
 
@@ -967,6 +969,7 @@ function getStackTrace() {
 }
 
 function log(msg) {
+    deprecation('log()');
     var console = Cc['@mozilla.org/consoleservice;1'].getService(Ci.nsIConsoleService);
     log = function(msg) {
         console.logStringMessage('xmpp4moz: ' + msg);
