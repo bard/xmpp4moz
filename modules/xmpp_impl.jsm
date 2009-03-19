@@ -850,12 +850,16 @@ function _up(account, onSessionActive) {
         port: account.connectionPort,
         security: account.connectionSecurity,
     }, function() {
+        if(sessionOnly) {
+            onSessionActive();
+            return;
+        }
+
         var presenceHistory = JSON.parse(account.presenceHistory || '[]');
         var newPresenceStanza;
 
         if(presenceHistory.length < 1)
             newPresenceStanza = defaultInitialPresenceStanza;
-
         else if(connectorTypeFor(account.jid) != 'tcp')
             // Play it safe: just plain presence for non-XMPP+TCP
             // accounts now, to avoid getting in the way of the
@@ -880,18 +884,15 @@ function _up(account, onSessionActive) {
         delete newPresenceStanza.ns_caps::*;
         newPresenceStanza.appendChild(caps);
 
-        if(sessionOnly)
-            onSessionActive();
-        else
-            send(account.jid,
-                 <iq type='get'>
-                 <query xmlns='jabber:iq:roster'/>
-                 </iq>,
-                 function() {
-                     send(account, newPresenceStanza);
-                     if(onSessionActive)
-                         onSessionActive()
-                 });
+        send(account.jid,
+             <iq type='get'>
+             <query xmlns='jabber:iq:roster'/>
+             </iq>,
+             function() {
+                 send(account, newPresenceStanza);
+                 if(onSessionActive)
+                     onSessionActive()
+             });
     });
 }
 
