@@ -300,18 +300,11 @@ function q() {
 }
 
 function resolver(prefix) {
-    switch(prefix) {
-    case 'x4m':
-        return ns_x4m_in;
-        break;
-    case 'roster':
-        return ns_roster;
-        break;
-    case 'bookmarks':
-        return ns_bookmarks;
-        break;
-    }
-    return undefined;
+    var ns = 'ns_' + prefix;
+    if(ns in this)
+        return this[ns];
+    else
+        throw new Error('Unknown namespace prefix. (' + prefix + ')');
 }
 
 
