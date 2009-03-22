@@ -48,14 +48,13 @@ function Channel() {
     this._listeners = [];
 }
 
-Channel.prototype.on = function(pattern, handler) {
-    var reaction = {
-        pattern: pattern,
-        handler: handler,
-        _registrant: Components.stack.caller
+Channel.prototype.on = function(test, action) {
+    var listener = {
+        test: test,
+        action: action,
     };
-    this._listeners.push(reaction);
-    return reaction;
+    this._listeners.push(listener);
+    return listener;
 };
 
 Channel.prototype.forget = function(listener) {
@@ -67,8 +66,18 @@ Channel.prototype.forget = function(listener) {
 Channel.prototype.receive = function(event) {
     for each(var listener in this._listeners) {
         try {
-            if(match(event, listener.pattern))
-                listener.handler(event);
+            switch(typeof(listener.test)) {
+            case 'function':
+                if(listener.test(event))
+                    listener.action(event);
+                break;
+            case 'object':
+                if(match(event, listener.test))
+                    listener.action(event);
+                break;
+            default:
+                throw new Error('Unrecognized test type. (' + typeof(listener.test) + ')');
+            }
         } catch(e) {
             Cu.reportError(e + '\n' + e.stack);
         }
