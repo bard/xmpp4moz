@@ -46,21 +46,19 @@ xmpp.ui.refreshAccounts = function(menuPopup) {
             menuItem.setAttribute('class', 'menuitem-iconic');
 
             var accountPresence =
-                XMPP.cache.fetch({
-                    event: 'presence',
-                    direction: 'out',
-                    account: account.jid,
-                    stanza: function(s) { return s.ns_muc::x == undefined; }
-                    })[0] ||
+                XMPP.cache.first(XMPP.q()
+                                 .event('presence')
+                                 .account(account.jid)
+                                 .direction('out')) ||
                 { stanza: <presence type="unavailable"/> };
 
             menuItem.setAttribute('availability',
                                   accountPresence.stanza.@type == undefined ?
                                   'available' : 'unavailable')
 
-                menuItem.setAttribute('show',
-                                      accountPresence.stanza.show.toString());
+            menuItem.setAttribute('show',
+                                  accountPresence.stanza.show.toString());
 
-            menuPopup.insertBefore(menuItem, menuPopup.firstChild);            
+            menuPopup.insertBefore(menuItem, menuPopup.firstChild);
         })
 };
