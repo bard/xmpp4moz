@@ -134,7 +134,7 @@ function URI(uriRepresentation) {
     var uri = {
         account: (sourceUri.username && sourceUri.host) ?
             sourceUri.username + '@' + sourceUri.host : undefined,
-        username: jidMatch[1].slice(0, -1),
+        username: jidMatch[1] ? jidMatch[1].slice(0, -1) : null,
         hostname: jidMatch[2],
         resource: jidMatch[3],
         address: jidMatch[1] + jidMatch[2],
