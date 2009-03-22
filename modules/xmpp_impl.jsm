@@ -94,6 +94,7 @@ Cu.import('resource://xmpp4moz/connector-xmpp_tcp.jsm');
 
 var cache = {
     find: function(pattern) {
+        deprecation('cache.find()');
         return this.fetch(pattern)[0];
     },
 
@@ -114,6 +115,7 @@ var cache = {
     },
 
     fetch: function(pattern) {
+        deprecation('cache.fetch()');
         var remotePattern = {}, localPattern = {};
         for(var member in pattern)
             if(typeof(pattern[member]) == 'function') {
