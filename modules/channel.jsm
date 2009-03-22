@@ -58,17 +58,17 @@ Channel.prototype.on = function(pattern, handler) {
     return reaction;
 };
 
-Channel.prototype.forget = function(watcher) {
-    var index = this._listeners.indexOf(watcher);
+Channel.prototype.forget = function(listener) {
+    var index = this._listeners.indexOf(listener);
     if(index != -1)
         this._listeners.splice(index, 1);
 };
 
 Channel.prototype.receive = function(event) {
-    for each(var watch in this._listeners) {
+    for each(var listener in this._listeners) {
         try {
-            if(match(event, watch.pattern))
-                watch.handler(event);
+            if(match(event, listener.pattern))
+                listener.handler(event);
         } catch(e) {
             Cu.reportError(e + '\n' + e.stack);
         }
