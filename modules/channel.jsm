@@ -83,23 +83,33 @@ Channel.prototype.observe = function(subject, topic, data) {
     switch(name) {
     case 'connector':
         event.state = info;
+        event.name = name;
         event.event = name;
+        event.account = data.toString();
         if(subject instanceof Ci.nsIDOMElement)
             event.info = dom2xml(subject.QueryInterface(Ci.nsIDOMElement));
         break;
     case 'stanza':
-        event.stanza = dom2xml(subject.QueryInterface(Ci.nsIDOMElement));
+        subject.QueryInterface(Ci.nsIDOMElement);
+        event.stanza = dom2xml(subject);
         event.event = event.stanza.name();
+        event.account = event.stanza.ns_x4m_in::meta.@account.toString();
         event.direction = info;
+
+        event.name = event.stanza.name().localName;
+        event.from = event.stanza.@from.toString();
+        event.to = event.stanza.@to.toString();
+        event.type = event.stanza.@type.toString();
+        event.id = event.stanza.@id.toString();
+        event.xml = event.stanza;
+        event.dom = subject;
+        event.dir = info;
+        event.session = {
+            account: event.account,
+            resource: null
+        };
         break;
     }
-
-    if(event.stanza)
-        event.__defineGetter__('account', function() {
-            return this.stanza.ns_x4m_in::meta.@account.toString();
-        });
-    else
-        event.account = data.toString();
 
     this.receive(event);
 };
