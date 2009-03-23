@@ -138,12 +138,11 @@ var cache = {
     },
 
     _wrapResult: function(stanza) {
-        var meta = stanza.getElementsByTagNameNS(ns_x4m_in, 'meta')[0];
         return {
             stanza    : dom2xml(stanza),
-            direction : meta.getAttribute('direction'),
-            account   : meta.getAttribute('account'),
-            session   : { name: meta.getAttribute('account')}
+            direction : stanza.getAttributeNS(ns_x4m_in, 'direction'),
+            account   : stanza.getAttributeNS(ns_x4m_in, 'account'),
+            session   : { name: stanza.getAttributeNS(ns_x4m_in, 'account') }
         };
     },
 
@@ -922,7 +921,7 @@ function changedPresence(presence) {
         return;
     var stanza = presence.stanza.copy();
     delete stanza.@id;
-    delete stanza.ns_x4m_in::meta;
+    delete stanza.@ns_x4m_in::*;
 
     var history = JSON.parse(account.presenceHistory || '[]');
 

@@ -102,8 +102,8 @@ Channel.prototype.observe = function(subject, topic, data) {
         subject.QueryInterface(Ci.nsIDOMElement);
         event.stanza = dom2xml(subject);
         event.event = event.stanza.name();
-        event.account = event.stanza.ns_x4m_in::meta.@account.toString();
-        event.direction = info;
+        event.account = event.stanza.@ns_x4m_in::account.toString();
+        event.direction = event.stanza.@ns_x4m_in::direction.toString();
 
         event.name = event.stanza.name().localName;
         event.from = event.stanza.@from.toString();
@@ -112,7 +112,7 @@ Channel.prototype.observe = function(subject, topic, data) {
         event.id = event.stanza.@id.toString();
         event.xml = event.stanza;
         event.dom = subject;
-        event.dir = info;
+        event.dir = event.direction;
         event.session = {
             account: event.account,
             resource: null

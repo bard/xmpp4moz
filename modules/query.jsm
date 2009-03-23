@@ -127,22 +127,13 @@ Query.prototype = {
                        // make it a substring check.
                        '(@to = "' + this._to + '" or starts-with(@to, "' + this._to + '/"))' :
                        '@to="' + this._to + '"');
+        if(this._direction != undefined)
+            attrs.push('@x4m_in:direction="' + this._direction + '"');
+        if(this._account != undefined)
+            attrs.push('@x4m_in:account="' + this._account + '"');
+
         if(attrs.length > 0)
             q += '[' + attrs.join(' and ') + ']'
-
-        // xmpp4moz metadata (account and direction of travelling)
-
-        var meta = [];
-        if(this._direction)
-            meta.push('@direction="' + this._direction + '"');
-        if(this._account)
-            meta.push('@account="' + this._account + '"');
-        if(meta.length > 0) // XXX test
-            q += '/*[' +
-            'local-name() = "meta" and ' +
-            'namespace-uri() = "http://hyperstruct.net/xmpp4moz/protocol/internal" and '
-            + meta.join(' and ') +
-            ']';
 
         // XPath fragments
 

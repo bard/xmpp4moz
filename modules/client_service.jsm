@@ -152,7 +152,7 @@ service.open = function(jid, connector) {
                     var inverse = syntheticClone(stanzas.snapshotItem(i));
                     inverse.setAttribute('type', 'unavailable');
 
-                    if(inverse.getElementsByTagNameNS(ns_x4m_in, 'meta')[0].getAttribute('direction') == 'in')
+                    if(inverse.getAttributeNS(ns_x4m_in, 'direction') == 'in')
                         this.session.receive(inverse);
                     else
                         cache.receive(inverse);
@@ -249,11 +249,9 @@ service.open = function(jid, connector) {
     // roster (or if we don't receive it at all).
 
     cache.receive(
-        asDOM(<iq from={jid} to={jid} type="result">
+        asDOM(<iq from={jid} to={jid} type="result" xmlns:x4m={ns_x4m_in} x4m:account={jid} x4m:direction='in'>
               <query xmlns="jabber:iq:roster"/>
-              <meta xmlns={ns_x4m_in} account={jid} direction="in"/>
               </iq>));
-
 
     sessions.created(jid, session, connector);
 

@@ -99,21 +99,14 @@ Session.prototype.setObserver = function(observer) {
 
 function setMeta(domStanza, account, direction) {
     var outDomStanza = stripMeta(domStanza);
-
-    var meta = domStanza
-        .ownerDocument
-        .createElementNS('http://hyperstruct.net/xmpp4moz/protocol/internal', 'meta');
-    meta.setAttribute('account', account);
-    meta.setAttribute('direction', direction);
-    outDomStanza.appendChild(
-        outDomStanza.ownerDocument.importNode(meta, true));
+    outDomStanza.setAttributeNS('http://hyperstruct.net/xmpp4moz/protocol/internal', 'account', account);
+    outDomStanza.setAttributeNS('http://hyperstruct.net/xmpp4moz/protocol/internal', 'direction', direction);
     return outDomStanza;
 }
 
 function stripMeta(domStanza) {
     var outDomStanza = domStanza.cloneNode(true);
-    var metas = outDomStanza.getElementsByTagNameNS('http://hyperstruct.net/xmpp4moz/protocol/internal', 'meta');
-    for(var i=0, l=metas.length; i<l; i++)
-        outDomStanza.removeChild(metas[i]);
+    outDomStanza.removeAttributeNS('http://hyperstruct.net/xmpp4moz/protocol/internal', 'account');
+    outDomStanza.removeAttributeNS('http://hyperstruct.net/xmpp4moz/protocol/internal', 'direction');
     return outDomStanza;
 }
