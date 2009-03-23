@@ -174,26 +174,12 @@ var cache = {
 };
 
 function isMUC(account, address) {
-    return cache.fetch({ // XXX use optimized query here
-        event     : 'presence',
-        direction : 'out',
-        account   : account,
-        stanza    : function(s) {
-            return (s.@to != undefined &&
-                    JID(s.@to).address == address &&
-                    s.ns_muc::x != undefined);
-        }
-    }).length > 0 || cache.fetch({
-        event     : 'iq',
-        direction : 'in',
-        account   : account,
-        stanza    : function(s) {
-            return (s.ns_private::query
-                    .ns_bookmarks::storage
-                    .ns_bookmarks::conference
-                    .(@jid == address) != undefined);
-        }
-    }).length > 0;
+    return cache.first(
+        q().event('presence')
+            .direction('out')
+            .account(account)
+            .to(address)
+            .child(ns_muc, 'x')) != null;
 }
 
 function getError(stanza) {
@@ -714,7 +700,7 @@ function connectPanel(panel, account, address, createSocket) {
 
     // Presence from contact
 
-    var contactPresence = presenceSummary(account, address);
+    var contactPresence = presencesOf(account, address)[0];
 
     // MUC presence is the presence stanza we used to join the room
     // (if we are joining a room).
