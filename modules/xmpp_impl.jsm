@@ -301,16 +301,19 @@ function isDown(account) {
 }
 
 function send(account, stanza, handler) {
-    if(isUp(account))
+    if(isDown(account))
+        throw new Error('Attempting to send through account not connected. ' +
+                        '("' + account + '", "' + stanza.toXMLString() + '")');
+//    if(isUp(account))
         _send(account.jid || account, stanza, handler);
-    else if(stanza.name() == 'message' &&
-            (stanza.ns_event::x != undefined || stanza.ns_chatstates::* != undefined))
-        ;
-    else if(stanza.name() == 'presence' &&
-            stanza.@type == 'unavailable')
-        ;
-    else
-        up(account, function(jid) { _send(jid, stanza, handler); });
+    // else if(stanza.name() == 'message' &&
+    //         (stanza.ns_event::x != undefined || stanza.ns_chatstates::* != undefined))
+    //     ;
+    // else if(stanza.name() == 'presence' &&
+    //         stanza.@type == 'unavailable')
+    //     ;
+    // else
+    //     up(account, function(jid) { _send(jid, stanza, handler); });
 }
 
 function createChannel(features) {
