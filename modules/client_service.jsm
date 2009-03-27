@@ -380,6 +380,9 @@ service.init();
 
 function stripInternal(domStanza) {
     var outDomStanza = domStanza.cloneNode(true);
+    outDomStanza.removeAttributeNS(ns_x4m_in, 'account');
+    outDomStanza.removeAttributeNS(ns_x4m_in, 'direction');
+
     var child = outDomStanza.lastChild;
     while(child) {
         var next = child.previousSibling;
