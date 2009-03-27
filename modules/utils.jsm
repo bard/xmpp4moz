@@ -34,7 +34,8 @@ var EXPORTED_SYMBOLS = [
     'asDOM',
     'asXML',
     'asString',
-    'serialize'
+    'serialize',
+    'sha1'
 ];
 
 
@@ -264,6 +265,19 @@ function asString(thing) {
 
 function serialize(element) {
     return serializer.serializeToString(element);
+}
+
+function sha1(s) {
+    var stream = Cc['@mozilla.org/io/string-input-stream;1']
+        .createInstance(Ci.nsIStringInputStream);
+    stream.setData(s, s.length);
+
+    var ch = Cc['@mozilla.org/security/hash;1']
+        .createInstance(Ci.nsICryptoHash);
+    ch.init(ch.SHA1);
+    const PR_UINT32_MAX = 0xffffffff;
+    ch.updateFromStream(stream, PR_UINT32_MAX);
+    return ch.finish(false);
 }
 
 

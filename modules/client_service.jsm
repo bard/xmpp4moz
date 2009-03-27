@@ -268,19 +268,6 @@ service.close = function(jid) {
 }
 
 service.getCapsHash = function() {
-    function sha1(s) {
-        var stream = Cc['@mozilla.org/io/string-input-stream;1']
-            .createInstance(Ci.nsIStringInputStream);
-        stream.setData(s, s.length);
-
-        var ch = Cc['@mozilla.org/security/hash;1']
-            .createInstance(Ci.nsICryptoHash);
-        ch.init(ch.SHA1);
-        const PR_UINT32_MAX = 0xffffffff;
-        ch.updateFromStream(stream, PR_UINT32_MAX);
-        return ch.finish(false);
-    }
-
     var identity = <identity category='client' type='pc' name='xmpp4moz'/>;
 
     var featureURIs = [];
