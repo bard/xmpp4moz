@@ -35,7 +35,8 @@ var EXPORTED_SYMBOLS = [
     'asXML',
     'asString',
     'serialize',
-    'sha1'
+    'sha1',
+    'assert'
 ];
 
 
@@ -280,6 +281,43 @@ function sha1(s) {
     return ch.finish(false);
 }
 
+function assert(condition, callerArgs) {
+    if(condition)
+        return;
+
+    function getLine(fileUrl, lineNumber) {
+        var req = Cc['@mozilla.org/xmlextras/xmlhttprequest;1']
+            .createInstance(Ci.nsIXMLHttpRequest);
+        req.overrideMimeType('text/plain; charset=x-user-defined');
+        req.open('GET', fileUrl, false);
+        req.send(null);
+        if(req.status != 0)
+            throw new Error('Could not access file "' + fileUrl + '"');
+
+        return req.responseText.split(/\n/)[lineNumber-1];
+    }
+    
+    function extractAssertionSource(line) {
+        return line
+            .replace(/\s*assert\(/, '')
+            .replace(/(,\s*arguments)?\);?\s*$/, '');
+    }
+
+    var lineNumber = Components.stack.caller.lineNumber;
+    var fileUrl = Components.stack.caller.filename;
+    var callerName = Components.stack.caller.name || '[anon]';
+    var m = fileUrl.split(/ -> /);
+    if(m[1])
+        fileUrl = m[1];
+
+    var assertion = extractAssertionSource(getLine(fileUrl, lineNumber));
+
+    throw new Error('Failed assertion: "' + assertion + '"\n' +
+                    'In: ' + callerName + '(' + (callerArgs ?
+                                                 Array.slice(callerArgs).toSource().replace(/(^\[|\]$)/g, '') :
+                                                 '...') + ')\n' +
+                    'At: ' + fileUrl + ':' + lineNumber);
+}
 
 // INTERNALS
 // ----------------------------------------------------------------------
