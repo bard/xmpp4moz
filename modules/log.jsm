@@ -102,7 +102,7 @@ Source.prototype.send = function(data) {
         d[n] = data[n];
 
     for each([pattern, sinkFunction] in sinks) {
-        if((typeof(pattern) == 'string' && (pattern == '*' || pattern == info.name)) ||
+        if((typeof(pattern) == 'string' && (pattern == '*' || pattern == this._info.name)) ||
            (typeof(pattern.test) == 'function' && pattern.test(info.name)))
             try {
                 sinkFunction(d);
