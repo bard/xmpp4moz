@@ -319,19 +319,21 @@ function assert(condition, callerArgs) {
     }
 
     var lineNumber = Components.stack.caller.lineNumber;
-    var fileUrl = Components.stack.caller.filename;
+    var fileUrl = Components.stack.caller.filename.replace(/^.+> /, '');
     var callerName = Components.stack.caller.name || '[anon]';
-    var m = fileUrl.split(/ -> /);
-    if(m[1])
-        fileUrl = m[1];
 
     var assertion = extractAssertionSource(getLine(fileUrl, lineNumber));
 
-    throw new Error('Failed assertion: "' + assertion + '"\n' +
-                    'In: ' + callerName + '(' + (callerArgs ?
-                                                 Array.slice(callerArgs).toSource().replace(/(^\[|\]$)/g, '') :
-                                                 '...') + ')\n' +
-                    'At: ' + fileUrl + ':' + lineNumber);
+    var errorMessage =
+        'Failed assertion: "' + assertion + '"\n' +
+        'In: ' + callerName + '(' + (callerArgs ?
+                                     Array.slice(callerArgs).toSource().replace(/(^\[|\]$)/g, '') :
+                                     '...') + ')\n' +
+        'At: ' + fileUrl + ':' + lineNumber;
+    if(arguments.callee.outputStackTrace)
+        errorMessage += '\nStack:\n' + new Error().stack;
+
+    throw new Error(errorMessage);
 }
 
 // INTERNALS
