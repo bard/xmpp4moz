@@ -49,6 +49,10 @@ function Channel() {
 }
 
 Channel.prototype.on = function(test, action) {
+    if(typeof(test) == 'object')
+        deprecation('2009-04-09 channel.on() - use simple functions in your channel tests,' +
+                    ' e.g. channel.on(function(e) e.name == "presence", ...).');
+
     var listener = {
         test: test,
         action: action,

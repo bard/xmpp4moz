@@ -729,24 +729,22 @@ function connectPanel(panel, account, address, createSocket) {
     var channel = createChannel();
     panel.xmppChannel = channel;
 
-    channel.on({
-        direction : 'in',
-        account   : account,
-        stanza    : function(s) { return s != undefined && (JID(s.@from).address == address); }
-    }, function(event) { gotDataFromXMPP(event.stanza); });
+    channel.on(
+        function(ev) (ev.dir == 'in' &&
+               ev.account == account &&
+               ev.xml != undefined && // XXX document cases (if any) where it could be undefined
+               JID(ev.from).address == address),
+        function(event) gotDataFromXMPP(event.stanza));
 
-    channel.on({
-        direction : 'out',
-        event     : 'message',
-        account   : account,
-        stanza    : function(s) { return JID(s.@to).address == address; }
-    }, function(message) {
-        // Only echo messages to chat app if they're not groupchat.
-        // groupchat ones will be echoed back to us by the server.
-        if(message.stanza.@type != 'groupchat')
-            gotDataFromXMPP(message.stanza);
-    });
-
+    channel.on(
+        function(ev) (ev.dir == 'out' &&
+               ev.name == 'message' &&
+               ev.account == account &&
+               JID(ev.to).address == address &&
+               // Only echo messages to chat app if they're not groupchat.
+               // groupchat ones will be echoed back to us by the server.
+               ev.type != 'groupchat'),
+        function(message) gotDataFromXMPP(message.stanza));
 
     gotDataFromXMPP(rosterSegment(account, address));
 
@@ -939,23 +937,20 @@ function log(msg) {
 // ----------------------------------------------------------------------
 
 let(channel = createChannel()) {
-    channel.on({
-        // TODO for some reason, this does not catch <presence
-        // type="unavailable"/> when synthesized, only when sent to the
-        // network, which at the moment means "only when user
-        // disconnects account explicitly".  This does what we want,
-        // but it's not future-proof: if we decide that xmpp4moz will
-        // need to behave nicely and send a <presence
-        // type="unavailable"/> before closing the stream, we will
-        // always record that, thus breaking the restore-presence
-        // functionality.
-
-        event     : 'presence',
-        direction : 'out',
-        stanza    : function(s) {
-            return ((s.@type == undefined || s.@type == 'unavailable') &&
-                    (s.@to == undefined));
-        }
-    }, function(presence) changedPresence(presence));
+    // MEMO for some reason, this does not catch <presence
+    // type="unavailable"/> when synthesized, only when sent to the
+    // network, which at the moment means "only when user
+    // disconnects account explicitly".  This does what we want,
+    // but it's not future-proof: if we decide that xmpp4moz will
+    // need to behave nicely and send a <presence
+    // type="unavailable"/> before closing the stream, we will
+    // always record that, thus breaking the restore-presence
+    // functionality.
+    channel.on(
+        function(ev) (ev.name == 'presence' &&
+                      ev.dir == 'out' &&
+                      (!ev.type || ev.type == 'unavailable') &&
+                      !ev.to),
+        function(presence) changedPresence(presence));
 }
 
