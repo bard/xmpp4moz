@@ -94,7 +94,7 @@ Cu.import('resource://xmpp4moz/connector-xmpp_tcp.jsm');
 
 var cache = {
     find: function(pattern) {
-        deprecation('cache.find()');
+        deprecation('2009-04-09 cache.find()');
         return this.fetch(pattern)[0];
     },
 
@@ -115,7 +115,7 @@ var cache = {
     },
 
     fetch: function(pattern) {
-        deprecation('cache.fetch()');
+        deprecation('2009-04-09 cache.fetch()');
         var remotePattern = {}, localPattern = {};
         for(var member in pattern)
             if(typeof(pattern[member]) == 'function') {
@@ -226,7 +226,7 @@ function getStreamErrorCondition(error) {
 }
 
 function nickFor(account, address) {
-    deprecation('nickFor');
+    deprecation('2009-04-09 nickFor');
 //     const ns_vcard_update = 'vcard-temp:x:update';
 
 //     var presence = cache.first(
@@ -424,7 +424,7 @@ function comparePresences(p1, p2) {
 }
 
 function connectorTypeFor(jid) {
-    deprecation('connectorTypeFor');
+    deprecation('2009-04-09 connectorTypeFor');
     var m = JID(jid).hostname.match(/^(.+)\.x4m\.localhost$/);
     return m ? m[1] : 'tcp';
 }
@@ -531,7 +531,7 @@ function presencesOf(account, address) {
 };
 
 function presenceSummary(account, address) {
-    deprecation('XMPP.presenceSummary');
+    deprecation('2009-04-09 XMPP.presenceSummary');
 
     if(account && address)
         return presencesOf(account, address)[0] || {
@@ -587,7 +587,7 @@ function openDialog(parentWindow, url, windowName, features) {
 // ----------------------------------------------------------------------
 
 function enableContentDocument(panel, account, address, type, createSocket) {
-    deprecation('enableContentDocument() - (use connectPanel() instead)');
+    deprecation('2009-04-09 enableContentDocument() - (use connectPanel() instead)');
     connectPanel(panel, account, address, createSocket);
 }
 
@@ -912,41 +912,18 @@ function changedPresence(presence) {
 }
 
 function getAccountByJid(jid) {
-    deprecation('getAccountByJid()');
+    deprecation('2009-04-09 getAccountByJid() - use accounts.get({jid: <jid>}) instead');
     return accounts.get({jid: jid});
 }
 
 function getAccountByKey(key) {
-    deprecation('getAccountByKey()');
+    deprecation('2009-04-09 getAccountByKey() - use accounts.get({key: <key>}) instead');
     return accounts.get({key: key});
 }
 
 
 // DEVELOPER UTILITIES
 // ----------------------------------------------------------------------
-
-function deprecation(msg) {
-    var frame = Components.stack.caller;
-
-    var s = 'xmpp4moz :: DEPRECATION NOTICE :: "' + msg + '" in: \n';
-    while(frame) {
-        s += '  ' + frame + '\n';
-        frame = frame.caller
-    }
-    Cu.reportError(s);
-}
-
-function getStackTrace() {
-    var frame = Components.stack.caller;
-    var str = "<top>";
-
-    while (frame) {
-        str += '\n' + frame;
-        frame = frame.caller;
-    }
-
-    return str;
-}
 
 function log(msg) {
     deprecation('log()');

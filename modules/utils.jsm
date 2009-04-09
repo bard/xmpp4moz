@@ -36,7 +36,8 @@ var EXPORTED_SYMBOLS = [
     'asString',
     'serialize',
     'sha1',
-    'assert'
+    'assert',
+    'deprecation'
 ];
 
 
@@ -279,6 +280,20 @@ function sha1(s) {
     const PR_UINT32_MAX = 0xffffffff;
     ch.updateFromStream(stream, PR_UINT32_MAX);
     return ch.finish(false);
+}
+
+// DEVELOPER UTILITIES
+// ----------------------------------------------------------------------
+
+function deprecation(msg) {
+    var frame = Components.stack.caller;
+
+    var s = 'xmpp4moz :: DEPRECATION NOTICE :: "' + msg + '" in: \n';
+    while(frame) {
+        s += '  ' + frame + '\n';
+        frame = frame.caller
+    }
+    Cu.reportError(s);
 }
 
 function assert(condition, callerArgs) {
