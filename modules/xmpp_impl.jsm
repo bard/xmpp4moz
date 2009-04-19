@@ -851,7 +851,7 @@ function _up(account, onSessionActive) {
 
             let candidatePresenceStanza = presenceHistory
                 .map(function(s) new XML(s))
-                .reduceRight(function(p1,p2) xmlP1.@type == undefined ? xmlP1 : xmlP2);
+                .reduceRight(function(p1,p2) p1.@type == undefined ? p1 : p2);
             
             newPresenceStanza = (candidatePresenceStanza.@type == undefined ?
                                  candidatePresenceStanza :
