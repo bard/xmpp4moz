@@ -275,8 +275,6 @@ service.getCapsHash = function() {
         if(features[featureURI] > 0)
             featureURIs.push(featureURI);
 
-    var ns_xml = 'http://www.w3.org/XML/1998/namespace';
-
     var s = '';
     s += identity.@category + '/';
     s += identity.@type + '/';
@@ -330,8 +328,6 @@ service.notifyObservers = function(subject, topic, data) {
         try {
             observer.observe(subject, topic, data);
         } catch(e) {
-            Cu.reportError(e);
-            //Cu.reportError('HERERERERERERERERERE')
             Cu.reportError('Channel raised exception: unregistered.');
             this.removeObserver(observer, null);
         }

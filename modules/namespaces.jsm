@@ -39,6 +39,7 @@ var EXPORTED_SYMBOLS = [];
 // GLOBAL DEFINITIONS
 // ----------------------------------------------------------------------
 
+var ns_xml          = 'http://www.w3.org/XML/1998/namespace';
 var ns_auth         = 'jabber:iq:auth';
 var ns_xhtml        = 'http://www.w3.org/1999/xhtml';
 var ns_xhtml_im     = 'http://jabber.org/protocol/xhtml-im';
@@ -54,6 +55,7 @@ var ns_chatstates   = 'http://jabber.org/protocol/chatstates';
 var ns_event        = 'jabber:x:event';
 var ns_stanzas      = 'urn:ietf:params:xml:ns:xmpp-stanzas';
 var ns_http_auth    = 'http://jabber.org/protocol/http-auth';
+var ns_x4m          = 'http://hyperstruct.net/xmpp4moz/protocol/internal';
 var ns_x4m_in       = 'http://hyperstruct.net/xmpp4moz/protocol/internal';
 var ns_x4m_ext      = 'http://hyperstruct.net/xmpp4moz/protocol/external';
 var ns_vcard        = 'vcard-temp';

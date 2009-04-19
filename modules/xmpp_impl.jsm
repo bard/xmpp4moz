@@ -845,16 +845,14 @@ function _up(account, onSessionActive) {
             // accounts now, to avoid getting in the way of the
             // Twitter connector.
             newPresenceStanza = defaultInitialPresenceStanza;
-
         else if(presenceHistory.length >= 1) {
             // Skip sequences of recent unavailable presences (there
             // should be only one, but you never know...)
-            let candidatePresenceStanza = presenceHistory.reduceRight(function(p1, p2) {
-                var xmlP1 = new XML(p1);
-                var xmlP2 = new XML(p2);
 
-                return xmlP1.@type == undefined ? xmlP1 : xmlP2;
-            });
+            let candidatePresenceStanza = presenceHistory
+                .map(function(s) new XML(s))
+                .reduceRight(function(p1,p2) xmlP1.@type == undefined ? xmlP1 : xmlP2);
+            
             newPresenceStanza = (candidatePresenceStanza.@type == undefined ?
                                  candidatePresenceStanza :
                                  defaultInitialPresenceStanza);
