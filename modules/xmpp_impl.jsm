@@ -868,8 +868,10 @@ function _up(account, onSessionActive) {
              </iq>,
              function() {
                  send(account, newPresenceStanza);
-                 if(onSessionActive)
+                 if(onSessionActive) {
+                     assert(typeof(onSessionActive) == 'function');
                      onSessionActive()
+                 }
              });
     });
 }
