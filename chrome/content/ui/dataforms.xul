@@ -102,7 +102,7 @@
       <label xulx:role="label"/>
       <vbox>
         <description xulx:role="desc" hidden="true"/>        
-        <listbox xulx:role="value" seltype="single" rows="4"/>
+        <menulist xulx:role="value" seltype="single" rows="4" label='[select]'/>
       </vbox>
     </row>
 

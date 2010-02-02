@@ -70,7 +70,9 @@ xmpp.ui.createDataForm = function(form) {
         xulField.setAttributeNS(ns_data, 'type', field.@type);        
         if(field.ns_data::required.length() > 0) 
             xulField.setAttributeNS(ns_data, 'required', 'true');
-        
+
+        _(xulForm, {'xulx:role': 'fields'}).appendChild(xulField);        
+
         if(field.@label != undefined)
             _(xulField, {'xulx:role': 'label'}).value = field.@label;        
         if(field.ns_data::desc != undefined) {
@@ -121,7 +123,6 @@ xmpp.ui.createDataForm = function(form) {
         default:
             break;
         }
-        _(xulForm, {'xulx:role': 'fields'}).appendChild(xulField);
     }
 
     return xulForm;
