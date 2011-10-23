@@ -869,7 +869,6 @@ function _up(account, onSessionActive) {
              function() {
                  send(account, newPresenceStanza);
                  if(onSessionActive) {
-                     assert(typeof(onSessionActive) == 'function');
                      onSessionActive()
                  }
              });

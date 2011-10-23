@@ -113,7 +113,7 @@ cache.remove = function(element) {
 };
 
 cache.resolve = function(prefix) {
-    var ns = cache.__parent__['ns_' + prefix];
+   var ns = Cu.getGlobalForObject(cache)['ns_'+prefix];
     if(ns)
         return ns;
     else
