@@ -1,1 +1,82 @@
-Please see http://github.com/bard/sameplace/wikis/home.
+README xmpp4moz
+Dec 8, 2011 sibrahim shaw.ibrahim [at] gmail.com
+
+1) The version here has been updated from bard/xmpp4moz branch 0.7. 
+Please see http://github.com/bard/sameplace/wikis/home for some documentation
+on the original version.
+
+These documents may shed some light on bard's (original author) design:
+http://hyperstruct.net/2006/08/10/your-first-javascript-xpcom-component-in-10-minutes/
+http://hyperstruct.net/2009/06/30/the-mozilla-addons-workshop-in-florence/
+
+2) My first set of changes were to enable xmpp4moz to run under the new
+xpcom for Gecko 2.0 framework. Code changes were marked with //FF4. 
+It runs under Firefox FF4-8. 
+
+See: 
+https://developer.mozilla.org/en/XPCOM/XPCOM_changes_in_Gecko_2.0
+http://blog.mozilla.com/addons/2010/06/14/multiple-breaking-changes-are-coming-for-components-in-extensions/
+See also notes file for files that changed
+
+3) The second set of changes were done to make xmpp4moz compatible w/ FF9
+The interface definitions nsIXMPPCacheService.idl for XMPPCacheService.js would
+cause an exception during runtime. 
+Exception ~= argument type error
+This could not be fixed with a new xpidl or xulrunner sdk. 
+In order to make it work, we disabled the ability to call xmpp4moz from 
+non-javascript code, thus removing the problematic idl and xmpp4moz worked.
+
+See: https://developer.mozilla.org/en/How_to_Build_an_XPCOM_Component_in_Javascript#Creating_the_Component
+
+The code changes were marked with //FF9
+
+Changed files:
+--------------
+ ./chrome.manifest
+ ./install.rdf
+ ./update.rdf.template
+
+ ./chrome/content/service/client_service.js
+ ./chrome/content/service/jsapi.js
+ ./chrome/content/test/tc_session.js
+
+ ./components
+   - Changed XMPPCacheService.js, XMPPClientService.js, XMPPClientSession.js, 
+   XMPPTCPConnector.js to new XPCOM Gecko 2.0, marked with //FF
+
+No longer needed:
+----------------
+ ./public - idl definitions. 
+
+ This directory can be removed if we no longer 
+ need to call xmpp4moz from non-javascript code
+
+ ./public/nsIXMPPCacheService.idl
+ ./public/nsIXMPPClientService.idl
+ ./public/nsIXMPPClientSession.idl
+ ./public/nsIXMPPConnector.idl
+
+ produces xpt file using xpidl (xulrunner idl compiler) 
+
+ ./components/nsIXMPPCacheService.xpt  	  (removed)	
+ ./components/nsIXMPPClientService.xpt    (removed)
+ ./components/nsIXMPPClientSession.xpt    (removed)
+ ./components/nsIXMPPConnector.xpt        (removed)
+
+These xpt 's are also no longer needed since xmpp4moz is not being called from 
+non-javascript code. 
+
+New files:
+---------
+ ./pack.csh - helper pack files into xmpp4moz.xpi 
+ ./buildsax.csh - helper to compile SAX (xml parser) xpcom interface definitions. Should be changed to a Makefile
+
+No change:
+---------
+ chrome/content/ui/dataforms.js
+ chrome/content/ui/dataforms.xul
+
+
+
+
+//EOF

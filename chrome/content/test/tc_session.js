@@ -41,7 +41,10 @@ var spec       = new mozunit.Specification('Session');
 // ----------------------------------------------------------------------
 
 function createSession() {
-    return Cc['@hyperstruct.net/xmpp4moz/xmppsession;1'].createInstance(Ci.nsIXMPPClientSession);
+    //FF9
+    //return Cc['@hyperstruct.net/xmpp4moz/xmppsession;1'].createInstance(Ci.nsIXMPPClientSession);
+    return Cc['@hyperstruct.net/xmpp4moz/xmppsession;1'].createInstance().wrappedJSObject;
+    //END FF9
 }
 
 function asString(thing) {

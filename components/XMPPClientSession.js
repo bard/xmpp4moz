@@ -10,6 +10,9 @@ const INTERFACE = Components.interfaces.nsIXMPPClientSession;
 /* ---------------------------------------------------------------------- */
 /*                           Template code                                */
 
+//SI New for FF4
+Components.utils.import("resource://gre/modules/XPCOMUtils.jsm");
+
 const Cc = Components.classes;
 const Ci = Components.interfaces;
 const Cr = Components.results;
@@ -18,23 +21,54 @@ const loader = Cc['@mozilla.org/moz/jssubscript-loader;1']
     .getService(Ci.mozIJSSubScriptLoader);
 
 function Component() {
-    this.wrappedJSObject = this;
+    this.wrappedJSObject = this; //USED for accessing from js only //FF9
 }
 
 Component.prototype = {
+
+    classID: CLASS_ID, //SI
+    classDescription: CLASS_NAME, //FF9
+    contractID: CONTRACT_ID,  //FF9
+
     reload: function() {
         loader.loadSubScript(SOURCE, this.__proto__);
     },
     
+    //FF4 - init listener, originally I had it in SOURCE
+    observe: function (aSubject, aTopic, aData) {
+	if ((aTopic == "app-startup")||(aTopic == "profile-after-change")) {
+	    this.init();
+	    //this._message = 'huppo mini moose';
+	}
+    },
+
+    //FF9 
+    QueryInterface: XPCOMUtils.generateQI([
+	Components.interfaces.nsIObserver
+    ])
+
+    //FF4
+    /*
+    QueryInterface: XPCOMUtils.generateQI([
+	INTERFACE, //alt to the above
+	Components.interfaces.nsIObserver //To observe startup event
+    ])
+    */
+
+    //FF3
+    /*
     QueryInterface: function(aIID) {
         if(!aIID.equals(INTERFACE) &&
            !aIID.equals(Ci.nsISupports))
             throw Cr.NS_ERROR_NO_INTERFACE;
         return this;
-    }
+    }*/
 };
+
 loader.loadSubScript(SOURCE, Component.prototype);
 
+//FF3
+/*
 var Factory = {
     createInstance: function(aOuter, aIID) {
         if(aOuter != null)
@@ -43,7 +77,10 @@ var Factory = {
         return component.QueryInterface(aIID);
     }
 };
+*/
 
+//FF3
+/*
 var Module = {
     _firstTime: true,
 
@@ -74,5 +111,17 @@ var Module = {
 
     canUnload: function(aCompMgr) { return true; }
 };
+*/
 
-function NSGetModule(aCompMgr, aFileSpec) { return Module; }
+//function NSGetModule(aCompMgr, aFileSpec) { return Module; }
+
+//This replaces the above commented objects Factory and Module
+/**
+* XPCOMUtils.generateNSGetFactory was introduced in Mozilla 2 (Firefox 4).
+* XPCOMUtils.generateNSGetModule is for Mozilla 1.9.2 (Firefox 3.6).
+*/
+
+if (XPCOMUtils.generateNSGetFactory)
+    var NSGetFactory = XPCOMUtils.generateNSGetFactory([Component]);
+else
+    var NSGetModule = XPCOMUtils.generateNSGetModule([Component]);

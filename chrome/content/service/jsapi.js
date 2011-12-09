@@ -55,8 +55,14 @@ const Cc = Components.classes;
 const Ci = Components.interfaces;
 const Cu = Components.utils;
 
+//FF9
+const service = Cc['@hyperstruct.net/xmpp4moz/xmppservice;1']
+    .getService().wrappedJSObject;
+/*
 const service = Cc['@hyperstruct.net/xmpp4moz/xmppservice;1']
     .getService(Ci.nsIXMPPClientService);
+*/
+//END FF9
     
 const pref = Cc['@mozilla.org/preferences-service;1']
     .getService(Ci.nsIPrefService)
@@ -449,10 +455,18 @@ function open(jid, opts, continuation) {
         }
     }
 
+    //FF9
+    var connector = 
+        Cc['@hyperstruct.net/xmpp4moz/connector;1?type=' + connectorTypeFor(jid)]
+        .createInstance().wrappedJSObject;
+
+    /*
     var connector = 
         Cc['@hyperstruct.net/xmpp4moz/connector;1?type=' + connectorTypeFor(jid)]
         .createInstance(Ci.nsIXMPPConnector);
-    
+    */
+    //END FF9
+
     connector.init(jid, password, host, port, security);
     service.open(jid, connector, connectionObserver);
 }

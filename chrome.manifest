@@ -2,6 +2,39 @@ content xmpp4moz chrome/content/
 locale xmpp4moz en-US chrome/locale/en-US/
 skin xmpp4moz classic/1.0 chrome/skin/classic/
 
+#FF4 Begin
+
+#TEST
+#interfaces components/nsIXMPPCacheService.xpt
+#interfaces components/nsIXMPPClientService.xpt
+#interfaces components/nsIXMPPClientSession.xpt
+#interfaces components/nsIXMPPConnector.xpt
+
+# The {classID} here must match the classID in particular component
+component {ecf93052-9720-45d6-94fd-0253f3410105} components/XMPPCacheService.js
+contract @hyperstruct.net/xmpp4moz/xmppcache;1 {ecf93052-9720-45d6-94fd-0253f3410105}
+
+component {93fa793c-2bda-4a4c-90c6-7db2c52de9f5} components/XMPPClientService.js
+contract @hyperstruct.net/xmpp4moz/xmppservice;1 {93fa793c-2bda-4a4c-90c6-7db2c52de9f5}
+
+component {1552a874-4e8f-47cd-a9f0-5a87b248e0a8} components/XMPPClientSession.js
+contract @hyperstruct.net/xmpp4moz/xmppsession;1 {1552a874-4e8f-47cd-a9f0-5a87b248e0a8}
+
+component {6a51541a-791c-41fa-a32f-29371ea088a9} components/XMPPTCPConnector.js
+contract @hyperstruct.net/xmpp4moz/connector;1?type=tcp {6a51541a-791c-41fa-a32f-29371ea088a9}
+
+#FF4 startup listener  
+#Note: the name of the 3rd parameter doesnt matter. ex fooMyComponent
+#The fourth paramter must match the contract of the listening component
+
+category profile-after-change XMPPCacheService @hyperstruct.net/xmpp4moz/xmppcache;1
+category profile-after-change XMPPClientService @hyperstruct.net/xmpp4moz/xmppservice;1
+category profile-after-change XMPPClientSession @hyperstruct.net/xmpp4moz/xmppsession;1
+category profile-after-change XMPPConnector @hyperstruct.net/xmpp4moz/connector;1?type=tcp
+
+
+#FF4 End
+
 overlay chrome://browser/content/browser.xul chrome://xmpp4moz/content/overlay_browser.xul
 overlay chrome://messenger/content/messenger.xul chrome://xmpp4moz/content/overlay_mail.xul
 overlay chrome://songbird/content/xul/statusBarOverlay.xul chrome://xmpp4moz/content/overlay_songbird.xul

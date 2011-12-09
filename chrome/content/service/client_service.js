@@ -75,8 +75,16 @@ var sessions = {
 // ----------------------------------------------------------------------
 
 function init() {
+    //FF9
     cache = Cc['@hyperstruct.net/xmpp4moz/xmppcache;1']
-        .getService(Ci.nsIXMPPCacheService);
+        .getService().wrappedJSObject; 
+
+    /*
+    cache = Cc['@hyperstruct.net/xmpp4moz/xmppcache;1']
+        .getService(Ci.nsIXMPPCacheService); 
+    */
+    //END FF9
+
 
     pref.addObserver('', {
         observe: function(subject, topic, data) {
@@ -116,9 +124,18 @@ function open(jid, connector, connectionProgressObserver) {
     var session = sessions.get(jid);
     if(session)
         return session;
-    
+
+    //FF9
+    session = Cc['@hyperstruct.net/xmpp4moz/xmppsession;1']
+	.createInstance().wrappedJSObject;
+        //.getService().wrappedJSObject;
+
+    /*
     session = Cc['@hyperstruct.net/xmpp4moz/xmppsession;1']
         .createInstance(Ci.nsIXMPPClientSession);
+    */
+    //END FF9
+
     session.init(jid);
     sessions.created(session);
 

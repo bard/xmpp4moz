@@ -1,0 +1,206 @@
+Notes: To make if FF5 compatible from from FF4,
+-----------------------------------------------
+
+a)Install.rdf : firefox version nummber had to be changed.
+b)recompile xpt from idl. Since there as no xpidl in the xulrunner-sdk5
+download, used the xpidl in xulrunner-sdk-1.9.2 for FF4
+
+Directory:
+----------
+
+./chrome
+./chrome/content
+
+----------
+No need to modify
+Support and utility code for xmpp and stanzas. 
+
+./chrome/content/lib
+./chrome/content/lib/channel.js
+./chrome/content/lib/misc.js
+./chrome/content/lib/query.js
+./chrome/content/lib/test.js
+
+----------
+No need to modify
+UI implementation. xul layout for mail, songbird, browser etc
+
+./chrome/content/overlay.js
+./chrome/content/overlay_browser.xul
+./chrome/content/overlay_impl.js
+./chrome/content/overlay_mail.xul
+./chrome/content/overlay_songbird.xul
+
+----------
+No need to modify 
+? Not sure what this section does. Might be legacy to test out the stanzas, pattern mattching and xmpp service
+
+./chrome/content/test
+./chrome/content/test/mocks.js
+./chrome/content/test/tc_match.js
+./chrome/content/test/tc_session.js
+
+----------
+No need to modify
+
+./chrome/content/ui
+./chrome/content/ui/accounts.js
+./chrome/content/ui/accounts.xul
+./chrome/content/ui/dataforms.js
+./chrome/content/ui/dataforms.xul
+./chrome/content/ui/register.js
+./chrome/content/ui/register.xul
+./chrome/content/ui/registration.js
+./chrome/content/ui/registration.xul
+./chrome/content/ui/signon.js
+./chrome/content/ui/signon.xul
+./chrome/content/ui/utils.js
+
+----------
+No need to modify
+Key file for defining all the methods of XMPP
+
+./chrome/content/service/jsapi.js
+
+----------
+No need to modify
+This file loads jsapi.js into the XMPP namespace. 
+Therefore it means the XMPP functionality is defined in jsapi.js -)
+
+./chrome/content/xmpp.js
+
+----------
+No need to modify
+Textual labels and error messages
+
+./chrome/locale
+./chrome/locale/en-US
+./chrome/locale/en-US/overlay_browser.dtd
+./chrome/locale/en-US/streamErrors.properties
+./chrome/locale/en-US/xmpp4moz.properties
+
+----------
+No need to modify
+
+./chrome/skin
+./chrome/skin/classic
+./chrome/skin/classic/accounts.css
+./chrome/skin/classic/overlay.css
+./chrome/skin/classic/status
+./chrome/skin/classic/status/all-small.png
+./chrome/skin/classic/status/all.png
+./chrome/skin/classic/status/available-big.png
+./chrome/skin/classic/status/available-small.png
+./chrome/skin/classic/status/available.png
+./chrome/skin/classic/status/away-small.png
+./chrome/skin/classic/status/away.png
+./chrome/skin/classic/status/dnd-small.png
+./chrome/skin/classic/status/dnd.png
+./chrome/skin/classic/status/unavailable-small.png
+./chrome/skin/classic/status/unavailable.png
+
+----------
+Interface
+./components
+
+[x ] Need to recompile the following xpt:
+
+In order to recompile, u need to execute xpidl in v1.9.2 for ff4
+bash-3.2$ ~/src/mozilla/xulrunner-4-v1.9.2/bin/xpidl -m typelib -w -v -I ~/src/mozilla/xulrunner-5/idl/ -e nsISAXAttributes.xpt nsISAXAttributes.idl
+
+There is a helper csh called buildsax.csh that will do it for u
+
+ xmpp4moz5/components/nsISAXAttributes.xpt   
+ xmpp4moz5/components/nsISAXContentHandler.xpt
+ xmpp4moz5/components/nsISAXDTDHandler.xpt
+ xmpp4moz5/components/nsISAXErrorHandler.xpt
+ xmpp4moz5/components/nsISAXLexicalHandler.xpt
+ xmpp4moz5/components/nsISAXLocator.xpt
+ xmpp4moz5/components/nsISAXMutableAttributes.xpt
+ xmpp4moz5/components/nsISAXXMLFilter.xpt
+ xmpp4moz5/components/nsISAXXMLReader.xpt
+
+these xpt's come from -> xulrunner-sdk/idl
+List of xulrunner-sdk/idl
+
+nsISAXAttributes.idl
+nsISAXContentHandler.idl
+nsISAXDTDHandler.idl
+nsISAXErrorHandler.idl
+nsISAXLexicalHandler.idl
+nsISAXLocator.idl
+nsISAXMutableAttributes.idl
+nsISAXXMLFilter.idl
+nsISAXXMLReader.idl
+
+----------
+No need to recompile for FF5. Maybe for future gecko & FF versions
+To recompile use the makefile
+
+X ./components/nsIXMPPCacheService.xpt - comes from public/*.idl
+X ./components/nsIXMPPClientService.xpt
+X ./components/nsIXMPPClientSession.xpt
+X ./components/nsIXMPPConnector.xpt
+
+idl's defined in:
+
+X ./public
+X ./public/Makefile
+X ./public/nsIXMPPCacheService.idl
+X ./public/nsIXMPPClientService.idl
+X ./public/nsIXMPPClientSession.idl
+X ./public/nsIXMPPConnector.idl
+
+----------
+
+Modify
+./chrome.manifest - includes ui elements for songbird, messenger and browser
+
+./install.rdf   
+
+Changed to 4.0 but here's the issue, why is maxversion = 3.1.* and not 3.6.* ?
+Is the original code old ?
+After checking, found out Bart only updated maxversion in the release, 
+not in the src code. Therefore code is ok and not old.
+The code here is from 0.7.2, the latest. We just need to change the maxversion
+
+----------
+X To be modified (TBM)
+
+Component plumbing, like MyComponent.js 
+[X] ./components/XMPPCacheService.js 
+[X] ./components/XMPPClientService.js
+[X] ./components/XMPPClientSession.js
+[X] ./components/XMPPTCPConnector.js
+
+------------
+No need to modify
+
+[NA] No need to modify to implement startup observer. That is done 
+in the component plumbing code (see above), ie ./componenets/XMPPClientSession.js 
+instead of the service code here
+
+Here are the app specific files that implement the component
+ex: ./components/XMPPCacheService.js  will load ./chrome/content/service/cache_service.js
+
+Each of these (ex cache_service.js) have an init() function
+[X] Study how the component calls the init() in ff3.6 
+init() was called in the component,  So no need to modify these service 
+(ex cache_service.js) files, instead change the component plumbing code.
+
+./chrome/content/service
+./chrome/content/service/cache_service.js
+./chrome/content/service/client_service.js
+./chrome/content/service/client_session.js
+./chrome/content/service/connector-xmpp_tcp.js
+
+----------
+
+X ./defaults/preferences/xmpp4moz.js  - defines firstInstall and logTarget -)
+
+X ./update.rdf.template
+
+X ./notes
+X ./README
+
+-------
