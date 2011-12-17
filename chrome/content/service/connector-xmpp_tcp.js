@@ -94,6 +94,11 @@ XML.ignoreWhitespace = true;
 // ----------------------------------------------------------------------
 
 function init(jid, password, host, port, security) {
+  
+  //SI
+  this._actualJid = jid;
+  //SI END
+
     this._jid             = jid;
     this._password        = password;
     this._host            = host;
@@ -151,8 +156,27 @@ function onEvent_streamElement(element) {
            element.getAttribute('type') == 'result' &&
            // cheating, should check child instead
            element.getAttribute('id') == 'bind_2') {
-            this.requestSession();
-            this.setState('requesting-session');
+
+	  //ORIG
+          /*this.requestSession();
+          this.setState('requesting-session');
+	  */
+
+	  //SI 
+	  //example of bind iq 
+	    /* <iq xmlns="jabber:client" type="result" id="bind_2" >
+	    <bind xmlns="urn:ietf:params:xml:ns:xmpp-bind">
+	    <jid>wokishare@gmail.com/sis-macbooC40D092F</jid>
+	    </bind>
+	    </iq> */
+
+          this.requestSession();
+	  wtlog('AA1 connector-xmpp_tcp requesting-session');
+
+	  this._actualJid = element.getElementsByTagName('jid')[0].childNodes[0].nodeValue;
+          this.setState('requesting-session', this._actualJid);
+	  //SI END
+
         } else {
             throw new Error('Error while binding resource.');
         }
@@ -236,6 +260,12 @@ function onEvent_sessionActive() {
 
 // PUBLIC API
 // ----------------------------------------------------------------------
+
+//SI Returns the actualJid ex: foo@boo.com/resource123 instead of 
+//foo@boo.com/intendedResource
+function getActualJid() {
+  return this._actualJid;  
+}
 
 function isConnected() {
     return ['requested-tls',
@@ -348,6 +378,7 @@ function _write(data) {
 }
 
 function bindResource() {
+  wtlog('AA1 connector-xmpp_tcp bindResource()');
     this._write(<iq id='bind_2' type='set'>
                <bind xmlns='urn:ietf:params:xml:ns:xmpp-bind'>
                <resource>{JID(this._jid).resource}</resource>
@@ -391,6 +422,11 @@ function requestTLS() {
 function setState(name, stateData) {
     this.LOG('STATE  ', name, ' [', stateData, ']');
     this._state = name;
+
+  //SI DEBUG
+  //if ( name === 'requesting-session' ) { wtlog('AA1 setState name,stateData = '+name+' , '+stateData); }
+  //END SI
+
     this.notifyObservers(stateData, name, null);
 }
 
@@ -428,6 +464,14 @@ function assertState() {
     this.LOG('ERROR: event ' + arguments.callee.caller.name + ' while in state ' + this._state);
 }
 
+//SI
+function wtlog(msg) {
+    var console = Cc['@mozilla.org/consoleservice;1'].getService(Ci.nsIConsoleService);
+  wtlog = function(msg) {
+        console.logStringMessage('xmpp4moz: ' + msg);
+    }
+  wtlog(msg);
+}
 
 function LOG() {
     if(this._logging) {

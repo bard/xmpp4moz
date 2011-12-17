@@ -377,6 +377,7 @@ function send(account, stanza, handler) {
             stanza.@type == 'unavailable')
         ;
     else
+      //SI Note it reconnects automatically, esp if fullJid is different than initial intendedJid 
         up(account, function(jid) { _send(jid, stanza, handler); });
 }
 
@@ -398,7 +399,7 @@ function createChannel(features) {
             service.addFeature(feature.toXMLString());
         }
 
-    service.addObserver(channel, null, false);
+    service.addObserver(channel, null, false); //SI channel.on() observers are added
     return channel;
 }
 
@@ -411,12 +412,30 @@ function open(jid, opts, continuation) {
     var port     = opts.connectionPort || 5223;
     var security = opts.connectionSecurity == undefined ? 1 : opts.connectionSecurity;
 
+    //FF9 MOVED FROM BELOW
+    var connector = 
+        Cc['@hyperstruct.net/xmpp4moz/connector;1?type=' + connectorTypeFor(jid)]
+        .createInstance().wrappedJSObject;
+  //FF9 END
+
     var connectionObserver = {
         observe: function(subject, topic, data) {
             switch(topic) {
+
+	      //SI TEST
+	      //The subject has the actualJid. Now how do we get it up to wt ?
+	      //- No need to get it up to the wt application layer, since we now
+	      //provide a public getActualJid() function
+	    /*  
+	    case 'connector-requesting-session':
+	      log('AA1 jsapi:connector-requesting-session, subject = '+subject);
+	      log('AA1 jsapi actualJid = '+connector.getActualJid());
+	      break; 
+	    */
+
             case 'connector-active':
                 if(continuation)
-                    continuation();
+                  continuation();
                 break;
             case 'connector-error':
                 if(!subject || subject instanceof Ci.nsIDOMElement) {
@@ -455,12 +474,9 @@ function open(jid, opts, continuation) {
         }
     }
 
-    //FF9
-    var connector = 
-        Cc['@hyperstruct.net/xmpp4moz/connector;1?type=' + connectorTypeFor(jid)]
-        .createInstance().wrappedJSObject;
-
-    /*
+  
+  //FF9 MOVED TO THE TOP
+  /*
     var connector = 
         Cc['@hyperstruct.net/xmpp4moz/connector;1?type=' + connectorTypeFor(jid)]
         .createInstance(Ci.nsIXMPPConnector);
@@ -477,6 +493,10 @@ function close(jid) {
     service.close(jid);
 }
 
+//SI
+function getActualJid(jid) {
+  return service.getActualJid(jid);
+}
 
 // UTILITIES
 // ----------------------------------------------------------------------
@@ -899,9 +919,13 @@ function _up(account, continuation) {
              </iq>,
              function() {
                  send(account.jid, <presence/>);
-                 if(continuation)
-                     continuation(account.jid)
-             })        
+               if(continuation) {
+		   //SI Note At this point u could add actualJid into account 
+		   //if account was passed into open() instead of the
+		   //account properties like account.jid
+                 continuation(account.jid);
+	       }
+             });        
     });
 }
 

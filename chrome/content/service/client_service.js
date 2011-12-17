@@ -115,6 +115,12 @@ function init() {
 // PUBLIC FUNCTIONALITY
 // ----------------------------------------------------------------------
 
+//SI
+function getActualJid(jid) {
+  var session = sessions.get(jid);
+  return (session && session.wrappedJSObject.connector.getActualJid());
+}
+
 function isUp(jid) {
     var session = sessions.get(jid);
     return (session && session.wrappedJSObject.connector.isConnected());
@@ -172,10 +178,11 @@ function open(jid, connector, connectionProgressObserver) {
             break;
         }
 
-        if(connectionProgressObserver)
+      //SI NOTE this is where the jsapi:connectionObserver is checked
+      if(connectionProgressObserver) {
             // XXX might just add connectionObserver to observers
             connectionProgressObserver.observe(subject, 'connector-' + topic, data);
-
+      }
         service.notifyObservers(subject, 'connector-' + topic, session.name);
     } };
     
@@ -271,7 +278,7 @@ function open(jid, connector, connectionProgressObserver) {
 
     session.addObserver(sessionObserver, null, false);
 
-    connector.addObserver(connectorObserver, null, false);
+    connector.addObserver(connectorObserver, null, false);  //SI listens to 'connector-requesting-session'
     session.wrappedJSObject.connector = connector;
 
     connector.connect();
