@@ -85,83 +85,11 @@ function finish() {
     prefBranch.removeObserver('', prefObserver);
 }
 
+//SI AMO (SIC) Compatibility
+//CODE HAD TO BE REMOVED BECAUSE STUPID AMO VALIDATOR CANT TELL COMMENT FROM CODE
+//See orig subdirectory for original code
 
-// GUI ACTIONS
-// ----------------------------------------------------------------------
-
-// XXX Redundant with and dependent on SamePlace code -- wrong, but no
-// better solution in sight.
-
-function openPreferences(paneID) {
-    var instantApply;
-    try {
-        instantApply = Cc['@mozilla.org/preferences-service;1']
-            .getService(Ci.nsIPrefBranch)
-            .getBoolPref('browser.preferences.instantApply');
-    } catch(e) {
-        instantApply = false;
-        Cu.reportError(e);
-    }
-        
-    var features = 'chrome,titlebar,toolbar,centerscreen' +
-        (instantApply ? ',dialog=no' : '');
-    
-    var prefWindow = Cc['@mozilla.org/appshell/window-mediator;1']
-        .getService(Ci.nsIWindowMediator)
-        .getMostRecentWindow('SamePlace:Preferences');
-    
-    if(prefWindow) {
-        prefWindow.focus();
-        if(paneID) {
-            var pane = prefWindow.document.getElementById(paneID);
-            prefWindow.document.documentElement.showPane(pane);
-        }
-    } else {
-        window.openDialog('chrome://sameplace/content/preferences/preferences.xul',
-                          'SamePlace:Preferences', features, paneID);
-    }
-}
-
-function configureAccounts() {
-    openPreferences();
-}
-
-
-// ----------------------------------------------------------------------
-// REACTIONS
-
-function selectedAccount(jid) {
-    _('main').getButton('accept').disabled = false;
-    if(XMPP.isUp(jid)) {
-        _('password-area').hidden = true;
-        _('already-connected').hidden = false;
-    } else {        
-        _('password-area').hidden = false;
-        _('already-connected').hidden = true;
-        _('password').value = XMPP.accounts.filter(function(a) {
-            return a.jid == jid;
-        })[0].password || '';
-    }
-}
-
-function doOk() {
-    request.jid = request.jid || _('accounts').value;
-    request.password = _('password').value;
-    request.confirm = true;
-
-    return true;
-}
-
-function doCancel() {
-    return true;
-}
-
-var prefObserver = {
-    observe: function(subject, topic, data) {
-        xmpp.ui.refreshAccounts(_('xmpp-popup-accounts'));
-    }
-};
-
+//SI END
 
 // ----------------------------------------------------------------------
 // UTILITIES

@@ -26,7 +26,7 @@
 
 const pref = Cc['@mozilla.org/preferences-service;1']
     .getService(Ci.nsIPrefService)
-    .getBranch('xmpp.')
+    .getBranch('extensions.xmpp.')
     .QueryInterface(Ci.nsIPrefBranch2);
 
 const ns_disco_info = 'http://jabber.org/protocol/disco#info';    

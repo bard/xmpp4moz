@@ -4,8 +4,8 @@
      xmlns:em="http://www.mozilla.org/2004/em-rdf#">
 
   <Description about="urn:mozilla:install-manifest">
-    <em:id>xmpp4moz@hyperstruct.net</em:id>
-    <em:version>42.0.0</em:version>
+    <em:id>xmpp4moz@wokitalk.com</em:id>
+    <em:version>44.0.0</em:version>
     <em:type>2</em:type>
 
     <!-- firefox -->
@@ -14,47 +14,7 @@
       <Description>
         <em:id>{ec8030f7-c20a-464f-9b0e-13a3a9e97384}</em:id>
         <em:minVersion>3.6.*</em:minVersion>
-        <em:maxVersion>9.0.*</em:maxVersion>
-      </Description>
-    </em:targetApplication>
-
-    <!-- flock -->
-
-    <em:targetApplication>
-      <Description>
-        <em:id>{a463f10c-3994-11da-9945-000d60ca027b}</em:id>
-        <em:minVersion>0.9</em:minVersion>
-        <em:maxVersion>1.1</em:maxVersion>
-      </Description>
-    </em:targetApplication>
-   
-    <!-- thunderbird -->
-    
-    <em:targetApplication>
-      <Description>
-        <em:id>{3550f703-e582-4d05-9a08-453d09bdfdc6}</em:id>
-        <em:minVersion>1.5</em:minVersion>
-        <em:maxVersion>2.0.0.*</em:maxVersion>
-      </Description>
-    </em:targetApplication>
-
-    <!-- songbird -->
-    
-    <em:targetApplication>
-      <Description>
-        <em:id>songbird@songbirdnest.com</em:id>
-        <em:minVersion>0.2</em:minVersion>
-        <em:maxVersion>1.0+</em:maxVersion>
-      </Description>
-    </em:targetApplication>
-
-    <!-- toolkit -->
-
-    <em:targetApplication>
-      <Description>
-        <em:id>toolkit@mozilla.org</em:id>
-        <em:minVersion>1.8</em:minVersion>
-        <em:maxVersion>1.9.0.*</em:maxVersion>
+        <em:maxVersion>11.*</em:maxVersion>
       </Description>
     </em:targetApplication>
 
@@ -62,8 +22,7 @@
     <em:description>XMPP integration layer for Mozilla</em:description>
     <em:iconURL>chrome://xmpp4moz/skin/status/available-big.png</em:iconURL>
     <em:creator>Massimiliano Mirra</em:creator>
-    <em:updateURL/>
-    <em:homepageURL>http://dev.hyperstruct.net/xmpp4moz</em:homepageURL>
-    <em:updateKey>MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDEIAFfynLWE9Kh6D7bbe0yM3gHyZKikhDkVK1n/3E8RngyNDAnjVb4W7M6XRpJVWjNLObB+CA+izRCUwvWOWzdIA1409od1gN9cjWU6c6X68AX/aGW7/LH30NCGcQcmw/MUtlPUQgI1agOJIIqCVRZh9npef/Vdtr3AxjsKtK4QwIDAQAB</em:updateKey>
+    <em:contributor>Shahril Ibrahim</em:contributor>
+    <em:homepageURL>https://github.com/sibrahim/xmpp4moz/</em:homepageURL>    
   </Description>      
 </RDF>

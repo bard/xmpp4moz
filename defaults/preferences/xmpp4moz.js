@@ -1,2 +1,2 @@
-pref("xmpp.firstInstall", true);
-pref("xmpp.logTarget", "");
+pref("extensions.xmpp.firstInstall", true);
+pref("extensions.xmpp.logTarget", "");
